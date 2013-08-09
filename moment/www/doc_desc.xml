@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <pagename>
+    <eng>Documentation - Server overview</eng>
+    <rus>Документация - Описание сервера</rus>
+  </pagename>
+  <title>
+    <eng>Server overview</eng>
+    <rus>Описание сервера</rus>
+  </title>
+
+  <moment_toc>
+    <dl>
+	<dt>
+	  <eng><a href="doc_desc.html#func">Capabilities</a></eng>
+	  <rus><a href="doc_desc.ru.html#func">Функциональные возможности</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_desc.html#spec">Special features</a></eng>
+	  <rus><a href="doc_desc.ru.html#spec">Отличительные особенности</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_desc.html#req">System requirements</a></eng>
+	  <rus><a href="doc_desc.ru.html#req">Системные требования</a></rus>
+	</dt>
+    </dl>
+  </moment_toc>
+
+  <a name="func">
+    <moment_section>
+      <eng>Capabilities</eng>
+      <rus>Функциональные возможности</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Primary capabilities of Moment Video Server include:</eng>
+    <rus>Основные возможности, предоставляемые видеосервером &laquo;Момент&raquo;:</rus>
+  </p>
+
+  <ul class="moment_list">
+    <li>
+      <eng>Streaming video to Adobe Flash clients using RTMP and RTMPT protocols.</eng>
+      <rus>Передача потокового видео клиентам Adobe Flash по протоколам RTMP, RTMPT.</rus>
+    </li>
+    <li>
+      <eng>Receiving video from Adobe Flash clients.</eng>
+      <rus>Получение видео от клиентов Adobe Flash.</rus>
+    </li>
+    <li>
+      <eng>Receiving video from IP cameras, locally connected cameras,
+      video streaming servers, and other sources.</eng>
+      <rus>Захват видео с IP-камер и камер, подключенных локально. Получение видео с серверов
+      потокового вещания, из других источников.</rus>
+    </li>
+    <li>
+      <eng>Live video transcoding. Support for a full spectre of audio and video codecs.
+      Support for various video transformations: scaling, rotation, clipping, color correction,
+      special effects.</eng>
+      <rus>Перекодирование видео на лету. Поддержка полного спектра аудио и видеокодеков.
+      Поддержка различных преобразований видео: масштабирование, поворот,
+      кадрирование, цветовая коррекция, спецэффекты.</rus>
+    </li>
+    <li>
+      <eng>Recording video to disk, continuous or by a fixed schedule.</eng>
+      <rus>Запись видео на диск, в том числе запись по расписанию.</rus>
+    </li>
+    <li>
+      <eng>Playlists for scheduled video playback.</eng>
+      <rus>Плейлисты для показа видео.</rus>
+    </li>
+    <li>
+      <eng>Built-in web applications: video player, video phone.</eng>
+      <rus>Встроенные веб-приложения: видеоплеер, видеозвонки.</rus>
+    </li>
+    <li>
+      <eng>API for plugins written in C and C++.</eng>
+      <rus>API для написания плагинов на языках C и C++.</rus>
+    </li>
+    <li>
+      <eng>Supported operating systems: Linux, FreeBSD.</eng>
+      <rus>Поддерживаемые ОС: Linux, FreeBSD.</rus>
+    </li>
+  </ul>
+
+  <a name="spec">
+    <moment_section>
+      <eng>Special features</eng>
+      <rus>Отличительные особенности</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Special features of Moment Video Server:</eng>
+    <rus>Основные особенности видеосервера &laquo;Момент&raquo;:</rus>
+    <ul class="moment_list">
+      <li>
+        <eng><b>High performance</b> when streaming video to numerous clients simultaneously.
+	One of the goals of the project is to create the highest performing video server.
+	Our estimates show that Moment outperforms other servers which stream video to Flash clients.
+	This allows for handling high loads with relatively inexpensive server equipment.</eng>
+	<rus><b>Высокая производительность</b> при передаче видео множеству клиентов. Одна из целей проекта &mdash;
+	создание самого высокопроизводительного сервера потокового вещания. Сегодня можно утверждать,
+	что видеосервер &laquo;Момент&raquo; превосходит по скорости другие серверы, работающие с Flash-клиентами.
+	Это позволяет справляться с высокой нагрузкой с использованием недорогого серверного оборудования.</rus>
+      </li>
+      <li>
+        <eng><b>Ability to receive video from a broad spectre of sources</b>,
+	including, but not limited to, IP cameras, locally connected cameras, video streaming servers with
+	HTTP, MMS, RTSP, MJPEG protocols, local files in asf, avi, 3gp/mp4/mov, flv, mpeg-ps/ts, mkv/webm, mxf, ogg formats.
+	</eng>
+	<rus>Встроенная <b>возможность получать видео из
+	широкого спектра источников</b>, в том числе с IP-камер и камер, подключенных локально, с серверов потокового
+	вещания по протоколам HTTP, MMS, RTSP, из потоков MJPEG, из файлов asf, avi, 3gp/mp4/mov, flv, mpeg-ps/ts, mkv/webm,
+	mxf, ogg.</rus>
+      </li>
+    </ul>
+  </p>
+
+  <a name="req">
+    <moment_section>
+      <eng>System requirements</eng>
+      <rus>Системные требования</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Moment VS is a high performance video server capable of serving more than 3000 simultaneously connected clients
+    using a single core of a medium-class CPU.</eng>
+    <rus>&laquo;Момент&raquo; &mdash; высокопроизводительный видеосервер, способный обслуживать
+    более 3000 одновременно подключенных клиентов с одного ядра процессора среднего класса.</rus>
+  </p>
+
+  <p>
+    <eng>The table below shows results of performance measurements when streaming 500 Kbit/sec video
+    from a 64-bit system with an Intel Core i700 2600 CPU. Only a single processor core was used during the test.
+    Memomry usage numbers represent the amount of memory utilized by video server's process.</eng>
+    <rus>В таблице приведены результаты измерения производительности видеосервера при отдаче
+    видеопотока 500 Кбит/сек на 64-битной системе с процессором Intel Core i7 2600.
+    В тесте задействовано только одно процессорное ядро. Под требуемым объёмом оперативной памяти понимается
+    объём памяти, занятой процессом видеосервера.</rus>
+  </p>
+
+  <table class="moment_table" style="text-align: right" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background-color: #f7f7f7; border-bottom: 1px solid #c0c0c0">
+        <eng>Number of clients</eng>
+        <rus>Кол-во клиентов</rus>
+      </td>
+      <td style="background-color: #eaeaea; border-bottom: 1px solid #c0c0c0">
+        <eng>CPU core load</eng>
+        <rus>Загруженность процессорного ядра</rus>
+      </td>
+      <td style="background-color: #f7f7f7; border-bottom: 1px solid #c0c0c0">
+        <eng>Memory usage</eng>
+        <rus>Объём оперативной памяти</rus>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color: #fafafa; border-bottom: 1px solid #e0e0e0">1000</td>
+      <td style="background-color: #f1f1f1; border-bottom: 1px solid #e0e0e0">8%</td>
+      <td style="background-color: #fafafa; border-bottom: 1px solid #e0e0e0">130 <eng>MB</eng><rus>Мб</rus></td>
+    </tr>
+    <tr>
+      <td style="background-color: #fafafa; border-bottom: 1px solid #e0e0e0">5000</td>
+      <td style="background-color: #f1f1f1; border-bottom: 1px solid #e0e0e0">41%</td>
+      <td style="background-color: #fafafa; border-bottom: 1px solid #e0e0e0">210 <eng>MB</eng><rus>Мб</rus></td>
+    </tr>
+    <tr>
+      <td style="background-color: #fafafa">10000</td>
+      <td style="background-color: #f1f1f1">95%</td>
+      <td style="background-color: #fafafa">360 <eng>MB</eng><rus>Мб</rus></td>
+    </tr>
+  </table>
+
+  <p>
+    <eng>Results of a similar test ran on a system with a 32-bit Intel Pentium Dual-core 2.4 GHz CPU (E2220):</eng>
+    <rus>Результаты аналогичного теста, проведённого на 32-битной системе бюджетного
+    класса с процессором Intel Pentium Dual-Core 2.4 ГГц (E2220):</rus>
+  </p>
+
+  <table class="moment_table" style="text-align: right" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="background-color: #f7f7f7; border-bottom: 1px solid #c0c0c0">
+        <eng>Number of clients</eng>
+        <rus>Кол-во клиентов</rus>
+      </td>
+      <td style="background-color: #eaeaea; border-bottom: 1px solid #c0c0c0">
+        <eng>CPU core load</eng>
+        <rus>Загруженность процессорного ядра</rus>
+      </td>
+      <td style="background-color: #f7f7f7; border-bottom: 1px solid #c0c0c0">
+        <eng>Memory usage</eng>
+        <rus>Объём оперативной памяти</rus>
+      </td>
+    </tr>
+    <tr>
+      <td style="background-color: #fafafa; border-bottom: 1px solid #e0e0e0">100</td>
+      <td style="background-color: #f1f1f1; border-bottom: 1px solid #e0e0e0">2%</td>
+      <td style="background-color: #fafafa; border-bottom: 1px solid #e0e0e0">25 <eng>MB</eng><rus>Мб</rus></td>
+    </tr>
+    <tr>
+      <td style="background-color: #fafafa; border-bottom: 1px solid #e0e0e0">1000</td>
+      <td style="background-color: #f1f1f1; border-bottom: 1px solid #e0e0e0">14%</td>
+      <td style="background-color: #fafafa; border-bottom: 1px solid #e0e0e0">90 <eng>MB</eng><rus>Мб</rus></td>
+    </tr>
+    <tr>
+      <td style="background-color: #fafafa">3000</td>
+      <td style="background-color: #f1f1f1">70%</td>
+      <td style="background-color: #fafafa">240 <eng>MB</eng><rus>Мб</rus></td>
+    </tr>
+  </table>
+
+  <p>
+    <eng>Required network bandwidth can be determined by multiplying bitrate of the video stream
+    by the number of clients served simultaneoulsy and accounting for utility traffic.
+    In the example above, to serve 1000 clients one would need a 700 Mbit/sec network channel.
+    To serve 3000 clients, a 2 Gbit/sec channel would be needed.</eng>
+    <rus>Требуемая ширина сетевого канала определяется умножением
+    битрейта отдаваемого видеопотока на количество одновременно обслуживаемых клиентов
+    с учётом накладных расходов на передачу данных.
+    Так, в приведённом тесте для обслуживания 1000 клиентов нужен канал пропускной способностью
+    около 700 Мбит/сек, для 3000 клиентов &mdash; 2 Гбит/сек.</rus>
+  </p>
+
+</content>
+</moment>
+

@@ -1,0 +1,47 @@
+[long before 10.11.14]
+
+На выходе scruffy:
+
+* Порядок объявлений неважен, но может быть сохранён в отдельном списке.
+
+* Получаем иерархию объявлений:
+
+    (Root namespace) - выход.
+
+    Namespace {
+	Nested namespaces;
+	Classes;
+	Unions;
+	Data object declarations;
+	Functions;
+    }
+
+    Class {
+	Nested classes;
+	Data members;
+	Methods;
+	Special methods;
+    }
+
+    Function {
+	Nested classes;
+	Nested unions;
+	Statements;
+    }
+
+    Statement {
+	Compound;
+	if / switch / for / while / do ...
+	Expression;
+	Declaration;
+    }
+
+    Expression {
+	(удобное внутренне представление для выражений)
+    }
+
+? Кто формирует вывод? - cpp_parser.
+? Какую роль в этом играет NameTracker?
+    ...пока логика работы NameTracker не противоречит формированию
+    вывода в cpp_parser. 
+

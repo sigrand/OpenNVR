@@ -1,0 +1,23 @@
+FOR WEB-SITE:
+when moment is built, edit {momentdir}/share/moment/myplayer/index.tpl
+
+find all 3 occurences of 'localhost' and replace to '123.456.78.90'
+	where 123.456.78.90 - ip of the server, where moment is deployed.
+
+mkdir {momentdir}/records
+mkdir {momentdir}/conf.d
+cp {sources_from_repo}/instructions/moment.example.conf {momentdir}/moment.conf
+in moment.conf :
+change 
+#define HOST 127.0.0.1 
+to
+#define HOST 123.456.78.90
+
+change all paths to paths you prefer.
+
+./moment --config ../moment.conf --loglevel D --log ./log.txt &
+
+in browser go to 123.456.78.90:8080/moment/
+
+NOTE:
+for seeking on recorded file you should drag the triangle of slider, not click on any place on slider.

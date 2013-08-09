@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: scruffy
+Description: C++ parser based on pargen
+Requires: libmary-1.0 pargen-1.0
+Version: @VERSION@
+Libs: -L${libdir} -lscruffy-1.0
+Cflags: -I${includedir}/scruffy-1.0
+

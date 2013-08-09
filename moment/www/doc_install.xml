@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <pagename>
+    <eng>Documentation - Installation</eng>
+    <rus>Документация - Установка</rus>
+  </pagename>
+  <title>
+    <eng>Installation</eng>
+    <rus>Установка</rus>
+  </title>
+
+  <moment_toc>
+    <dl>
+      <dt>
+	<eng><a href="doc_install.html#linux">Installation on Linux</a></eng>
+	<rus><a href="doc_install.ru.html#linux">Установка в Linux</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_install.html#freebsd">Installation on FreeBSD</a></eng>
+	<rus><a href="doc_install.ru.html#freebsd">Установка на FreeBSD</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_install.html#run">Running the server</a></eng>
+	<rus><a href="doc_install.ru.html#run">Запуск видеосервера</a></rus>
+      </dt>
+    </dl>
+  </moment_toc>
+
+  <a name="linux">
+    <moment_section>
+      <eng>Installation on Linux</eng>
+      <rus>Установка в Linux-системах</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Download</eng>
+    <rus>Скачайте</rus>
+    <a href="http://momentvideo.org/dist/moment_13-05-13_linux32.tar.gz">
+      <eng>Moment VS installation package</eng><rus>установочный архив</rus></a><rus> видеосервера &laquo;Moment&raquo;</rus>.
+  </p>
+
+  <p>
+    <eng>Unpack the archive into /opt directory with the following command:</eng>
+    <rus>Распакуйте полученный архив в директорию /opt, выполнив команду:</rus>
+  </p>
+<pre>tar -C /opt -xzf moment-bin-1.2.0_32bit.tar.gz</pre>
+
+  <p>
+    <eng>/opt/moment directory will be created as the result. This directory contains
+    server's files.</eng>
+    <rus>В результате будет создана директория /opt/moment c файлами сервера.</rus>
+  </p>
+
+  <a name="freebsd">
+    <moment_section>
+      <eng>Installation on FreeBSD</eng>
+      <rus>Установка на FreeBSD</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Installation on FreeBSD requires compiling the server from sources according to
+    <a href="developers.html">buidling instructions</a>.</eng>
+    <rus>Для установки сервера &laquo;Момент&raquo; на FreeBSD необходимо собрать его из исходных кодов
+    в соответствии с <a href="developers.ru.html">инструкцией по сборке</a>.</rus>
+  </p>
+
+  <a name="run">
+    <moment_section>
+      <eng>Running the server</eng>
+      <rus>Запуск видеосервера</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Configure the server before launching it. Refer to <a href="doc_config.html">"Configuration" section</a> for details.
+    You can also make a quick initial setup by following <a href="quickstart.html">quickstart guideline</a>.</eng>
+    <rus>Перед запуском выполните настройку видеосервера.<br/>Процесс настройки описан в <a href="doc_config.ru.html">разделе о настройке</a>.
+    Также можно выполнить ускоренную настройку сервера, как это описано
+    в <a href="quickstart.ru.html">кратком руководстве по установке</a>.</rus>
+  </p>
+
+  <p>
+    <eng>
+      Run the videoserver with the following command:
+    </eng>
+    <rus>
+      Запустите видеосервер следующей командой:
+    </rus>
+  </p>
+<pre>/opt/moment/bin/moment</pre>
+
+  <p>
+    <eng>
+      You can make the server start automatically on system startup
+      using mechanisms specific to your Linux distribution.
+    </eng>
+    <rus>
+      Если необходимо, настройте автоматический запуск сервера способом, предусмотренным в используемой вами операционной системе.
+    </rus>
+  </p>
+
+  <p>
+    <eng>To verify that the server works, open its home page in a browser:</eng>
+    <rus>Проверить работоспособность сервера после запуска можно, зайдя на его страницу в браузере:</rus>
+    <a href="http://localhost:8080">http://localhost:8080</a><br/>
+    <eng>If installation passed fine, you should see a greetings page.</eng>
+    <rus>Если установка прошла успешно, то по этому адресу откроется страница приветствия.</rus>
+  </p>
+
+  <moment_subsection>
+    <eng>Command line options</eng>
+    <rus>Параметры командной строки</rus>
+  </moment_subsection>
+
+  <p>
+    <eng>Server command line options:</eng>
+    <rus>Параметры, которые можно указать видеосерверу при запуске:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>-c --config</b> &lt;<eng>filename</eng><rus>имя_файла</rus>&gt; &mdash;
+      <eng>Configuration file to use. Default: /opt/moment/moment.conf</eng>
+      <rus>Путь к основному конфигурационному файлу. По умолчанию: /opt/moment/moment.conf</rus>
+    </p>
+    <p>
+      <b>-l --log</b> &lt;<eng>filename</eng><rus>имя_файла</rus>&gt; &mdash;
+      <eng>Log file to use. Default: /var/log/moment.log</eng>
+      <rus>Путь к файлу журанала (лог-файлу). По умолчанию: /var/log/moment.log</rus>
+    </p>
+    <p>
+      <b>--loglevel</b> &lt;<eng>loglevel</eng><rus>логлевел</rus>&gt; &mdash;
+      <eng>Loglevel, one of A/D/I/W/E/H/F/N. Default: I, "Info".</eng>
+      <rus>Уровень журналирования: A/D/I/W/E/H/F/N. По умолчанию: I, "Info"</rus>
+    </p>
+    <p>
+      <b>-d --daemonize</b> &mdash;
+      <eng>Daemonize (run in the background as a daemon).</eng>
+      <rus>Запуск в фоновом режиме.</rus>
+    </p>
+    <p>
+      <b>--exit-after</b> &lt;<eng>number</eng><rus>число</rus>&gt; &mdash;
+      <eng>Exit after specified timeout in seconds.</eng>
+      <rus>Завершить работу по прошествии указанного времени в секундах.</rus>
+    </p>
+    <p>
+      <b>-h --help</b> &mdash;
+      <eng>Show help message.</eng>
+      <rus>Показать справку.</rus>
+    </p>
+  </moment_params>
+
+</content>
+</moment>
+

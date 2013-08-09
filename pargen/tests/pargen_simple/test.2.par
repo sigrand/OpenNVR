@@ -1,0 +1,11 @@
+word:
+    *
+
+word {
+    match
+    accept
+}
+
+*:
+    word_seq
+

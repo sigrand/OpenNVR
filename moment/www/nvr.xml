@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <title>
+    <eng>Network Video Recorder</eng>
+    <rus>Сетевой видеорегистратор</rus>
+  </title>
+
+  <moment_toc>
+    <dl>
+    <!--
+      <dt>
+        <a href="nvr.ru.html#desc">Описание</a>
+      </dt>
+    -->
+      <dt>
+        <a href="nvr.ru.html#config">Настройка</a>
+      </dt>
+      <dt>
+        <a href="nvr.ru.html#use">Использование</a>
+      </dt>
+      <dt>
+        <a href="nvr.ru.html#gui">Тестовый веб-интерфейс</a>
+      </dt>
+    </dl>
+  </moment_toc>
+
+<!--
+  <a name="desc">
+    <moment_section>
+      Описание
+    </moment_section>
+  </a>
+
+  <p>
+    (описание)
+
+    Выгрузка видеофайлов из архива.
+
+
+Для включения NVR в конфиг добавляется:
+
+mod_nvr {
+    enable = y
+    // Путь к директории для записанного видео
+    record_dir = "/path/to/records"
+}
+
+  </p>
+-->
+
+  <a name="config">
+    <moment_section>
+      Настройка
+    </moment_section>
+  </a>
+
+  <p>
+    Модуль <i>mod_nvr</i> работает с каналами, которые заданы файлами в директории
+    conf.d (см. раздел <a href="doc_channels.ru.html">&laquo;Управление каналами&raquo;</a>).
+    Доступные параметры конфигурации:
+  </p>
+
+  <moment_params>
+    <p>
+      <b>mod_nvr/enable</b> &mdash; включить модуль <i>mod_nvr</i>. По умолчанию: "no" (<i>mod_nvr</i> выключен).
+    </p>
+    <p>
+      <b>mod_nvr/record_dir</b> &mdash; директория, в которую помещается записанное видео.
+      Это обязательный параметр. По умолчанию директория не задана.
+    </p>
+    <p>
+      <b>mod_nvr/file_duration</b> &mdash; максимальная длительность одного видеофайла (сегмента записи) в секундах.
+      По умолчанию: 3600 секунд (1 час).
+      Значение длительности меньше 60 секунд должно нацело делить 60. Значение длительности меньше 3600 сек (1 час)
+      должно нацело делить 3600. Например, подходят значения 10, 15, 20, 30 минут. Аналогичное правило - для
+      значений длительности меньше 24 часов.
+    </p>
+    <p>
+      <b>mod_nvr/max_age</b> &mdash; срок хранения файлов-сегментов видеозаписи в минутах.
+      Файлы старше это срока удаляются. По умолчанию: 120 минут.
+    </p>
+  </moment_params>
+
+  <p>
+    Пример настройки модуля <i>mod_nvr:</i>
+  </p>
+<pre>
+  mod_nvr {
+    enable = y
+    record_dir = /opt/records
+    file_duration = 3600
+    // 31 день == 44640 минут
+    max_age = 44640
+  }
+</pre>
+
+  <p>
+    Кроме того, в файлах настроек каждого канала в директории conf.d можно задавать следующие параметры:
+  </p>
+
+  <moment_params>
+    <p>
+      <b>prewrite</b> &mdash; размер буфера упреждающей записи в секундах. По умолчанию: 5 секунд.
+    </p>
+    <p>
+      <b>postwrite</b> &mdash; длительность отрезка видео, записываемого после получения команды
+      окончания записи. По умолчанию: 5 секунд.
+    </p>
+    <p>
+      <b>prewrite_frames</b> &mdash; максимальное количество аудио/видеокадров в буфере упреждающей записи.
+      По умолчанию: 1000 кадров.
+    </p>
+    <p>
+      <b>postwrite_frames</b> &mdash; Максимальное количество аудио/видеокадров, записываемых после
+      получения команды окончания записи. По умолчанию: 1000 кадров.
+    </p>
+  </moment_params>
+
+  <a name="use">
+    <moment_section>
+      Использование
+    </moment_section>
+  </a>
+
+  <p>
+    Живое и записанное видео можно получать по протоколам RTMP, RTMPT и HLS.
+    Для получения информации о состоянии модуля и выгрузки файлов используется HTTP-интерфейс
+    (см. параметр <i>http/http_bind</i>).
+    Для управления модулем <i>mod_nvr</i> используется HTTP-интерфейс администрирования
+    (см. параметр <i>http/admin_bind</i>).
+  </p>
+
+  <moment_subsection>
+    Воспроизведение видео
+  </moment_subsection>
+
+  <p>
+    Доступно два режима воспроизведения: прямая трансляция живого видеопотока
+    и показ записанного видео.
+  </p>
+
+  <p>
+    Живой видеопоток транслируется как обычный исходящий канал.
+    Пример ссылки на живой видеопоток с именем "test":<br/>
+    <tt>rtmp://127.0.0.1:1935/live/test</tt>
+  </p>
+
+  <p>
+    Для получения видео в записи по протоколу RTMP нужно использовать
+    ссылку на приложение "nvr", добавив параметр <i>start</i> &mdash;
+    unixtime позиции начала воспроизведения, т.е. кол-во секунд,
+    прошедших с 00:00 1 января 1970 года в часовом поясе UTC.
+    Пример ссылки на поток в записи:<br/>
+    <tt>rtmp://127.0.0.1:1935/nvr/test?start=1368828341</tt>
+  </p>
+
+  <moment_subsection>
+    HTTP-интерфейс
+  </moment_subsection>
+
+<!--
+  <p>
+    <tt>http://.../mod_nvr/unixtime</tt><br/>
+    Запрос текущего unixtime на стороне сервера.
+  </p>
+-->
+
+  <p>
+    <b>Скачивание участка видеозаписи</b> в формате mp4:<br/>
+    <tt>http://.../mod_nvr/file?stream=test&amp;start=1368828341&amp;duration=600&amp;download</tt><br/>
+  </p>
+  <moment_params>
+    Параметры запроса:
+    <ul style="margin-top: 0px; padding-top: 0px">
+      <li>
+        <b>stream</b> &mdash; название канала для просмотра;
+      </li>
+      <li>
+        <b>start</b> &mdash; unixtime начала участка в секундах;
+      </li>
+      <li>
+        <b>duration</b> &mdash; длительность участка в секундах;
+      </li>
+      <li>
+        <b>download</b> &mdash; если этот параметр присутствует, то
+        Content-Type ответа будет "application/octet-stream", что подходит
+        для скачивания файла. Если параметр отсутствует, то Content-Type
+        будет "video/mp4", что подходит для просмотра видеофайла средствами
+        браузера.
+      </li>
+    </ul>
+  </moment_params>
+
+  <p>
+    <b>Получение информации о состоянии канала</b> в формате JSON:<br/>
+    <tt>http://.../mod_nvr/channel_state?stream=test&amp;seq=1</tt><br/>
+  </p>
+  <moment_params>
+    Параметры запроса:
+    <ul style="margin-top: 0px; padding-top: 0px">
+      <li>
+        <b>stream</b> &mdash; название канала;
+      </li>
+      <li>
+        <b>seq</b> &mdash; порядковый номер запроса.
+      </li>
+    </ul>
+    Пример ответа сервера:
+<pre style="margin-top: 0px">
+  { "seq": "1", "recording": true }
+</pre>
+  </moment_params>
+
+  <moment_subsection>
+    HTTP-интерфейс администрирования
+  </moment_subsection>
+
+  <p>
+    <b>Включение/выключение записи:</b><br/>
+    <tt>http://.../mod_nvr_admin/rec_on?stream=test&amp;seq=1</tt><br/>
+    <tt>http://.../mod_nvr_admin/rec_off?stream=test&amp;seq=1</tt><br/>
+  </p>
+  <moment_params>
+    Параметры запроса:
+    <ul style="margin-top: 0px; padding-top: 0px">
+      <li>
+        <b>stream</b> &mdash; название канала;
+      </li>
+      <li>
+        <b>seq</b> &mdash; порядковый номер запроса.
+      </li>
+    </ul>
+    <p>
+      На запросы rec_on и rec_off сервер даёт такой же ответ, как и на запрос <tt>mod_nvr/channel_state</tt>
+    </p>
+  </moment_params>
+
+  <a name="gui">
+    <moment_section>
+      Тестовый веб-интерфейс
+    </moment_section>
+  </a>
+
+  <p>
+    Тестовый интерфейс NVR позволяет:
+  </p>
+
+  <ul>
+    <li>
+      Просматривать живой видеопоток;
+    </li>
+    <li>
+      Просматривать записанное видео с произвольного места в режиме непрерывного воспроизведения;
+    </li>
+    <li>
+      Загружать участок записи в виде файла в формате mp4;
+    </li>
+    <li>
+      Включать и выключать запись.
+    </li>
+  </ul>
+
+  <p>
+    Для установки тестового интерфейса нужно добавить в конфиг сервера соответствующий путь
+    в секцию <b>mod_file</b> и настроить параметры плеера. Доступные параметры (vars):
+  </p>
+
+  <moment_params>
+    <p>
+      <b>NvrStreamName</b> &mdash; Название канала для показа. По умолчанию: "test"
+    </p>
+    <p>
+      <b>NvrPlayerBuffer</b> &mdash; Размер буфера плеера в секундах. По умолчанию: "2.0"
+    </p>
+  </moment_params>
+
+<pre>
+  mod_file {
+    {
+      prefix = "nvr"
+      path = "/opt/moment/web/nvr"
+      vars {
+        NvrStreamName = "test"
+        NvrPlayerBuffer = "2.0"
+      }
+    }
+  }
+</pre>
+
+  <p>
+    При такой настройке ссылка на тестовый интерфейс NVR будет иметь вид <tt>http://127.0.0.1:8080/nvr/</tt>
+  </p>
+
+</content>
+</moment>
+

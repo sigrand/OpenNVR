@@ -1,0 +1,11 @@
+#ifndef MOMENT_NVR__INC_H__
+#define MOMENT_NVR__INC_H__
+
+
+#define MOMENT_NVR__INIT
+#define MOMENT_NVR__NVR_CLEANER
+#define MOMENT_NVR__CHANNEL_RECORDER
+
+
+#endif /* MOMENT_NVR__INC_H__ */
+

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <pagename>
+    <eng>Documentation - Stress Testing</eng>
+    <rus>Документация - Нагрузочное тестирование</rus>
+  </pagename>
+  <title>
+    <eng>Stress Testing</eng>
+    <rus>Нагрузочное тестирование</rus>
+  </title>
+
+  <p>
+    <eng>Moment VS includes a tool for performing stress tests, <i>rtmptool</i>, which can
+    imitate thousands of simultaneously connected RTMP clients. Command line parameters
+    for <i>rtmptool</i>:</eng>
+    <rus>В комплект видеосервера &laquo;Момент&raquo; входит утилита нагрузочного тестирования
+    <i>rtmptool,</i> с помощью которой можно имитировать одновременное подключение
+    нескольких тысяч RTMP-клиентов. Параметры командной строки <i>rtmptool</i>:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>-n --num-clients</b> &lt;<eng>number</eng><rus>число</rus>&gt; &mdash;
+      <eng>Simulate N simultaneous clients. Default: 1</eng>
+      <rus>Кол-во одновременных подключений. По умолчанию: 1</rus>
+    </p>
+    <p>
+      <b>-s --server-addr</b> &lt;<eng>address</eng><rus>адрес</rus>&gt; &mdash;
+      <eng>Server address, IP:Port. Default: localhost:1935</eng>
+      <rus>Адрес сервера, IP:порт. По умолчанию: localhost:1935</rus>
+    </p>
+    <p>
+      <b>-a --app</b> &lt;<eng>string</eng><rus>строка</rus>&gt; &mdash;
+      <eng>Application name. Default: oflaDemo</eng>
+      <rus>Имя приложения для подключения. По умолчанию: oflaDemo</rus>
+    </p>
+    <p>
+      <b>-c --channel</b> &lt;<eng>string</eng><rus>строка</rus>&gt; &mdash;
+      <eng>Name of the channel to subscribe to. Default: red5StreamDemo</eng>
+      <rus>Название канала для просмотра. По умолчанию: red5StreamDemo</rus>
+    </p>
+    <p>
+      <b>-t --num-threads</b> &lt;<eng>number</eng><rus>число</rus>&gt; &mdash;
+      <eng>Number of threads to spawn. Default: 0, use a single thread.</eng>
+      <rus>Кол-во потоков. По умолчанию: 0, использовать один поток.</rus>
+    </p>
+    <p>
+      <b>-r --report-interval</b> &lt;<eng>number</eng><rus>число</rus>&gt; &mdash;
+      <eng>Interval between video frame reports. Default: 0, no reports.</eng>
+      <rus>Интервал между сообщениями о получении видеокадра. По умолчанию: 0,
+      не сообщать о получении.</rus>
+    </p>
+    <p>
+      <b>--nonfatal-errors</b> &mdash;
+      <eng>Do not exit on the first error.</eng>
+      <rus>Не завершать работу при любой ошибке.</rus>
+    </p>
+    <p>
+      <b>-h --help</b> &mdash;
+      <eng>Show help message.</eng>
+      <rus>Показать справку.</rus>
+    </p>
+  </moment_params>
+
+  <p>
+    <eng>Another stress testing tool is <i>mod_test</i> module, which generates pseudo
+    video stream &mdash; a sequence of frames with a certain frame rate and size, filled
+    with random data. Using <i>mod_test</i> and <i>rtmptool</i> one can assess how
+    characteritics of a video stream affect server's throughput when a large number of
+    clients is connected.</eng>
+    <rus>Также для тестирования можно использовать встроенный модуль <i>mod_test,</i> предназначенный
+    для генерации псевдо-видеопотока &mdash; последовательности кадров заданного размера и частоты, наполненных
+    случайными данными. С помощью модуля <i>mod_test</i> и утилиты <i>rtmptool</i> можно оперативно
+    оценить влияние характеристик видеопотока на производительность сервера при большом числе
+    одновременно подключенных клиентов.</rus>
+  </p>
+
+  <p>
+    <eng><i>mod_test</i> module configuration parameters:</eng>
+    <rus>Параметры модуля <i>mod_test</i> (задаются в файле конфигурации):</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>mod_test/enable</b> &mdash;
+      <eng>enable <i>mod_test</i> module (yes/no). Default: "no". </eng>
+      <rus>включить модуль mod_test (yes/no). По умолчанию: "no" (mod_test выключен).</rus>
+    </p>
+    <p>
+      <b>mod_test/stream_name</b> &mdash;
+      <eng>name of the generated video stream. Default: "test".</eng>
+      <rus>название видеопотока, генерируемого модулем <i>mod_test</i>.
+      По умолчанию: "test".</rus>
+    </p>
+    <p>
+      <b>mod_test/frame_duration</b> &mdash;
+      <eng>Duration of a single frame in milliseconds. Default: 40 milliseconds (25 frames per second).</eng>
+      <rus>продолжительность одного кадра в миллисекундах.
+      По умолчанию: 40 мс (25 кадров/сек).</rus>
+    </p>
+    <p>
+      <b>mod_test/frame_size</b> &mdash;
+      <eng>frame size in bytes. Default: 2500 bytes.</eng>
+      <rus>размер кадра в байтах. По умолчанию: 2500 байт.</rus>
+    </p>
+    <p>
+      <b>mod_test/start_timestamp</b> &mdash;
+      <eng>timestamp of the first generated video message. Default: 0.</eng>
+      <rus>временной штамп первого сгенерированного пакета. По умолчанию: 0.</rus>
+    </p>
+    <p>
+      <b>mod_test/keyframe_interval</b> &mdash;
+      <eng>distance between keyframes in the pseudo video stream, in frames. Default: 10 frames.</eng>
+      <rus>расстояние между ключевыми кадрами псевдо-видеопотока (в кадрах).
+      По умолчанию: 10 кадров.</rus>
+    </p>
+    <p>
+      <b>mod_test/burst_width</b> &mdash;
+      <eng>Number of frames to generate in a single iteration (doesn't affect average frame rate). Default: 1.</eng>
+      <rus>количество видеокадров, генерируемых за одну итерацию.
+      Не влияет на среднюю частоту кадров. По умолчанию: 1.</rus>
+    </p>
+    <p>
+      <b>mod_test/prechunk_size</b> &mdash;
+      <eng>RTMP chunk size in bytes. Video messages are divided into chunks before being sent to clients.
+      If prechunk_size is set to 0, then division of messages into chunks of default length will happen
+      separately for every client. Default: 65536 bytes.</eng>
+      <rus>размер RTMP-чанка в байтах. Видеосообщения разбиваются на чанки
+      однократно перед рассылкой клиентам. Если в качестве значения задать 0, то разбиение на чанки
+      (длиной по умолчанию) будет производиться отдельно для каждого клиента. По умолчанию: 65536 байт.</rus>
+    </p>
+    <p>
+      <b>mod_test/same_pages</b> &mdash;
+      <eng>if enabled, then all video frames are represented by the same set of pages, which does not
+      change. If disabled, then every frame is generated separately in a new set of pages.
+      Default: "on" (enabled).</eng>
+      <rus>если включено, то все видеокадры представляются
+      одним и тем же набором страниц, который не меняется во время работы.
+      Если выключено, то каждый кадр генерируется отдельно и размещается в новом наборе страниц.
+      По умолчанию: "on" (включено).</rus>
+    </p>
+  </moment_params>
+
+</content>
+</moment>
+

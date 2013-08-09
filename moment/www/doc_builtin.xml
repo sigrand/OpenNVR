@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <pagename>
+    <eng>Documentation - Built-in applications</eng>
+    <rus>Документация - Встроенные приложения</rus>
+  </pagename>
+  <title>
+    <eng>Built-in applications</eng>
+    <rus>Встроенные приложения</rus>
+  </title>
+
+  <moment_toc>
+    <dl>
+      <dt>
+	<a href="doc_builtin.ru.html#player">
+	  <eng>Video Player</eng>
+	  <rus>Видеоплеер</rus>
+	</a>
+      </dt>
+      <dt>
+	<a href="doc_builtin.ru.html#phone">
+	  <eng>Video Phone</eng>
+	  <rus>Видеозвонки</rus>
+	</a>
+      </dt>
+    </dl>
+  </moment_toc>
+
+  <a name="player">
+    <moment_section>
+      <eng>Video Player</eng>
+      <rus>Видеоплеер</rus>
+    </moment_section>
+  </a>
+
+<!--  <div style="text-align: left; /* padding-top: 1em; padding-bottom: 1em */"> -->
+    <a href="img/myplayer_big.png"><img src="img/myplayer_med.png"/></a>
+<!--    <img style="margin-left: 2em" src="http://momentvideo.org/wiki/images/thumb/7/7c/Myplayer.png/180px-Myplayer.png"/> -->
+<!--  </div> -->
+
+  <p>
+    <eng>Video Player app allows users to watch video from Moment Video Server in a web browser.
+    It is available by default with <tt>/moment/</tt> URI suffix.</eng>
+    <rus>Приложение &laquo;Видеоплеер&raquo; позволяет пользователям смотреть видео
+    с сервера &laquo;Момент&raquo; через веб-браузер.
+    По умолчанию &laquo;Видеоплеер&raquo; доступен по URI с суффиксом <tt>/moment</tt></rus>
+  </p>
+  
+  <p>
+    <eng>Video Player consists of a video display field and a list of available channels to the right of the video.
+    Users can watch video in fullscreen mode, scale it to full horizontal screen size and show/hide the list of
+    channels using control buttons at the bottom right corner of the video field.</eng>
+    <rus>&laquo;Видеоплеер&raquo; представляет
+    собой поле с видеоизображением и список каналов, расположенный справа от видео.
+    Пользователь может развернуть видео на весь экран, масштабировать видео по горизонтальным границам экрана
+    и скрыть/показать список воспроизведения с помощью кнопок управления в правом нижнем углу поля с видео.</rus>
+  </p>
+
+  <p>
+    <eng>To change the list of available channels, one should edit /opt/moment/myplayer/playlist.json file (JSON file format).
+    Channel list example:</eng>
+    <rus>Для изменения списка каналов нужно отредактировать файл /opt/moment/myplayer/playlist.json (файл в формате JSON).
+    Пример списка каналов:</rus>
+  </p>
+
+<pre>
+[
+  [ "Test Channel", "rtmp://192.168.0.10:1935", "testChannel" ],
+  [ "<eng>Wild Nature</eng><rus>Дикая природа</rus>"<eng>  </eng> "rtmpt://10.0.0.2:8080",    "wild" ],
+]
+</pre>
+
+  <a name="phone">
+    <moment_section>
+      <eng>Video Phone</eng>
+      <rus>Видеозвонки</rus>
+    </moment_section>
+  </a>
+
+  <a href="img/mychat_big.png"><img src="img/mychat.png"/></a>
+
+  <p>
+    <eng>Video Phone app lets two users talk to each other with live video, audio and text messages.
+    It is available by default with <tt>/mychat/</tt> URI suffix.</eng>
+    <rus>Приложение &laquo;Видеозвонки&raquo; позволяет двум пользователям общаться между сообой с передачей видео, звука и
+    текстовых сообщений. По умолчанию &laquo;Видеозвонки&raquo; доступны по URI с суффиксом <tt>/mychat</tt> .</rus>
+  </p>
+  
+  <p>
+    <eng>Before conversation starts, user enters conversation code. Users who have entered the same
+    conversation codes get connected.</eng>
+    <rus>Перед началом общения пользователь вводит код разговора. Между пользователями, которые ввели
+    одинаковый код, устанавливается соединение.</rus>
+  </p>
+
+  <p>
+    <eng>For the Video Phone app to work properly, video server's address must be specified in
+    /opt/moment/mychat/index.html file. To do that, change the value of server_uri variable at the beginning of the file
+    (highlighted in bold):</eng>
+    <rus>Для правильной работы приложения необходимо указать адрес видеосервера в начале файла /opt/moment/mychat/index.html,
+    изменив значение переменной server_uri на URI вашего сервера (выделено жирным шрифтом):</rus>
+  </p>
+
+<pre>
+<![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" ...>
+<html style="height: 100%" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <script type="text/javascript">]]>
+    var <b>server_uri = "rtmp://127.0.0.1:1935/mychat"</b>;
+<![CDATA[  </script>]]>
+</pre>
+
+</content>
+</moment>
+

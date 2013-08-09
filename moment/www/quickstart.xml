@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<download_sidebar/>
+<content>
+  <pagename>
+    <eng>Quick Start</eng>
+    <rus>Установка и запуск</rus>
+  </pagename>
+  <title>
+    <eng>Quick Start</eng>
+    <rus>Установка и запуск</rus>
+  </title>
+  <p>
+    <eng>
+      To install and run Moment VS, follow this quick start guide.
+      For more detailed information, refer to
+<!--      <a href="wiki/index.php?title=Moment:Config">more detailed instructions</a> in the wiki. -->
+      <a href="doc.html">the documentation</a>.
+    </eng>
+    <rus>
+      Чтобы установить и запустить видеосервер &laquo;Moment&raquo;, следуйте этой
+      краткой инструкции. Для более детальной настройки сервера воспользуйтесь
+<!--      <a href="wiki/index.php?title=Moment:Config:Ru">подробным руководством</a>.-->
+      <a href="doc.ru.html">подробным руководством</a>.
+    </rus>
+  </p>
+
+  <h2>
+    1. <eng>Installation</eng><rus>Установка</rus>
+  </h2>
+
+  <p>
+    <eng>Download</eng>
+    <rus>Скачайте</rus>
+    <a href="http://momentvideo.org/dist/moment_13-05-13_linux32.tar.gz">
+      <eng>Moment VS installation package</eng><rus>установочный архив</rus></a><rus> видеосервера &laquo;Moment&raquo;</rus>.
+  </p>
+
+  <p>
+    <eng>Unpack the archive into /opt directory with the following command:</eng>
+    <rus>Распакуйте полученный архив в директорию /opt, выполнив команду:</rus>
+  </p>
+<pre>tar -C /opt -xzf moment_13-05-13_linux32.tar.gz</pre>
+
+  <p>
+    <eng>/opt/moment directory will be created as the result. This directory contains
+    server's files.</eng>
+    <rus>В результате будет создана директория /opt/moment c файлами сервера.</rus>
+  </p>
+
+  <h2>2. <eng>Configuration</eng><rus>Настройка</rus></h2>
+
+  <p>
+    <eng>
+      Edit configuration file <code>/opt/moment/moment.conf</code>
+      to set the list of video streams which will be served. Config example:
+    </eng>
+    <rus>
+      Отредактируйте файл конфигурации <code>/opt/moment/moment.conf</code>,
+      чтобы задать список видеопотоков, которые будет транслировать сервер.
+      Пример файла конфигурации:
+    </rus>
+  </p>
+<pre>mod_gst {
+    sources {
+        "news"   = "http://10.0.0.1:8080"
+        "nature" = "mms://10.0.0.2"
+    }
+}</pre>
+
+  <p>
+    <eng>
+      Fill in the playlist for MyPlayer web app by editing <tt>/opt/moment/myplayer/playlist.json</tt>
+      <br/>For each entry in the playlist, three parameters are given:
+      channel name, server address, and internal video stream name.
+      Example:
+    </eng>
+    <rus>
+      Заполните список воспроизведения (плейлист) для приложения &laquo;MyPlayer&raquo;,
+      отредактировав файл <tt>/opt/moment/myplayer/playlist.json</tt>
+      <br/>Для каждого элемента списка определяются три параметра:
+      название канала, адрес видеосервера и название видеопотока на сервере.
+      Пример:
+    </rus>
+  </p>
+<pre>[
+  [ "<eng>News</eng><rus>Новости</rus>",       "rtmp://10.0.1.3:1935", "news" ],
+  [ "<eng>Wild Nature</eng><rus>Дикая природа</rus>", "rtmp://10.0.1.3:1935", "nature" ],
+]</pre>
+
+  <h2>3. <eng>Running</eng><rus>Запуск</rus></h2>
+
+  <p>
+    <eng>
+      Run the videoserver with the following command:
+    </eng>
+    <rus>
+      Запустите видеосервер следующей командой:
+    </rus>
+  </p>
+<pre>/opt/moment/bin/moment</pre>
+
+  <p>
+    <eng>
+      You can make the server start automatically on system startup
+      using mechanisms specific to your Linux distribution.
+    </eng>
+    <rus>
+      Если необходимо, настройте автоматический запуск сервера способом, предусмотренным в используемом вами дистрибутиве Linux.
+    </rus>
+  </p>
+
+  <p>
+    <eng>
+      Setup is complete! You can now watch video from Moment's web page:
+    </eng>
+    <rus>
+      Установка завершена! Теперь можно смотреть видео со страницы сервера:
+    </rus>
+    <a href="http://localhost:8080/moment/">http://localhost:8080/moment/</a>
+  </p>
+
+  <br/>
+  <p>
+    Подробную информацию о настройке видеосервера можно найти в
+    <a href="doc.ru.html">руководстве пользователя</a>.
+  </p>
+</content>
+</moment>
+

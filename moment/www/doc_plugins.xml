@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <pagename>
+    <eng>Documentation - Plugins</eng>
+    <rus>Документация - Подключаемые модули</rus>
+  </pagename>
+  <title>
+    <eng>Plugins</eng>
+    <rus>Подключаемые модули</rus>
+  </title>
+
+  <moment_toc>
+    <dl>
+      <dt>
+        <a href="doc_plugins.ru.html#api">
+	  <eng>Moment API</eng>
+	  <rus>API видеосервера</rus>
+	</a>
+      </dt>
+      <dt>
+        <a href="doc_plugins.ru.html#building">
+	  <eng>Building and installing plugins</eng>
+	  <rus>Компиляция и установка модулей</rus>
+	</a>
+      </dt>
+      <dt>
+        <a href="doc_plugins.ru.html#example">
+	  <eng>Sample plugin</eng>
+	  <rus>Пример внешнего модуля</rus>
+	</a>
+      </dt>
+    </dl>
+  </moment_toc>
+
+  <a name="api">
+    <moment_section>
+      <eng>Moment API</eng>
+      <rus>API видеосервера</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Mometn VS supports external plugins written in C or C++. Plugins communicate
+    with the server using a programming interface (API) described
+    int <a href="https://github.com/erdizz/moment/blob/master/moment/api.h">moment/api.h</a> header file.</eng>
+    <rus>Для видеосервера &laquo;Момент&raquo; можно создавать внешние плагины на языках C или C++.
+    Плагины взаимодействуют с сервером через программный интерфейс (API), описанный в заголовочном
+    файле <a href="https://github.com/erdizz/moment/blob/master/moment/api.h">moment/api.h</a></rus>
+  </p>
+
+  <a name="building">
+    <moment_section>
+      <eng>Building and installing plugins</eng>
+      <rus>Компиляция и установка модулей</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Plugins are built as shared libraries (.so). To install a plugin,
+    put its .so file into /opt/moment/lib/moment-1.0 directory.</eng>
+    <rus>Плагины собираются в виде разделяемых библиотек (.so) и размещаются
+    в директории /opt/moment/lib/moment-1.0/</rus>
+  </p>
+
+  <p>
+    <eng>Plugin entry point is <tt>moment_module_init()</tt> function.</eng>
+    <rus>Точка входа в модуль &mdash; функция <tt>moment_module_init()</tt>.</rus>
+  </p>
+
+  <a name="example">
+    <moment_section>
+      <eng>Sample plugin</eng>
+      <rus>Пример внешнего модуля</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>An example of a plugin for Moment VS is "Video Phone" app module (see
+    <a href="doc_builtin.ru.html#phone">"Builtin applications" section</a>).</eng>
+    <rus>Пример реализации плагина &mdash; модуль приложения &laquo;Видеозвонки&raquo; (см. раздел
+    <a href="doc_builtin.ru.html#phone">&laquo;Встроенные приложения&raquo;</a>).</rus>
+  </p>
+
+  <p>
+    <eng>Video Phone plugin works as follows. After a client enters conversation code,
+    videophone flash module connects to the server and tells it the code.
+    When another client with the same conversation code shows up, communication session is started.</eng>
+    <rus>Плагин видеозвонков работает следующим образом. После того, как пользователь ввёл код разговора,
+    флешка видеозвонков подключается к видеосерверу и сообщает ему этот код. Когда к серверу
+    подключается другой пользователь с таким же кодом разговора, начинается сеанс связи.</rus>
+  </p>
+
+  <p>
+    <eng>Source code of the module can be found at <a href="https://github.com/erdizz/mychat">https://github.com/erdizz/mychat</a><br/>
+    Files of interset:</eng>
+    <rus>Исходный код модуля доступен по адресу <a href="https://github.com/erdizz/mychat">https://github.com/erdizz/mychat</a><br/>
+    Файлы, на которые стоит обратить внимание:</rus>
+  </p>
+
+  <moment_params>
+    <p><a href="https://github.com/erdizz/mychat/blob/master/mychat/mychat.cpp">mychat/mychat.cpp</a> &mdash;
+    <eng>plugin written in C++</eng><rus>плагин на C++;</rus></p>
+    <p><a href="https://github.com/erdizz/mychat/blob/master/web/MyChat.as">web/MyChat.as</a> &mdash;
+    <eng>flash module (written in ActionScript)</eng><rus>флешка видеозвонков (код на языке ActionScript);</rus></p>
+    <p><a href="https://github.com/erdizz/mychat/blob/master/web/index.html">web/index.tml</a> &mdash;
+    <eng>Video Phone web page with chat in JavaScript</eng><rus>страница видеозвонков с чатом на JavaScript.</rus></p>
+  </moment_params>
+
+</content>
+</moment>
+

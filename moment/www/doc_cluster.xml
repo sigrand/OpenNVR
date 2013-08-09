@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <pagename>
+    <eng>Documentation - Clustering</eng>
+    <rus>Документация - Кластеризация</rus>
+  </pagename>
+  <title>
+    <eng>Clustering</eng>
+    <rus>Кластеризация</rus>
+  </title>
+
+  <p>
+    <eng>Several Moment Video Server instances can be configured as a cluster, which allows
+    for load distrubution between cluster nodes. Such cluster consits of master servers
+    which receive video streams from primary sources, and slave servers acting as retransmitters.
+    Here's a pipeline for retransmitting a stream from another server:</eng>
+    <rus>В целях распределения нагрузки несколько серверов &laquo;Момент&raquo; можно объединить
+    в кластер, состоящий из опорных серверов, получающих видеопоток из основного источника,
+    и серверов-ретрансляторов. Конвейер для ретрансляции видеопотока с другого сервера:</rus>
+  </p>
+
+<pre>
+mod_gst {
+  streams {
+    {
+      // <eng>Retransmitting "video" channel from server my.server.com</eng><!--
+      --><rus>Ретранслируем канал "video" с сервера my.server.com</rus>
+      name = video
+      chain = "rtmpsrc location=\"rtmp://my.server.com:1935/app/video\" ! \
+               flvdemux name=demux                                        \
+               demux.video ! queue ! fakesink name=video                  \
+               demux.audio ! queue ! fakesink name=audio"
+  }
+}
+</pre>
+
+</content>
+</moment>
+

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<content>
+  <pagename>
+    <eng>Documentation</eng>
+    <rus>Документация</rus>
+  </pagename>
+  <title>
+    <eng>Documentation</eng>
+    <rus>Документация</rus>
+  </title>
+
+  <div class="toc">
+  <dl>
+    <dt>
+      <eng><a href="doc_desc.html">Server overview</a></eng>
+      <rus><a href="doc_desc.ru.html">Описание сервера</a></rus>
+    </dt>
+    <dd>
+      <dl>
+	<dt>
+	  <eng><a href="doc_desc.html#func">Capabilities</a></eng>
+	  <rus><a href="doc_desc.ru.html#func">Функциональные возможности</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_desc.html#spec">Special features</a></eng>
+	  <rus><a href="doc_desc.ru.html#spec">Отличительные особенности</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_desc.html#req">System requirements</a></eng>
+	  <rus><a href="doc_desc.ru.html#req">Системные требования</a></rus>
+	</dt>
+      </dl>
+    </dd>
+    <dt>
+      <eng><a href="doc_install.html">Installation</a></eng>
+      <rus><a href="doc_install.ru.html">Установка</a></rus>
+    </dt>
+    <dd>
+      <dl>
+	<dt>
+	  <eng><a href="doc_install.html#linux">Installation on Linux</a></eng>
+	  <rus><a href="doc_install.ru.html#linux">Установка в Linux</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_install.html#freebsd">Installation on FreeBSD</a></eng>
+	  <rus><a href="doc_install.ru.html#freebsd">Установка на FreeBSD</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_install.html#run">Running the server</a></eng>
+	  <rus><a href="doc_install.ru.html#run">Запуск видеосервера</a></rus>
+	</dt>
+      </dl>
+    </dd>
+    <dt>
+      <eng><a href="doc_config.html">Configuration</a></eng>
+      <rus><a href="doc_config.ru.html">Настройка</a></rus>
+    </dt>
+    <dd>
+      <dl>
+	<dt>
+	  <eng><a href="doc_config.html#config">Main configuration file</a></eng>
+	  <rus><a href="doc_config.ru.html#config">Основной конфигурационный файл</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_config.html#flashsrc">Receiving video from Flash clients</a></eng>
+	  <rus><a href="doc_config.ru.html#flashsrc">Получение видео от Flash-клиентов</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_config.html#transcoding">Video grabbing and transcoding</a></eng>
+	  <rus><a href="doc_config.ru.html#transcoding">Захват и перекодирование видео</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_config.html#ipcam">Receiving video from IP cameras</a></eng>
+	  <rus><a href="doc_config.ru.html#ipcam">Получение видео с IP-камер</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_config.html#cam">Receiving video from local cameras</a></eng>
+	  <rus><a href="doc_config.ru.html#cam">Захват видео с локальных камер</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_config.html#inputs">Receiving video from other sources</a></eng>
+	  <rus><a href="doc_config.ru.html#inputs">Получение видео из других источников</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_config.html#playlists">Playlists</a></eng>
+	  <rus><a href="doc_config.ru.html#playlists">Списки воспроизведения (плейлисты)</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_config.html#recording">Video recording</a></eng>
+	  <rus><a href="doc_config.ru.html#recording">Запись видео</a></rus>
+	</dt>
+      </dl>
+    </dd>
+    <dt>
+      <eng><a href="doc_builtin.html">Built-in applications</a></eng>
+      <rus><a href="doc_builtin.ru.html">Встроенные приложения</a></rus>
+    </dt>
+    <dd>
+      <dl>
+	<dt>
+	  <eng><a href="doc_builtin.html#player">Video Player</a></eng>
+	  <rus><a href="doc_builtin.ru.html#player">Видеоплеер</a></rus>
+	</dt>
+        <dt>
+	  <eng><a href="doc_builtin.html#phone">Viedo Phone</a></eng>
+	  <rus><a href="doc_builtin.ru.html#phone">Видеозвонки</a></rus>
+	 </dt>
+      </dl>
+    </dd>
+    <dt>
+      <eng><a href="doc_plugins.html">Plugins</a></eng>
+      <rus><a href="doc_plugins.ru.html">Подключаемые модули (плагины)</a></rus>
+    </dt>
+    <dd>
+      <dl>
+	<dt>
+	  <eng><a href="doc_plugins.html#api">Moment API</a></eng>
+	  <rus><a href="doc_plugins.ru.html#api">API видеосервера</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_plugins.html#building">Builing and installing plugins</a></eng>
+	  <rus><a href="doc_plugins.ru.html#building">Компиляция и установка модулей</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_plugins.html#example">Sample plugin</a></eng>
+	  <rus><a href="doc_plugins.ru.html#example">Пример внешнего модуля</a></rus>
+	</dt>
+      </dl>
+    </dd>
+    <dd>
+    </dd>
+    <dt class="toc_single">
+      <eng><a href="doc_cluster.html">Clustering</a></eng>
+      <rus><a href="doc_cluster.ru.html">Кластеризация</a></rus>
+    </dt>
+    <dt class="toc_single">
+      <eng><a href="doc_stress.html">Stress testing</a></eng>
+      <rus><a href="doc_stress.ru.html">Нагрузочное тестирование</a></rus>
+    </dt>
+    <dt>
+      <eng><a href="doc_examples.html">Usage examples</a></eng>
+      <rus><a href="doc_examples.ru.html">Примеры использования</a></rus>
+    </dt>
+    <dd>
+      <dl>
+        <dt>
+	  <eng><a href="doc_examples.html#videochat">Video chat</a></eng>
+	  <rus><a href="doc_examples.ru.html#videochat">Видеочат</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_examples.html#tv">Online TV</a></eng>
+	  <rus><a href="doc_examples.ru.html#tv">Вещание онлайн ТВ</a></rus>
+	</dt>
+	<dt>
+	  <eng><a href="doc_examples.html#surv">Video surveillance</a></eng>
+	  <rus><a href="doc_examples.ru.html#surv">Видеонаблюдение</a></rus>
+	</dt>
+      </dl>
+    </dd>
+  </dl>
+  </div>
+
+</content>
+</moment>
+

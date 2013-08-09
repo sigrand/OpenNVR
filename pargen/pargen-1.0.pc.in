@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: pargen
+Description: MyNC parser generator
+Requires: libmary-1.0
+Version: @VERSION@
+Libs: -L${libdir} -lpargen-1.0
+Cflags: -I${includedir}/pargen-1.0
+

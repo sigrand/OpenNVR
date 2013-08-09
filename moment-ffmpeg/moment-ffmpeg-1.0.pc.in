@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: Moment-FFmpeg
+Description: FFmpeg integration module for MomentVideo.
+Requires: libmoment-1.0
+Version: @VERSION@
+Libs: -L${libdir} -lmoment-ffmpeg-1.0
+Cflags: -I${includedir}/moment-ffmpeg-1.0
+

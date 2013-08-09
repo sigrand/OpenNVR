@@ -1,0 +1,136 @@
+more info:
+http://momentvideo.org/quickstart.ru.html
+http://momentvideo.org/doc_config.ru.html
+http://momentvideo.org/nvr.ru.html
+http://momentvideo.org/doc_channels.ru.html
+
+=====================================================================================
+to write debug-level log in ./l.txt 
+./moment --log ./l.txt --level-log D
+
+all log levels:
+S = Stream,
+D = Debug,
+I = Info,
+W = Warning,
+A = Access,
+E = Error,
+H = High,
+F = Failure,
+N = None
+
+=====================================================================================
+to capture rtsp stream and broadcast rtmp and others
+
+in moment.conf in mod_gst.streams add:
+
+name = sony
+title = "Sony"
+uri = "rtsp://192.168.10.21:8092/test1.sdp"
+
+run moment
+after that run "vlc rtmp://127.0.0.1:1935/sony", 
+	where 1935 - port of RTMP server, 
+	sony - name of stream (in mod_gst.streams)
+
+=====================================================================================
+to enable RTMPT:
+
+input "#define RTMPT 8081" (in fact, port can be arbitrary)
+
+in moment add "this_rtmpt_server_addr = HOST:RTMPT"
+in moment.conf in mod_rtmpt add "rtmpt_bind = :RTMPT"
+
+run moment
+after that run rtmpt-player (not vlc, it can't capture RTMPT! there is .swf-player in repo) 
+	use "rtmpt://127.0.0.1:8081/sony"
+	where 8081 - port of RTMPT server, 
+	sony - name of stream (in mod_gst.streams)
+
+=====================================================================================
+to enable NVR
+
+add in moment.conf:
+
+mod_nvr {
+  enable = y
+  record_dir = "/opt/moment/records"
+  file_duration = 3600
+  max_age = 44640
+}
+
+do "mkdir /opt/moment/records"
+do "mkdir /opt/moment/conf.d"
+do "cd /opt/moment/conf.d"
+do "touch sony"
+add in ./sony:
+
+title = "Sony"
+uri = "rtsp://192.168.10.21:8092/test1.sdp"
+
+then just run moment. nvr will automatically write stream in /opt/moment/records/sony/curyear/curmonth/curday/
+
+http://127.0.0.1:8082/mod_nvr_admin/rec_on?stream=sony&seq=1 - turn on record
+http://127.0.0.1:8082/mod_nvr_admin/rec_off?stream=sony&seq=1 - turn off record
+
+http://127.0.0.1:8080/mod_nvr/channel_state?stream=test&seq=1 - get state info (turned on or off)
+
+=====================================================================================
+to get video from NVR
+
+example:
+rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
+	where start — unixtime of begin playing position from 00:00 1 Jan 1970 in UTC
+	sony - name of stream
+
+http://127.0.0.1:8080/mod_nvr/file?stream=sony&start=1368828341&duration=600&download
+    sony - name of stream
+    start — unixtime of begin in sec;
+    duration — duration in sec;
+    download — if it exists, Content-Type of response will be "application/octet-stream", it is appropriate for downloading. if it doesn't exist, so Content-Type will be "video/mp4", it is appropriate for run video in browser. Firefox in Ubuntu may have some problems with downloading.
+
+=====================================================================================
+to manage sources via http-requests
+
+examples:
+
+add channel
+http://192.168.10.21:8082/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp
+
+modify channel
+http://192.168.10.21:8082/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp&update
+
+remove channel
+http://192.168.10.21:8082/admin/remove_channel?conf_file=sony0
+
+=====================================================================================
+to turn on keeping of recording states for sources
+
+example
+
+mod_nvr {
+  ...
+  recording_state_dir = "/home/igorp/Sigrand/NVR/moment/recordingState"
+  ...
+}
+
+then when using "http://127.0.0.1:8082/mod_nvr_admin/rec_off?stream=sony0&seq=1"
+the file "recordingState/sony0" will be created there. if it exist, then source will not be recorded on disk after restarting server or changing stream.
+"http://127.0.0.1:8082/mod_nvr_admin/rec_on?stream=sony0&seq=1" will delete the file "recordingState/sony0".
+
+if "mod_nvr/recording_state_dir" does not exist then default behaviour will be set.
+
+=====================================================================================
+To enable ONVIF support in moment
+
+in moment.conf:
+
+mod_onvif
+{
+    enable = y
+    port = 80
+}
+
+Then ONVIF server starts on the specified port; if port wasn't set - 80 is default;
+
+

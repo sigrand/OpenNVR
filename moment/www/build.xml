@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<download_sidebar/>
+<content>
+  <title>
+    <eng>Building from git</eng>
+    <rus>Сборка из git</rus>
+  </title>
+  <rus>
+    <p>
+      1. Получение исходников из git.
+    </p>
+<pre>
+  git clone git://github.com/erdizz/libmary.git
+  git clone git://github.com/erdizz/pargen.git
+  git clone git://github.com/erdizz/scruffy.git
+  git clone git://github.com/erdizz/mconfig.git
+  git clone git://github.com/erdizz/moment.git
+  git clone git://github.com/erdizz/moment-gst.git
+</pre>
+    <p>
+      2. Сборка и установка сервера.
+    </p>
+<pre>
+  cd libmary;    ./autogen.sh; ./configure; make; make install; cd ..
+  cd pargen;     ./autogen.sh; ./configure; make; make install; cd ..
+  cd scruffy;    ./autogen.sh; ./configure; make; make install; cd ..
+  cd mconfig;    ./autogen.sh; ./configure; make; make install; cd ..
+  cd moment;     ./autogen.sh; ./configure; make; make install; cd ..
+  cd moment-gst; ./autogen.sh; ./configure; make; make install; cd ..
+</pre>
+    <p>
+      3. Обновление из git.
+    </p>
+<pre>
+  cd libmary;    git pull; cd ..
+  cd pargen;     git pull; cd ..
+  cd scruffy;    git pull; cd ..
+  cd mconfig;    git pull; cd ..
+  cd moment;     git pull; cd ..
+  cd moment-gst; git pull; cd ..
+</pre>
+    <p>
+      Далее для обновления &mdash; повторная сборка и установка (п.2)
+    </p>
+  </rus>
+</content>
+</moment>
+

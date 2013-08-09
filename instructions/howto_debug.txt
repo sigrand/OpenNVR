@@ -1,0 +1,17 @@
+How to debug Moment in QtCreator for dummies
+
+1. build Moment as Debug binary
+
+2. run ./moment
+
+3. use "ps -ax | grep moment" to determine the pidMoment of Moment
+
+4. Let it be 5678 port
+run "gdbserver host:5678 --attach pidMoment"
+
+5. in QtCreator in upper panel choose:
+Debug -> StartDebugging -> Attach to Remote Debug Server...
+
+In server port write "5678"
+In Local executable find moment binary and choose it.
+Then Ok

@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: LibMary
+Description: Core M library
+Requires: glib-2.0 @LIBMARY_GTHREAD_DEP@ gmodule-2.0
+Version: @VERSION@
+Libs: -L${libdir} -lmary-1.0
+Cflags: -I${includedir}/libmary-1.0
+

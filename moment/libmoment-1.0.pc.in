@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: LibMoment
+Description: MomentVideo core library
+Requires: libmary-1.0 mconfig-1.0 @MOMENT_GSTREAMER_DEP@
+Version: @VERSION@
+Libs: -L${libdir} -lmoment-1.0 @MOMENT_NETTLE_LIBS@
+Cflags: -I${includedir}/moment-1.0
+

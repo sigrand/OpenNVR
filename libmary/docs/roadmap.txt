@@ -1,0 +1,76 @@
+==== libMary Roadmap ====
+
+Ultimately, this is meant to be an ideal development environment for server
+apps, various backends, soft real-time apps.
+
+Legend:
+    v - fully implemented;
+    * - partially implemented;
+    _ - not started
+    M - used from MyNC
+
+[*] Reference counting
+    [v] BasicReferenced
+    [v] VirtReferenced
+    [v] Referenced
+    [v] Object
+    [v] Ref
+    [v] WeakRef
+    [v] DeletionQueue
+    [ ] Comprehensive multithreaded tests
+[*] Language support
+    [v] Annotations
+    [v] Callback
+    [v] Informer - frontend/backend idiom + class Informer.
+    [M] Pointer
+    [v] Memory
+    [v] Strings
+    [ ] Asynchronous branches of execution
+[*] Basic utility functions
+    [v] Command line parsing
+    [v] String to number conversion
+    [ ] Unicode, UTF-8
+[v] Basic containers
+    [v] List                   // For cases when Intrusive* can't be used.
+    [v] IntrusiveList          // The most common choice.
+    [v] IntrusiveCircularList  // Lightweight list head.
+    [v] AvlTree
+    [v] IntrusiveAvlTree
+    [v] Map
+    [N] IdMap
+    [v] Hash
+    [v] VStack
+    [v] VSlab
+    [v] Iterators (LibMary style + MyCpp)
+[v] Multithreading
+    [v] Thread-local data
+    [v] Atomic operations
+    [v] Mutex
+    [v] StateMutex
+    [v] Cond
+[*] I/O
+    [*] File
+        [*] Posix file backend
+	[*] Win32 file backend
+    [*] CachedFile - Implemented basic BufferedOutputStream.
+    [v] Streams
+    [v] Printing
+    [*] Event notification
+        [v] epoll backend
+	[v] select backend
+	[v] poll packend
+	[*] Win32 backend
+	[*] Threaded pollers
+    [v] Logging
+[v] Networking
+    [v] TcpServer
+    [v] TcpConnection
+[v] Timers
+[*] File system
+[M] Message passing library (libmrelay/myrelay)
+[v] Parsing utility (libmlang)
+[M] IDL compiler for message passing (relic)
+[M] Documentation generator
+[ ] Static source code analysis tool
+[ ] Mt language translator
+

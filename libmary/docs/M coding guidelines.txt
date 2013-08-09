@@ -1,0 +1,54 @@
+libMary is coded in such a way that it can serve as a prototype for the core
+library written in Mt programming language. Albeit libMary is written in C++,
+it uses only the subset of C/C++ features which Mt is about to support.
+
+This document describes C++ constructs which are meant to map to equivalent
+Mt constructs. It also defines the subset of C++ which is allowed to be used
+in Mt-like programs.
+
+1. All plain C constructs are allowed. Unsafe operations (pointer ariphmetic)
+   must be placed within "mt_unsafe {}" block.
+
+2. Only language-class objects (the ones defininf C++ to Mt pseudo mapping)
+   are allowed to use overloading of names and operators.
+
+3. Only language-class objects are allowed to use multiple inheritance.
+   Virtual base classes are explicitly forbidden.
+   Language constructs for interfaces are discussed separately.
+
+4. Safe memory operations are operations on Memory objects.
+
+5. Generic representation for callbacks (closures) is class Callback.
+
+6. Annotations are represented as tokens with "mt_" prefix: mt_annotation
+   mt_mutex, etc.
+
+7. Although the language is named Mt, its namespace is shortly named "M" for
+   convenience.
+
+8. There's two base Referenced classes: one for synchronous objects and another
+   one for asynchronous objects: Object and AsyncObject. Everything that
+   supports references supports weak references as well.
+
+9. C++ exceptions are not allowed. RTTI is not allowed and should be disabled
+   at compile-time.
+
+10. C++ standard library is not allowed at all (except for numeric limits).
+
+11. Only a small subset of the standard C library is allowed to be used. There
+    is a defined set of symbols which can be used.
+
+12. Only default non-failing constructors are allowed.
+
+13. Templates are allowed. Partial template specializations are forbidden..
+
+14. C++ references (&) are allowed only within implementations of language-class
+    objects.
+
+15. Destructors must be short and to the point. Keep in mind that there are
+    deletion queues which are protected from nested processing.
+
+LibMary serves as a standard library and is an image of Mt library. It is
+supposed to be Rich, i.e. it should cover most of the needs of domain-specific
+applications (server applications).
+

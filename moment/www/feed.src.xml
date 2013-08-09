@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<rss version="2.0">
+<channel>
+  <title>
+    <eng>Moment Video Server</eng>
+    <rus>Видеосервер «Moment»</rus>
+  </title>
+  <link>
+    <eng>http://momentvideo.org/feed.xml</eng>
+    <rus>http://momentvideo.org/feed.ru.xm</rus>
+  </link>
+  <language>
+    <eng>en</eng>
+    <rus>ru</rus>
+  </language>
+  <managingEditor>shatrov@gmail.com</managingEditor>
+  <generator>momentvideo.org</generator>
+  <image>
+    <link>http://momentvideo.org</link>
+    <url>http://momentvideo.org/img/logo_short.png</url>
+    <title>
+      <eng>Moment Video Server</eng>
+      <rus>Видеосервер «Moment»</rus>
+    </title>
+  </image>
+
+  <item>
+    <pubDate>Thu, 24 Nov 2011 09:00:00 GMT</pubDate>
+    <author>Moment</author>
+    <link>http://momentvideo.org</link>
+    <title>
+      <eng>Moment Video Server 1.2 is out</eng>
+      <rus>Вышел Moment Video Server 1.2</rus>
+    </title>
+    <description>
+      <eng>
+        <![CDATA[
+	The new version brings many new capabilities:
+	receiving video from Flash clients,
+	built-in video chat application,
+	video recording,
+	support for h.264 and AAC codecs,
+	support for arbitrary GStreamer pipelines,
+	API for plugins in C/C++,
+	server-side playlists,
+	FreeBSD port.
+        See the <a href="doc_desc.html">technical description</a>
+	for a list of features available in Moment VS.</eng>
+	]]>
+      </eng>
+      <rus>
+        <![CDATA[
+	В новой версии добавлено много новых возможностей:
+	получение видео от Flash-клиентов,
+	встроенное приложение видеочата,
+	запись видео на диск,
+	поддержка кодеков h.264 и AAC,
+	поддержка произвольных конвейеров GStreamer,
+	API для плагинов на C/C++,
+	плейлисты на стороне сервера,
+	поддержка FreeBSD.
+        Список основных возможностях видеосервера можно найти
+	в <a href="doc_desc.ru.html">техническом описании</a>.</rus>
+	]]>
+      </rus>
+    </description>
+  </item>
+
+  <item>
+    <pubDate>Wed, 28 Jul 2011 07:51:06 GMT</pubDate>
+    <author>Moment</author>
+    <link>http://momentvideo.org</link>
+    <title>
+      <eng>Moment 1.0.1</eng>
+      <rus>Moment 1.0.1</rus>
+    </title>
+    <description>
+      <eng><![CDATA[Version 1.0.1 is a bug fix relase for Moment 1.0]]></eng>
+      <rus><![CDATA[Версия 1.0.1 содержит исправления ошибок, обнаруженных в предыдущей версии.]]></rus>
+    </description>
+  </item>
+
+  <item>
+    <pubDate>Wed, 27 Jul 2011 07:51:06 GMT</pubDate>
+    <author>Moment</author>
+    <link>http://momentvideo.org</link>
+    <title>
+      <eng>Moment Video Server 1.0 is out!</eng>
+      <rus>Вышел Moment Video Server 1.0</rus>
+    </title>
+    <description>
+      <eng>
+        <![CDATA[
+	<a href="http://momentvideo.org">Moment Video Server</a> allows you to organize live video streaming on the Internet or in your local network.
+	Moment VS can stream video from various sources: files on disk, IP cameras, web cameras, from other
+	streaming servers. Moment VS is easy to install and easy to use. It is a robust high-performance solution.
+	]]>
+      </eng>
+      <rus>
+        <![CDATA[
+	С помощью видеосервера «Moment» вы можете с минимальными усилиями организовать вещание потокового видео
+	в Интернете или локальной сети.
+	«Moment» может транслировать видео из самых разных источников - из видеофайлов на диске, с IP-камер,
+	с веб-камеры, с других серверов потокового вещания (например, для ретрансляции телеканалов).
+	«Moment» прост в установке и использовании, отличается высокой производительностью и надёжностью.
+	]]>
+      </rus>
+    </description>
+  </item>
+
+</channel>
+</rss>
+

@@ -1,0 +1,10 @@
+This catalogue contains tests for scruffy parser and code generator.
+These tests are meant to drive the development process. Each test
+is a feature request which is to be fulfilled.
+
+A test passes if scruffy parses it correctly and generates equivalent
+code as output.
+
+Note that with these tests we don't check scruffy behavior for ill-formed
+C++ code, since all tests are valid C++ programs.
+

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <title>
+    Внешняя авторизация
+  </title>
+
+  <p>
+    Авторизация клиентов производится с помощью модуля <i>mod_auth</i>.
+    Для проверки прав доступа <i>mod_auth</i> делает HTTP-запросы
+    к внешнему серверу, который выполняет роль сервера авторизации.
+  </p>
+
+  <p>
+    Если в теле ответа на запросы <i>watch</i> и <i>stream</i> - это строка <tt>OK</tt>, то доступ разрешён, иначе - запрещён. Пустые строки в конце ответа игнорируются.
+    Если запрос завершился с ошибкой, то доступ запрещён. Если доступ запрещён, то соединение с RTMP-клиентом разрывается.
+  </p>
+
+  <p>
+    Пример настройки <i>mod_auth</i>:
+  </p>
+
+<pre>
+mod_auth {
+    enable     = y
+    // Сервер, на который отправляются HTTP-запросы
+    auth_host  = 1.2.3.4:8080
+    // Адрес сервера moment или любой идентификатор,
+    // чтобы различать moment-серверы в кластере
+    this_host  = HOST
+    // запрос проверки доступа для просмотра видеопотока
+    watch_req  = "auth/watch?myparam=foobar"
+    // запрос проверки доступа для вещания
+    stream_req = "auth/stream"
+    // уведомление об отключении
+    disconnected_req = auth/disconnected
+}
+</pre>
+
+  <p>
+    При такой настройке <i>mod_auth</i> делает следующие HTTP-запросы:
+  </p>
+
+<pre>
+Просмотр:   http://1.2.3.4:8080/auth/watch?myparam=foobar&amp;host=HOST&amp;client=3.4.5.6&amp;stream=StreamName&amp;auth=foobar
+Вещание:    http://1.2.3.4:8080/auth/stream?host=HOST&amp;client=3.4.5.6&amp;stream=StreamName&amp;auth=foobar
+Дисконнект: http://1.2.3.4:8080/auth/disconnected?host=HOST&amp;auth=foobar
+</pre>
+
+  <p>
+    Значение параметра <tt>auth=...</tt> берётся из названия потока в методах play/publish.
+    При этом название потока имеет вид <i>streamname?auth=...</i>
+  </p>
+
+  <p>
+    Если у подключенного клиента не прошла ни одна проверка доступа (в доступе отказано), то запроса disconnected при его отключении не будет.
+  </p>
+
+</content>
+</moment>
+

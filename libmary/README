@@ -1,0 +1,5 @@
+LibMary is a portability, multithreading, and basic utility library for
+high-performance network servers written in C++.
+
+Moment Video Server uses LibMary as its core library.
+

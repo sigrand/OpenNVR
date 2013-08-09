@@ -1,0 +1,7 @@
+[
+  [ "First Channel",  "rtmp://192.168.0.1:1935", "FirstChannelName"  ],
+  [ "Second Channel", "rtmp://10.0.0.1:443",     "SecondChannelName" ],
+  [ "Live Broadcast", "rtmpt://10.0.1.3:8080",   "Live"              ],
+  [ "Another Live",   "rtmp://172.16.0.10:1935", "AnotherLive"       ],
+]
+

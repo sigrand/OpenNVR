@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/123/trunk/packages/deb
+END
+control
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/100/trunk/packages/deb/control
+END
+libctemplate-dev.dirs
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/54/trunk/packages/deb/libctemplate-dev.dirs
+END
+compat
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/11/trunk/packages/deb/compat
+END
+libctemplate0.dirs
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/11/trunk/packages/deb/libctemplate0.dirs
+END
+libctemplate-dev.install
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/!svn/ver/54/trunk/packages/deb/libctemplate-dev.install
+END
+changelog
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/123/trunk/packages/deb/changelog
+END
+docs
+K 25
+svn:wc:ra_dav:version-url
+V 40
+/svn/!svn/ver/20/trunk/packages/deb/docs
+END
+copyright
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/103/trunk/packages/deb/copyright
+END
+rules
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/!svn/ver/11/trunk/packages/deb/rules
+END
+libctemplate0.install
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/11/trunk/packages/deb/libctemplate0.install
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/!svn/ver/11/trunk/packages/deb/README
+END

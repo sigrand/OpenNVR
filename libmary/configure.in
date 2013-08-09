@@ -1,0 +1,162 @@
+AC_INIT([LibMary], [0.1])
+
+PKG_CHECK_MODULES(THIS, [glib-2.0 >= 2.0, gthread-2.0 >= 2.0, gmodule-2.0 >= 2.0])
+AC_SUBST(THIS_CFLAGS)
+AC_SUBST(THIS_LIBS)
+
+AM_INIT_AUTOMAKE([1.7 gnu nostdinc])
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_LIBTOOL_WIN32_DLL
+AC_PROG_LIBTOOL
+
+AC_LANG_CPLUSPLUS
+
+case "$host" in
+  *-*-cygwin*)
+    platform_cygwin=yes
+    platform_default=no
+    ;;
+  *-*-mingw*)
+    platform_win32=yes
+    platform_default=no
+    ;;
+  *)
+    platform_win32=no
+    platform_cygwin=no
+    platform_default=yes
+    ;;
+esac
+
+AM_CONDITIONAL(LIBMARY_PLATFORM_CYGWIN, test x$platform_cygwin = xyes)
+if test "x$platform_cygwin" = "xyes"; then
+    AC_DEFINE([LIBMARY_PLATFORM_CYGWIN], [1], [ ])
+fi
+
+AM_CONDITIONAL(LIBMARY_PLATFORM_WIN32, test x$platform_win32 = xyes)
+AM_CONDITIONAL(LIBMARY_INC,            test x$platform_win32 = xyes)
+if test "x$platform_win32" = "xyes"; then
+    AC_DEFINE([LIBMARY_PLATFORM_WIN32], [1], [ ])
+fi
+
+AM_CONDITIONAL(LIBMARY_PLATFORM_DEFAULT, test x$platform_default = xyes)
+if test "x$platform_default" = "xyes"; then
+    AC_DEFINE([LIBMARY_PLATFORM_DEFAULT], [1], [ ])
+fi
+
+AC_ARG_ENABLE([mt-safe],
+	      AC_HELP_STRING([--disable-mt-safe],
+			     [Disable MT-safety]),
+	      [enable_mt_safe=$enable_mt_safe],
+	      [enable_mt_safe="yes"])
+AM_CONDITIONAL([LIBMARY_MT_SAFE], test "x$enable_mt_safe" = "xyes")
+if test "x$enable_mt_safe" = "xyes"; then
+    AC_DEFINE([LIBMARY_MT_SAFE], [1], [ ])
+    LIBMARY_GTHREAD_DEP="gthread-2.0"
+fi
+AC_SUBST(LIBMARY_GTHREAD_DEP)
+
+AC_ARG_ENABLE([epoll],
+	      AC_HELP_STRING([--disable-epoll],
+			     [Disable epoll]),
+	      [enable_epoll=$enableval],
+	      [enable_epoll="yes"])
+if test "x$platform_default" = "xno"; then
+    enable_epoll=no
+fi
+AM_CONDITIONAL(LIBMARY_ENABLE_EPOLL, test "x$enable_epoll" = "xyes")
+if test "x$enable_epoll" = "xyes"; then
+    AC_DEFINE([LIBMARY_ENABLE_EPOLL], [1], [ ])
+fi
+
+AC_ARG_ENABLE([iocp],
+              AC_HELP_STRING([--enable-iocp],
+                             [Enable IOCP on Win32]),
+              [enable_iocp=$enableval],
+              [enable_iocp="no"])
+AM_CONDITIONAL(LIBMARY_WIN32_IOCP, test "x$enable_iocp" = "xyes")
+if test "x$enable_iocp" = "xyes"; then
+    AC_DEFINE([LIBMARY_WIN32_IOCP], [1], [ ])
+fi
+
+AC_ARG_WITH([select],
+	    AC_HELP_STRING([--with-select=@<:@yes/no@:>@],
+			   [Use select() syscall for event polling by default [default=no]]),
+	    [with_select=$withval],
+	    [with_select="no"])
+if test "x$with_select" = "xyes"; then
+    AC_DEFINE([LIBMARY_USE_SELECT], [1], [ ])
+fi
+
+AC_ARG_WITH([poll],
+	    AC_HELP_STRING([--with-poll=@<:@yes/no@:>@],
+			   [Use poll() syscall for event polling by default [default=no]]),
+	    [with_poll=$withval],
+	    [with_poll="no"])
+if test "x$with_poll" = "xyes"; then
+    AC_DEFINE([LIBMARY_USE_POLL], [1], [ ])
+fi
+
+AC_ARG_ENABLE([mwritev],
+	      AC_HELP_STRING([--enable-mwritev],
+			     [Enable mwritev]),
+	      [enable_mwritev=$enableval],
+	      [enable_mwritev="no"])
+if test "x$platform_default" = "xno"; then
+    enable_mwritev=no
+fi
+AM_CONDITIONAL(LIBMARY_ENABLE_MWRITEV, test "x$enable_mwritev" = "xyes")
+if test "x$enable_mwritev" = "xyes"; then
+    AC_DEFINE([LIBMARY_ENABLE_MWRITEV], [1], [ ])
+fi
+
+
+tmp_cxxflags="$CXXFLAGS"
+
+CXXFLAGS="$CXXFLAGS -Wextra"
+AC_MSG_CHECKING([whether CXX supports -Wextra])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([])],
+    [AC_MSG_RESULT([yes])]
+        [AM_CFLAGS="$AM_CFLAGS -Wextra"]
+        [AM_CXXFLAGS="$AM_CXXFLAGS -Wextra"],
+    [AC_MSG_RESULT([no])]
+        [AM_CFLAGS="$AM_CFLAGS"]
+        [AM_CXXFLAGS="$AM_CXXFLAGS"])
+
+CXXFLAGS="$tmp_cxxflags -std=gnu++11"
+AC_MSG_CHECKING([whether CXX supports -std=gnu++11])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([])],
+    [AC_MSG_RESULT([yes])]
+        [AM_CXXFLAGS="$AM_CXXFLAGS -std=gnu++11"],
+    [AC_MSG_RESULT([no])]
+        AC_MSG_CHECKING([whether CXX supports -std=c++11])
+        CXXFLAGS="$tmp_cxxflags -std=c++11"
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+                          [AC_MSG_RESULT([yes])]
+                              [AM_CXXFLAGS="$AM_CFLAGS -std=c++11"],
+                          [AC_MSG_RESULT([no])]
+                              [AM_CXXFLAGS="$AM_CFLAGS -std=gnu++0x"]))
+
+CXXFLAGS="$tmp_cxxflags"
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CXXFLAGS])
+
+
+# local_config.h is for local configuration and should not be used in external
+# headers. Every libmary source file (*.cpp, *.c) must include local_config.h
+# This is acheived by specifying -include "local_config.h" compilation option
+# in libmary/Makefile.am
+#
+# libmary_config.h is for external configuration and should be included
+# by external headers when necessary.
+#
+AC_CONFIG_HEADERS([local_config.h libmary/libmary_config.h])
+
+AC_CONFIG_FILES([Makefile
+		 libmary/Makefile
+		 libmary-1.0.pc])
+AC_OUTPUT
+

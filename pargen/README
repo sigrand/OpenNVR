@@ -1,0 +1,3 @@
+Pargen is a parser generator with hooks necessary to build a standard-compliant
+C++ parser.
+

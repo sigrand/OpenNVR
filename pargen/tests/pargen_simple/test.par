@@ -1,0 +1,11 @@
+*:
+   word_opt
+
+word:
+a)   word-fix word
+b)   word-fix
+
+word-fix:
+    *
+
+

@@ -1,0 +1,41 @@
+identifier:
+    *
+
+identifier {
+}
+
+type:
+Void)	[void]
+Int32)	[int32]
+Int64)	[int64]
+
+function_name {
+}
+
+function_name:
+    identifier
+
+function_call:
+    function_name [(] [)] [;]
+
+function_body:
+    [{] function_call_seq_opt [}]
+
+function_definition:
+    type identifier [(] [)] function_body_opt [;]
+
+class_definition:
+    [class] identifier [{] function_definition_seq_opt [}] [;]
+
+test_inner:
+    [test]
+
+test_block:
+    [[] test_inner []]
+
+*:
+ClassDefinition)    class_definition
+FunctionDefinition) function_definition
+FunctionCall)       function_call
+TestBlock)          test_block
+

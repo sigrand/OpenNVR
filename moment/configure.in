@@ -1,0 +1,134 @@
+AC_INIT([Moment], [0.1])
+
+AC_ARG_WITH([release-tag],
+	    AC_HELP_STRING([--with-release-tag=TAG],
+			   [Relese tag (version) to use]),
+	    [with_release_tag=$withval],
+	    [with_release_tag=""])
+if test "x$with_release_tag" != "x"; then
+    AC_DEFINE_UNQUOTED([MOMENT_RELEASE_TAG], ["$with_release_tag"], [ ])
+fi
+
+AC_ARG_ENABLE([gstreamer],
+	      AC_HELP_STRING([--disable-gstreamer],
+			     [Disable GStreamer integration]),
+	      [enable_gstreamer=$enable_gstreamer],
+	      [enable_gstreamer="yes"])
+AM_CONDITIONAL([MOMENT_GSTREAMER], test "x$enable_gstreamer" = "xyes")
+if test "x$enable_gstreamer" = "xyes"; then
+    AC_DEFINE([MOMENT_GSTREAMER], [1], [ ])
+    MOMENT_GSTREAMER_DEP="gstreamer-0.10 gstreamer-app-0.10"
+    MOMENT_GSTREAMER_PKGCHECK_DEP=", gstreamer-0.10, gstreamer-app-0.10"
+fi
+AC_SUBST(MOMENT_GSTREAMER_DEP)
+
+AC_ARG_ENABLE([nettle],
+              AC_HELP_STRING([--enable-nettle],
+                             [Enable libnettle]),
+              [enable_nettle=$enable_nettle],
+              [enable_nettle="no"])
+AM_CONDITIONAL([MOMENT_NETTLE], test "x$enable_nettle" = "xyes")
+if test "x$enable_nettle" = "xyes"; then
+    AC_DEFINE([MOMENT_NETTLE], [1], [ ])
+    MOMENT_NETTLE_DEP=", nettle, hogweed"
+    MOMENT_NETTLE_LIBS="-lgmp"
+fi
+AC_SUBST(MOMENT_NETTLE_LIBS)
+
+AC_ARG_ENABLE([ctemplate],
+	      AC_HELP_STRING([--disable-ctemplate],
+			     [Disable ctemplate support]),
+	      [enable_ctemplate=$enable_ctemplate],
+	      [enable_ctemplate="yes"])
+AM_CONDITIONAL([MOMENT_CTEMPLATE], test "x$enable_ctemplate" = "xyes")
+if test "x$enable_ctemplate" = "xyes"; then
+    AC_DEFINE([MOMENT_CTEMPLATE], [1], [ ])
+    MOMENT_CTEMPLATE_DEP=", libctemplate >= 1.0"
+fi
+AC_SUBST(MOMENT_GSTREAMER_DEP)
+
+AC_ARG_ENABLE([gperftools],
+              AC_HELP_STRING([--enable-gperftools],
+                             [Enable gperftools CPU profiler]),
+              [enable_gperftools=$enable_gperftools],
+              [enable_gperftools="no"])
+AM_CONDITIONAL([MOMENT_GPERFTOOLS], test "x$enable_gperftools" = "xyes")
+if test "x$enable_gperftools" = "xyes"; then
+    AC_DEFINE([MOMENT_GPERFTOOLS], [1], [ ])
+fi
+
+PKG_CHECK_MODULES(THIS, [libmary-1.0 >= 0.1, mconfig-1.0 >= 0.1 $MOMENT_NETTLE_DEP $MOMENT_CTEMPLATE_DEP $MOMENT_GSTREAMER_PKGCHECK_DEP])
+AC_SUBST(THIS_CFLAGS)
+AC_SUBST(THIS_LIBS)
+
+AM_INIT_AUTOMAKE([1.7 gnu nostdinc])
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_LIBTOOL_WIN32_DLL
+AC_PROG_LIBTOOL
+
+AC_LANG_CPLUSPLUS
+
+case "$host" in
+  *-*-cygwin*)
+    platform_cygwin=yes
+    platform_default=no
+    ;;
+  *-*-mingw*)
+    platform_win32=yes
+    platform_default=no
+    ;;
+  *)
+    platform_win32=no
+    platform_cygwin=no
+    platform_default=yes
+    ;;
+esac
+AM_CONDITIONAL(PLATFORM_CYGWIN,  test x$platform_cygwin  = xyes)
+AM_CONDITIONAL(PLATFORM_WIN32,   test x$platform_win32   = xyes)
+AM_CONDITIONAL(PLATFORM_DEFAULT, test x$platform_default = xyes)
+
+
+tmp_cxxflags="$CXXFLAGS"
+
+CXXFLAGS="$CXXFLAGS -Wextra"
+AC_MSG_CHECKING([whether CXX supports -Wextra])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([])],
+    [AC_MSG_RESULT([yes])]
+        [AM_CFLAGS="$AM_CFLAGS -Wextra"]
+        [AM_CXXFLAGS="$AM_CXXFLAGS -Wextra"],
+    [AC_MSG_RESULT([no])]
+        [AM_CFLAGS="$AM_CFLAGS"]
+        [AM_CXXFLAGS="$AM_CXXFLAGS"])
+
+CXXFLAGS="$tmp_cxxflags -std=gnu++11"
+AC_MSG_CHECKING([whether CXX supports -std=gnu++11])
+AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([])],
+    [AC_MSG_RESULT([yes])]
+        [AM_CXXFLAGS="$AM_CXXFLAGS -std=gnu++11"],
+    [AC_MSG_RESULT([no])]
+        AC_MSG_CHECKING([whether CXX supports -std=c++11])
+        CXXFLAGS="$tmp_cxxflags -std=c++11"
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
+                          [AC_MSG_RESULT([yes])]
+                              [AM_CXXFLAGS="$AM_CFLAGS -std=c++11"],
+                          [AC_MSG_RESULT([no])]
+                              [AM_CXXFLAGS="$AM_CFLAGS -std=gnu++0x"]))
+
+CXXFLAGS="$tmp_cxxflags"
+AC_SUBST([AM_CFLAGS])
+AC_SUBST([AM_CXXFLAGS])
+
+
+AC_CONFIG_HEADERS([local_config.h moment/libmoment_config.h])
+
+AC_CONFIG_FILES([Makefile
+		 moment/Makefile
+		 web/Makefile
+		 web/myplayer/Makefile
+		 libmoment-1.0.pc])
+AC_OUTPUT
+

@@ -1,0 +1,89 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/122/trunk/src/windows/ctemplate
+END
+template_pathops.h
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/template_pathops.h
+END
+template.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/template.h
+END
+template_modifiers.h
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/template_modifiers.h
+END
+per_expand_data.h
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/per_expand_data.h
+END
+template_cache.h
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/91/trunk/src/windows/ctemplate/template_cache.h
+END
+template_annotator.h
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/template_annotator.h
+END
+template_dictionary.h
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/120/trunk/src/windows/ctemplate/template_dictionary.h
+END
+template_dictionary_interface.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/template_dictionary_interface.h
+END
+template_string.h
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/120/trunk/src/windows/ctemplate/template_string.h
+END
+template_enums.h
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/template_enums.h
+END
+str_ref.h
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/122/trunk/src/windows/ctemplate/str_ref.h
+END
+template_emitter.h
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/template_emitter.h
+END
+find_ptr.h
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/121/trunk/src/windows/ctemplate/find_ptr.h
+END
+template_namelist.h
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/!svn/ver/60/trunk/src/windows/ctemplate/template_namelist.h
+END

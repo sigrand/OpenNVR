@@ -1,0 +1,1056 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <pagename>
+    <eng>Documentation - Configuration</eng>
+    <rus>Документация - Настройка</rus>
+  </pagename>
+  <title>
+    <eng>Configuration</eng>
+    <rus>Настройка</rus>
+  </title>
+
+  <moment_toc>
+    <dl>
+      <dt>
+	<eng><a href="doc_config.html#config">Main configuration file</a></eng>
+	<rus><a href="doc_config.ru.html#config">Основной конфигурационный файл</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_config.html#flashsrc">Receiving video from Flash clients</a></eng>
+	<rus><a href="doc_config.ru.html#flashsrc">Получение видео от Flash-клиентов</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_config.html#transcoding">Video grabbing and transcoding</a></eng>
+	<rus><a href="doc_config.ru.html#transcoding">Захват и перекодирование видео</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_config.html#ipcam">Receiving video from IP cameras</a></eng>
+	<rus><a href="doc_config.ru.html#ipcam">Получение видео с IP-камер</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_config.html#cam">Receiving video from local cameras</a></eng>
+	<rus><a href="doc_config.ru.html#cam">Захват видео с локальных камер</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_config.html#inputs">Receiving video from other sources</a></eng>
+	<rus><a href="doc_config.ru.html#inputs">Получение видео из других источников</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_config.html#playlists">Playlists</a></eng>
+	<rus><a href="doc_config.ru.html#playlists">Списки воспроизведения (плейлисты)</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_config.html#recording">Video recording</a></eng>
+	<rus><a href="doc_config.ru.html#recording">Запись видео</a></rus>
+      </dt>
+    </dl>
+  </moment_toc>
+
+  <p>
+    <eng>This section describes syntax of configuration files for Moment VS and
+    lists available configuration parameters.<!-- Examples of complete setups of the server
+    for typical tasks can be found in <a href="doc_examples.html">"Usage examples" section</a>.--></eng>
+    <rus>В этом разделе описывается синтаксис конфигурационных файлов видеосервера и приводится
+    список доступных параметров конфигурации.<!-- Примеры полной найстройки сервера для типовых
+    задач можно найти в разделе <a href="doc_examples.ru.html">&laquo;Примеры использования&raquo;</a>.--></rus>
+  </p>
+
+  <a name="config">
+    <moment_section>
+      <eng>Main configuration file</eng>
+      <rus>Основной конфигурационный файл</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>
+      By default, the main configuration file is located at /opt/moment/moment.conf<br/>
+      You can specify any other path to the config file using <tt>-c</tt> command line option
+      when running the server:
+    </eng>
+    <rus>
+      По умолчанию основной конфигурационный файл видеосервера &mdash; /opt/moment/moment.conf<br/>
+      Другой путь к конфигурационному файлу можно задать опцией <tt>-c</tt> при запуске сервера:
+    </rus>
+  </p>
+
+<pre>/opt/moment/bin/moment -c /path/to/moment.conf</pre>
+
+  <moment_subsection>
+    <eng>moment.conf file syntax</eng>
+    <rus>Синтаксис файла moment.conf</rus>
+  </moment_subsection>
+
+  <p>
+    <eng>Configuration file consists of sections. Each section is bounded with
+    curly braces {}. Section can be named or unnamed and can be nested.</eng>
+    <rus>Файл конфигурации состоит из секций. Каждая секция ограничена фигурными скобками {}.
+    Секции могут иметь название. Допускаются вложенные секции.</rus>
+  </p>
+
+<pre>MySection {
+  InnerSection {
+  }
+}
+</pre>
+
+  <p>
+    <eng>Sections contain configuration parameters. It is recommended to put string values
+    of parameters in quotes. Parameters are separated from each other with semicolons or line breaks.</eng>
+    <rus>Внутри секций задаются параметры. Строковые значения рекомендуется заключать в двойные кавычки.
+    Параметры можно разделять точкой с запятой или переводом строки.</rus>
+  </p>
+
+<pre>Section {
+  MyParameter = "MyValue"
+  width = 60; height = 40
+}
+</pre>
+
+  <p>
+    <eng>C preprocessor directives can be used within the configuration file (except #include):</eng>
+    <rus>Возможно использование директив препроцессора C (кроме #include):</rus>
+  </p>
+
+<pre>#define VPATH "file:///this/is/a/long/path/"
+mod_gst {
+  FirstVideo  = VPATH "first_video.ogv"
+  SecondVideo = VPATH "second_video.flv"
+}
+</pre>
+
+  <p>
+    <eng>C-style comments can be made:</eng>
+    <rus>Можно делать комментарии в стиле C:</rus>
+  </p>
+
+<pre>
+http {
+  // <eng>Single-line comment</eng><rus>Однострочный комментарий</rus>
+  /* <eng>Multi-line comment</eng><rus>Многострочный комментарий</rus> */
+  #if 0
+    #if 0
+      <eng>Nested multi-line comment.</eng><rus>Вложенный многострочный комментарий.</rus>
+    #endif
+  #endif
+}
+</pre>
+
+  <p>
+    <eng>Network addresses are specified in the form "IP address:Port" or "DNS name:Port".
+    Address or port path can be omitted. Examples of addresses:</eng>
+    <rus>Сетевые адреса в значениях параметров имеют вид "ip-адрес:порт" или "dns-имя:порт".
+    Адрес или порт можно опустить. Примеры адресов:</rus>
+    "momentvideo.org:80", "kernel.org", "192.168.0.1", ":8080".
+  </p>
+
+  <p>
+    <eng>From now on, configuration parameters are described by full path through all
+    nested sections to a parameter. E.g., parameter my/deep/parameter can be specified
+    in configuration file as follows:</eng>
+    <rus>Будем обозначать параметры конфигурации полным путём к параметру по секциям.
+    Например, параметр my/deep/parameter в файле конфигурации задаётся так:</rus>
+  </p>
+
+<pre>my {
+  deep {
+    parameter = "value"
+  }
+}
+</pre>
+
+  <p>
+    Primary configuration parameters are listed below.
+  </p>
+
+  <moment_subsection>
+    <eng>General configuration parameters</eng>
+    <rus>Общие параметры конфигурации</rus>
+  </moment_subsection>
+
+  <moment_params>
+    <p>
+      <b>moment/module_path</b> &mdash;
+      <eng>path to server plugins. Default: /opt/moment/lib/moment-1.0/</eng>
+      <rus>путь для поиска плагинов к видеосерверу. По умолчанию: /opt/moment/lib/moment-1.0/</rus>
+    </p>
+    <p>
+      <b>moment/num_threads</b> &mdash;
+      <eng>number of threads to use to serve clients. Default: 0 (clients are served from the main thread).</eng>
+      <rus>количество потоков для обслуживания сетевых клиентов.
+      По умолчанию: 0 (обслуживать клиентов в главном потоке).</rus>
+    </p>
+    <p>
+      <b>moment/num_file_threads</b> &mdash;
+      <eng>number of threads used for video recording. Default: 0 (recording is done from the main thread).</eng>
+      <rus>количество потоков для записи видео на диск.
+      По умолчанию: 0 (выполнять запись из главного потока).</rus>
+    </p>
+    <p>
+      <b>page_pool/min_pages</b> &mdash;
+      <eng>minimum number of pages of memory to keep allocated by the server (a page is 4 KB in size).</eng>
+      <rus>минимальное кол-во страниц памяти в пуле страниц на сервере
+      (размер одной страницы - 4 КБ).</rus>
+    </p>
+  </moment_params>
+
+  <moment_subsection>
+    <eng>RMTP settings</eng>
+    <rus>Настройки RTMP</rus>
+  </moment_subsection>
+
+  <p>
+    <eng><i>mod_rtmp</i> module is responsible for serving Flash clients wih RTMPT and RTMPT protocols.</eng>
+    <rus>За обслуживание Flash-клиентов по протоколам RTMP и RTMPT отвечает модуль <i>mod_rtmp</i>.</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>mod_rtmp/enable</b> &mdash;
+      <eng>enable support for RTMP and RTMPT (yes/no). Default: "yes".</eng>
+      <rus>включить поддержку RTMP и RTMPT (yes/no). По умолчанию: "yes" (включено).</rus>
+    </p>
+    <p>
+      <b>mod_rtmp/rtmp_bind</b> &mdash;
+      <eng>IP address and TCP port to which the server accepts RTMP connections. Default: ":1935"</eng>
+      <rus>IP-адрес интерфейса и порт TCP, на который сервер принимает
+      соединения по протоколу RTMP. По умолчанию: ":1935"</rus>
+    </p>
+    <p>
+      <b>mod_rtmp/rtmpt_bind</b> &mdash;
+      <eng>IP address and TCP port to which the server accepts RTMPT connections. Default: ":8081"</eng>
+      <rus>IP-адрес интерфейса и порт TCP, на который сервер принимает
+      соединения по протоколу RTMPT. По умолчанию: ":8081"</rus>
+    </p>
+    <p>
+      <b>mod_rtmp/rtmpt_session_timeout</b> &mdash;
+      <eng>RTMPT client session inactivity timeout, in seconds.
+      Client session is closed after the timeout expires.
+      Default: 30 seconds.</eng>
+      <rus>таймаут неактивности клиентской сессии RTMPT, в секундах. По истечении таймаута сессия закрывается.
+      По умолчанию: 30 сек.</rus>
+    </p>
+    <p>
+      <b>mod_rtmp/send_delay</b> &mdash;
+      <eng>Sending delay for audio messages in milliseconds. Delayed sending (buffering on the server)
+      increases server's performance substantially. E.g., when many clients are connected to the server,
+      CPU load is about 2.5 times less with a delay of 100 milliseconds than with no delay.
+      Default: 50 milliseconds.
+      </eng>
+      <rus>задержка отправки аудио и видеосообщений в миллисекундах.
+      Задержка отправки данных (буферизация на сервере) позволяет существенно повысить производительность сервера.
+      Так, при задержке 100 миллисекунд нагрузка на процессор при большом числе одновременно подключенных клиентов
+      снижается в 2,5 раза. Значение по умолчанию: 50 мс.</rus>
+    </p>
+    <p>
+      <b>mod_rtmp/audio_waits_video</b> &mdash;
+      <eng>don't send audio messages until the first video message is sent.
+      Default: "no" (send audio without waiting for video).</eng>
+      <rus>не отправлять клиентам аудиосообщения, пока не будет отправлено
+      первое видеосообщение. По умолчанию: "no" (передавать аудио, не дожидаясь видео).</rus>
+    </p>
+  </moment_params>
+
+  <moment_subsection>
+    <eng>HTTP settings</eng>
+    <rus>Настройки HTTP</rus>
+  </moment_subsection>
+
+  <p>
+    <eng>Moment VS can accept arbitrary HTTP requests and pass them for handling to modules
+    which subscibe for requests with a certain URI prefix.
+    A separate port is listened to to accept administrator's commands in the form of HTTP requests.</eng>
+    <rus>&laquo;Момент&raquo; может принимать произвольные HTTP-запросы и передавать их на обработку
+    модулям, подписавшимся на запросы с определённым префиксом URI.
+    Для приёма команд администратора в форме HTTP-запросов выделяется отдельный порт.</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>http/http_bind</b> &mdash;
+      <eng>HTTP bind address. Files served with <i>mod_file</i> will be available from this address as well.</eng>
+      <rus>адрес привязки HTTP. По этому адресу, в частности,
+      будут доступны статические файлы, отдаваемые модулем <i>mod_file.</i></rus>
+    </p>
+    <p>
+      <b>http/admin_bind</b> &mdash;
+      <eng>HTTP bind address for administrator's commands. Default: ":8082"</eng>
+      <rus>адрес привязки HTTP для команд администратора. По умолчанию: ":8082"</rus>
+    </p>
+    <p>
+      <b>http/keepalive_timeout</b> &mdash;
+      <eng>inactivity timeout for HTTP connections, in seconds.
+      Connections are closed after the timeout expires. Default: 60 seconds.</eng>
+      <rus>таймаут неактивности HTTP-соединений в секундах.
+      По истечении таймаута соединение разрывается. По умолчанию: 60 сек.</rus>
+    </p>
+  </moment_params>
+
+  <p>
+    <eng><i>mod_file</i> module serves relatively small static files (HTML pages, images) to HTTP clients.
+    This module is not meant to serve any video. Configuration parameters for <i>mod_file</i>:</eng>
+    <rus>Модуль <i>mod_file</i> предназначен для отдачи HTTP-клиентам небольших статических файлов
+    (HTML-страниц и изображений) с локальных дисков по протоколу HTTP.
+    Этот модуль не предназначен для передачи видео.
+    Параметры конфигурации <i>mod_file</i>:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>mod_file/enable</b> &mdash;
+      <eng>enable <i>mod_file</i> (yes/no). Default: "yes".</eng>
+      <rus>включить mod_file (yes/no). По умолчанию: "yes" (<i>mod_file</i> включен).</rus>
+    </p>
+  </moment_params>
+
+  <p>
+    <eng>List of file paths and corresponding URI prefixes is specified with a set
+    of unnamed sections. Each unnamed section contains two parameters:</eng>
+    <rus>Список путей к файлам и соответствующих этим путям префиксов URI задаётся набором безымянных секций.
+    В каждой секции определяются два параметра:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>path</b> &mdash;
+      <eng>directory from which the files are taken.</eng>
+      <rus>директория, из которой отдаются файлы;</rus>
+    </p>
+    <p>
+      <b>prefix</b> &mdash;
+      <eng>URI prefix to use. E.g., if the files should be available from http://myserver.com/my_files/,
+      then the prefix is "my_files".</eng>
+      <rus>префикс в URI. Например, если файлы должны быть доступны по URI
+      http://myserver.com/my_files/, то параметру prefix нужно присвоить значение "my_files".</rus>
+    </p>
+  </moment_params>
+
+  <p>
+    <eng>Example of mod_file configuration:</eng>
+    <rus>Пример настройки mod_file:</rus>
+  </p>
+
+<pre>mod_file {
+  enable = yes
+  {
+    path = "/opt/moment/myplayer"
+    prefix = "moment"
+  }
+  {
+    path = "/opt/moment/mychat"
+    prefix = "mychat"
+  }
+}
+</pre>
+
+  <a name="flashsrc">
+    <moment_section>
+      <eng>Receiving video from Flash clients</eng>
+      <rus>Получение видео от Flash-клиентов</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Moment VS can receive video from Flash clients and stream it to other clients
+    without extra configuration.</eng>
+    <rus>&laquo;Момент&raquo; может получать видео от Flash-клиентов и передавать его другим клиентам
+    без дополнительной настройки.</rus>
+  </p>
+  
+  <p>
+    <eng>By default, if a client starts streaming video to the server
+    with a certain channel name, then this channel becomes immediately available
+    to other clients for viewing. Automatic channel availability can be disabled by
+    setting <b>moment/publish_all</b> parameter to "no". In this case, video
+    received from Flash clients is available only though plugins which allow that explicitly.</eng>
+    <rus>По умолчанию, если клиент подключается и начинает
+    передавать на сервер видео с определённым названием канала, то этот канал становится
+    доступным другим клиентам для просмотра. Автоматическое предоставление доступа к видео
+    можно отключить, присвоив параметру <b>moment/publish_all</b> значение "no".
+    В этом случае передача видео, получаемое от Flash-клиентов, будет доступна только
+    через те плагины видеосервера, которые это разрешают явно.</rus>
+  </p>
+
+  <a name="transcoding">
+    <moment_section>
+      <eng>Video grabbing and transcoding</eng>
+      <rus>Захват и перекодирование видео</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Moment VS uses <a href="http://gstreamer.freedesktop.org/features/">GStreamer</a>
+    multimedia framework for receiving video from various sources. GStreamer offers
+    rich capabilities for video grabbing, transcoding and transforming video streams
+    on-the-fly, and supports a broad spectre of video formats and codecs.</eng>
+    <rus>Для получения видео из внешних источников &laquo;Moment&raquo; использует
+    мультимедийный фреймворк <a href="http://gstreamer.freedesktop.org/features/">GStreamer</a>,
+    обладающий богатыми возможностями по захвату видео, его перекодированию и преобразованию
+    &laquo;на лету&raquo; с широким спектром поддерживаемых форматов и кодеков.</rus>
+  </p>
+
+  <p>
+    <eng>GStreamer integration is provided by <i>mod_gst</i> module. General settings for <i>mod_gst</i>:</eng>
+    <rus>За взаимодействие с GStreamer отвечает модуль <i>mod_gst</i>. Общие настройки модуля:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>mod_gst/enable</b> &mdash;
+      <eng>enable <i>mod_gst</i> module. Default: "yes".</eng>
+      <rus>включить модуль <i>mod_gst</i>. По умолчанию: "yes" (<i>mod_gst</i> включен).</rus>
+    </p>
+    <p>
+      <b>mod_gst/no_video_timeout</b> &mdash;
+      <eng>video source availability timeout, in seconds. If there was no audio or video messages
+      from the source for this period of time, then Moment VS attempts to reconnect to the source.
+      Default: 60 seconds.</eng>
+      <rus>таймаут доступности источника видео, в секундах. Если по истечении таймаута от источника
+      не получено ни одного видео- или аудиосообщения, то производится повторное подключение
+      к этому источнику. По умолчанию: 60 сек.</rus>
+    </p>
+    <p>
+      <b>mod_gst/send_metadata</b> &mdash;
+      <eng>generate metadata (onMetaData message) for flv stream format.
+      Default: "no" (onMetaData is not generated).</eng>
+      <rus>генерировать метаданные (сообщение onMetaData) для формата flv.
+      По умолчанию: "no" (onMetaData не генерируется).</rus>
+    </p>
+    <p>
+      <b>mod_gst/gst_debug</b> &mdash;
+      <eng>enable gstreamer debug messages. This can be used to determing causes of errors
+      during video grabbing/transcoding. Default: "off".</eng>
+      <rus>включить отладочные сообщения gstreamer. Отладочные сообщения можно включать
+      для выявления причин неполадок при захвате/перекодировании видео. По умолчанию: "off" (выключено).</rus>
+    </p>
+  </moment_params>
+
+  <p>
+    <eng>From server configuration viewpoint, GStreamer integration means that arbitrary gstreamer
+    pipelines can be used for video processing. Pipelines consist of discrete elements,
+    each of which performs some distinct operation with a video stream. Pipelines are specified
+    using syntax of <i>gst-launch</i> utility. Complete information on <i>gst-launch</i>
+    can be found in system manuals and GStreamer documentation.</eng>
+    <rus>С точки зрения настройки видеосервера взаимодействие с GStreamer сводится
+    к заданию конвейеров обработки, определяющих источник видео и последовательность преобразований.
+    Конвейеры состоят из отдельных элементов, каждый из которых выполняет некоторую операцию над видеопотоком.
+    Конвейеры описываются с использованием синтаксиса, принимаемого утилитой <i>gst-launch</i>.
+    Подробную информацию об этой утилите можно найти в системной документации и в документации GStreamer.</rus>
+  </p>
+
+<!--
+  <p>
+    Для наиболее простых случаев захвата и перекодирования видео видеосервер предлагает конвейеры
+    предопределённой формы. Это существенно упрощает описание захватываемого видеопотока:
+    достаточно указать URI ресурса, с которого сервер должен получать видео.
+    Такие источники задаются в секции <b>mod_gst/sources</b> в виде пар
+    <tt>"название канала" = "URI источника видео"</tt>. Пример:
+  </p>
+
+<pre>
+  mod_gst {
+    sources {
+      "Первый канал" = "mms://myvideostreams.com/first"
+      "Спорт" = "http://sport.example.domain/tv/sport"
+      "12 Стульев" = "file:///home/user/video/12 стульев.avi"
+    }
+  }
+</pre>
+
+  <p>
+    Для источников из списка "sources" можно задать ширину/высоту видео на выходе
+    и желаемый битрейт сжатого видеопотока
+    (применяется ко всем источникам):
+  </p>
+
+  <moment_params>
+    <p><b>mod_gst/width</b> &mdash; ширина видео (для секции "sources");</p>
+    <p><b>mod_gst/height</b> &mdash; высота видео (для секции "sources").</p>
+    <p><b>mod_gst/bitrate</b> &mdash; битрейт, определящий степень сжатия видео, Кбит/сек</p>
+  </moment_params>
+-->
+
+  <p>
+    <eng>Video streams are listed in <b>mod_gst/streams</b> section
+    Each stream is described with an unnamed section. Video source can be
+    specified in one of three ways:</eng>
+    <rus>Видеопотоки определяются в секции <b>mod_gst/streams</b>. Каждый видеопоток
+    описывается отдельной безымянной секцией. Существует три варианта задания
+    источника видео:</rus>
+  </p>
+
+  <ol>
+    <li>
+      <eng>Video stream URI.</eng>
+      <rus>Через URI источника;</rus>
+    </li>
+    <li>
+      <eng>Gstreamer pipeline specification.</eng>
+      <rus>Описанием конвейера gstreamer;</rus>
+    </li>
+    <li>
+      <eng>Playlist.</eng>
+      <rus>Списком воспроизведения (плейлистом).</rus>
+    </li>
+  </ol>
+
+  <p>
+    <eng>Common video stream parameters:</eng>
+    <rus>Параметры описания источника видео, общие для всех способов:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>name</b> &mdash;
+      <eng>video stream name. Clients use this name to request the stream
+      from the server.</eng>
+      <rus>название видеопотока. По этому названию клиенты
+      запрашивают у сервера видеопоток.</rus>
+    </p>
+    <p>
+      <b>record_path</b> &mdash;
+      <eng>path to video recordings. If this parameter is not set,
+      then the stream is not recorded.</eng>
+      <rus>путь для записи видео на диск.
+      Если параметр не задан, то запись видео не производится.</rus>
+    </p>
+  </moment_params>
+
+  <moment_subsection>
+    <eng>URI sources</eng>
+    <rus>Задание источника по URI</rus>
+  </moment_subsection>
+
+  <p>
+    <eng>For the most basic cases of video receiving and trancoding the server offers
+    predefined pipelines. This makes adding new streams easy: all it takes is
+    specifying video resource URI. <b>uri</b> parameter is used to specify an URI. Example:</eng>
+    <rus>Для наиболее простых случаев захвата и перекодирования видео видеосервер предлагает конвейеры
+    предопределённой формы. Это существенно упрощает описание захватываемого видеопотока:
+    достаточно указать URI ресурса, с которого сервер должен получать видео.
+    Для задания источника по URI используется параметр <b>uri</b>. Пример:</rus>
+  </p>
+
+<pre>
+  {
+    <eng>// Receving video from an IP camera using RTSP protocol.</eng><!--
+ --><rus>// Получаем видео с IP-камеры по протоколу RTSP.</rus>
+    name = "<eng>Camera</eng><rus>Камера</rus> 1"
+    uri = "rtsp://91.200.224.242/mpeg4/media.amp"
+  }
+</pre>
+
+  <p>
+    <eng>One may set default width/height and desired compressed video bitrate
+    for video sources specified with an URI. The following parameters have effect for all
+    such sources:</eng>
+    <rus>Для источников, определяемых через URI, можно задавать ширину/высоту видео на выходе
+    и желаемый битрейт сжатого видеопотока. Следующие параметры применяются ко всем таким источникам:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>mod_gst/width</b> &mdash;
+      <eng>width of resulting video streams.</eng>
+      <rus>ширина видео;</rus>
+    </p>
+    <p>
+      <b>mod_gst/height</b> &mdash;
+      <eng>height of resulting video streams;</eng>
+      <rus>высота видео;</rus>
+    </p>
+    <p>
+      <b>mod_gst/bitrate</b> &mdash;
+      <eng>bitrate which determines video compression rate, Kbit/sec.</eng>
+      <rus>битрейт, определящий степень сжатия видео, Кбит/сек.</rus>
+    </p>
+  </moment_params>
+
+  <!-- TODO default_width, default_height, default_bitrate -->
+
+  <moment_subsection>
+    <eng>GStreamer pipelines</eng>
+    <rus>Конвейеры gstreamer</rus>
+  </moment_subsection>
+
+  <p>
+    <eng>With gstreamer pipelines one can specify a full set of operations
+    for grabbing, transcoding and transforming video.
+    GStreamer pipelines are chains of elements. Each element performs some
+    distinct operation on a video stream.</eng>
+    <rus>С помощью конвейеров gstreamer можно выполнять полный набор операций по захвату,
+    перекодированию и преобразованию видео. Конвейер gstreamer &mdash; это цепочка
+    элементов, каждый из которых выполняет некоторую операцию над видеопотоком.</rus>
+  </p>
+
+  <p>
+    <eng>Pipelines are specified by strings, which list all pipeline elements and define
+    links between those elements. You can test how a pipeline works separately from
+    the video server using <i>gst-launch</i> command line tool. Pipeline description
+    syntax in the video server's configuration files is the same as the one that <i>gst-launch</i> accepts.</eng>
+    Here's how a basic pipeline which displays a color table can be tested with <i>gst-launch</i>:
+    <rus>Конвейеры описываются строками, в которых перечисляются элементы и определяются связи
+    между ними. Работу конвейеров можно проверять отдельно от видеосервера с помощью
+    утилиты <i>gst-launch</i>. Синтаксис описания конвейеров в файлах конфигурации видеосервера
+    совпадает с синтаксисом, описанным в документации <i>gst-launch</i>.
+    Вот так с помощью <i>gst-launch</i> можно запустить простейший конвейер,
+    выводящий на экран настроечную таблицу цветов:</rus>
+  </p>
+
+<pre>gst-launch videotestsrc ! autovideosink</pre>
+
+  <p>
+    <eng>This pipeline consists of two elements: <i>videotestsrc</i> element generates
+    a video stream (color table), and <i>autovideosink</i> element displays video
+    in a separate window.</eng>
+    <rus>Этот конвейер состоит из двух элементов. Элемент <i>videotestsrc</i> генерирует видеопоток
+    (настроечную таблицу), а <i>autovideosink</i> отображает видео на экране в отдельном окне.</rus>
+  </p>
+
+  <p>
+    <eng>A pipeline must meet some special requirements for Moment VS to be able to use it:</eng>
+    <rus>Для того, чтобы &laquo;Момент&raquo; мог использовать конвейер для получения видео,
+    должны быть соблюдены следующие условия:</rus>
+  </p>
+
+  <ol>
+    <li>
+      <eng>Video processing chain must end with a <i>fakesink</i> element with name "video"
+      (<tt>name="video"</tt> attribute) and with <tt>sync=true</tt> attribute.</eng>
+      <rus>Цепочка обработки видео должна заканчиваться элементом <i>fakesink</i>
+      с именем "video" (параметр <tt>name="video"</tt>) и параметром <tt>sync=true</tt>;</rus>
+    </li>
+    <li>
+      <eng>Audio processing chain must end with a <i>fakesink</i> element with name "audio"
+      (<tt>name="audio"</tt> attribute) and with <tt>sync=true</tt> attribute.</eng>
+      <rus>Цепочка обработки звука должна заканчиваться элементом <i>fakesink</i>
+      с именем "audio" (параметр <tt>name="audio"</tt>) и параметром <tt>sync=true</tt>;</rus>
+    </li>
+    <li>
+      <eng>Vieo and audio which flows into <i>fakesink</i> elements must be encoded
+      with a codec supported by Moment VS.</eng>
+      <rus>Видео и аудио, попадающее в элементы <i>fakesink</i>, должно быть закодировано
+      одним из поддерживаемых видеосервером кодеков.</rus>
+    </li>
+  </ol>
+
+  <p>
+    <eng>Video streams can contain no video or no audio.</eng>
+    <rus>В потоке может не быть видео или аудио.</rus>
+  </p>
+
+  <p>
+    <eng>To make Moment VS use a gstreamer pipeline for video processing, <b>chain</b> parameter
+    is used in video stream description. Examples of ready-to-use pipelines can be found in
+    the following sections. A list of all available elements for building pipelines and
+    documentation on each element can be obtained with <i>gst-inspect</i> utility.</eng>
+    <rus>При захвате видео через конвейер gstreamer описание конвейера задаётся параметром <b>chain</b>.
+    Примеры готовых конвейеров gstreamer &mdash; в следующих разделах.
+    Список всех доступных элементов для построения конвейеров и справку по каждому элементу можно получить
+    с помощью утилиты <i>gst-inspect.</i></rus>
+  </p>
+
+  <moment_subsection>
+    <eng>Playlists</eng>
+    <rus>Плейлисты</rus>
+  </moment_subsection>
+
+  <p>
+    <eng>See <a href="#playlists">"Playlists" section</a> for information on how to use playlists.</eng>
+    <rus>См. раздел <a href="#playlists">&laquo;Списки воспроизведения&raquo;</a>.</rus>
+  </p>
+
+  <a name="ipcam">
+    <moment_section>
+      <eng>Receiving video from IP cameras</eng>
+      <rus>Захват видео с IP-камер</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Video from IP cameras can be received by specifying camera's video stream URI
+    or with a gstreamer pipeline which corresponds to the type of video stream being received.
+    Example of receiving video using RTSP protocol:</eng>
+    <rus>Захват видео с камер осуществляется указанием в конфигурационном файле URI видеопотока,
+    либо заданием конвейера, соответствующего виду потока, отдаваемого камерой.
+    Захват видео по протоколу RTSP:</rus>
+  </p>
+<pre>
+  uri = "rtsp://10.1.12.3/mpeg4/media.amp"
+</pre>
+
+  <p>
+    <eng>Pipeline for receiving MJPEG video over HTTP and transcoding it to h.264:</eng>
+    <rus>Конвейер для захвата MJPEG, передаваемого по HTTP, и перекодирования видео в h.264:</rus>
+  </p>
+<pre>
+  chain = "souphttpsrc location=http://192.168.0.1/mjpg/video.mjpg ! \
+           multipartdemux ! jpegdec ! ffmpegcolorspace !             \
+           x264enc speed-preset=ultrafast bitrate=500 !  \
+           fakesink name=video"
+</pre>
+
+  <a name="cam">
+    <moment_section>
+      <eng>Receiving video from local cameras</eng>
+      <rus>Захват видео с локальных камер</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Under Linux, video from locally connected cameras can be grabbed
+    with "Video for Linux" subsystem. <i>v4lsrc</i> is an element which does this.
+    Example of a pipeline to grab video from a camera:</eng>
+    <rus>При работе под Linux видео с локальных камер захватывается при помощи
+    подсистемы "Video for Linux". Элемент, выполняющий захват видео &mdash; <i>v4l2src</i>.
+    Пример конвейера для захвата видео с камеры:</rus>
+  </p>
+<pre>
+  chain = "v4l2src device=/dev/video0 ! video/x-raw-yuv,width=320,height=240 ! \
+           ffmpegcolorspace ! ffenc_flv ! fakesink name=video"
+</pre>
+
+  <a name="inputs">
+    <moment_section>
+      <eng>Receiving video from other sources</eng>
+      <rus>Получение видео из других источников</rus>
+    </moment_section>
+  </a>
+
+  <a name="gst_examples">
+    <eng>Examples of gstreamer pipelines for various video sources follow.</eng>
+    <rus>Далее приводятся примеры построения конвейеров gstreamer для различных источников видео.</rus>
+  </a>
+
+<p>
+  <eng><b>Example 1.</b> Generating a color table and encoding it with Sorenson H.263 video codec.</eng>
+  <rus><b>Пример 1.</b> Генерируем настроечную таблицу и кодируем видео кодеком Sorenson H.263</rus>
+</p>
+<pre>
+  {
+    chain = "videotestsrc ! ffenc_flv ! fakesink name=video sync=true"
+    name = "<eng>Example</eng><rus>Пример</rus> 1"
+  }
+</pre>
+
+<p>
+  <eng><b>Example 2.</b> Adding a sound beep encoded with Nellymoser audio codec
+  to video stream from the previous example.</eng>
+  <rus><b>Пример 2.</b> Добавляем к таблице цветов (см. пример 1) звуковой гудок, кодируемый кодеком Nellymoser.</rus>
+</p>
+<pre>
+  {
+    chain = "videotestsrc ! ffenc_flv ! fakesink name=video sync=true \
+             audiotestsrc ! ffenc_nellymoser ! fakesink name=audio sync=true"
+    name = "<eng>Example</eng><rus>Пример</rus> 2"
+  }
+</pre>
+
+<p>
+   <eng><b>Example 3.</b> Reading video from a file, applying "old tape" effect to it (agingtv),
+   encoding. Raw video format conversion is required for <i>agingtv</i> element, which is done
+   with <i>ffmpegcolorspace</i> element.</eng>
+   <rus><b>Пример 3.</b> Читаем видео из файла, применяем эффект "старой плёнки" (agingtv),
+   кодируем. Для элемента agingtv требуется конвертация видео в другой формат
+   цветового представления, используем для этого элементы ffmpegcolorspace.</rus>
+</p>
+<pre>
+  {
+    chain = "uridecodebin uri=file:///home/user/video.avi !  \
+             ffmpegcolorspace ! agingtv ! ffmpegcolorspace ! \
+             ffenc_flv ! fakesink name=video sync=true"
+    name = "<eng>Example</eng><rus>Пример</rus> 3"
+  }
+</pre>
+
+<p>
+  <eng><b>Example 4.</b> Organizing a screencast. Grabbing video from the screen
+  with a frequency of 15 frames per second and encoding it using Screen Video codec.</eng>
+  <rus><b>Пример 4.</b>
+  Организуем скринкаст (транслируем картинку с экрана).
+  Выполняем захват видео с экрана с частотой 15 кадров/сек и кодируем
+  видеопоток кодеком "Screen Video".</rus>
+</p>
+<pre>
+  {
+    chain =                                                               \
+        "ximagesrc use-damage=false do-timestamp=true show-pointer=true ! \
+         video/x-raw-rgb,framerate=15/1 !                                 \
+         ffmpegcolorspace !                                               \
+         ffenc_flashsv ! fakesink name=video"
+    name = "<eng>Example</eng><rus>Пример</rus> 4"
+  }
+</pre>
+
+  <a name="playlists">
+    <moment_section>
+      <eng>Playlists</eng>
+      <rus>Списки воспроизведения (плейлисты)</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>With playlists you can set up scheduled streaming of video from various sources.
+    A playlist is a linear list of playback elements. Each element contains stream source
+    description (URI, file path, or a gstreamer pipeline) and can be accompanied with
+    "start", "end", "duration", and "seek" attributes.</eng>
+    <rus>С помощью плейлистов можно организовать вещание видео из разных источников по расписанию.
+    Плейлист представляет собой линейный список элементов воспроизведения. Каждый
+    элемент содержит описание источника видео (URI, путь к файлу или конвейер gstreamer) и может
+    сопровождаться атрибутами "начало", "конец", "длительность" и "начальное положение".</rus>
+  </p>
+
+  <p>
+    <eng>Playlists are described with separate XML files. The root tag of each file is <i>&lt;playlist&gt;</i>.
+    Playlist elements are represented with <i>&lt;item&gt;</i> tags. Each <i>&lt;item&gt;</i> tag
+    should contain one of the following elements:</eng>
+    <rus>Плейлист описывается отдельным XML-файлом. Корневой тэг &mdash; <i>&lt;playlist&gt;</i>.
+    Элементы плейлиста &mdash; теги <i>&lt;item&gt;</i>. В теге <i>&lt;item&gt;</i> должен
+    содержаться один из следующих тегов:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <i>uri</i> &mdash;
+      <eng>video source URI</eng>
+      <rus>URI источника видео;</rus>
+    </p>
+    <p>
+      <i>path</i> &mdash;
+      <eng>file path</eng>
+      <rus>путь к видеофайлу;</rus>
+    </p>
+    <p>
+      <i>chain</i> &mdash;
+      <eng>gstreamer pipeline description</eng>
+      <rus>описание конвейера gstreamer.</rus>
+    </p>
+  </moment_params>
+
+  <p>
+    <eng><i>&lt;item&gt;</i> tag attributes:</eng>
+    <rus>Атрибуты тега <i>&lt;item&gt;</i>:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <i>start</i> &mdash;
+      <eng>playback start time.</eng>
+      <rus>время/дата начала воспроизведения;</rus>
+    </p>
+    <p>
+      <i>end</i> &mdash;
+      <eng>playback end time.</eng>
+      <rus>время/дата окончания воспроизведения;</rus>
+    </p>
+    <p>
+      <i>duration</i> &mdash;
+      <eng>playback duration. If the value is "full", then video is played util end of file is reached.</eng>
+      <rus>длительность воспроизведения. Значение &mdash; время или "full" (играть до конца файла).
+      По умолчанию: "full";</rus>
+    </p>
+    <p>
+      <i>seek</i> &mdash;
+      <eng>playback start position. The video is seeked to this position (time offset) before playback starts.</eng>
+      <rus>позиция начала воспроизведения. Перед началом показа видео будет перемотано в эту позицию.</rus>
+    </p>
+  </moment_params>
+
+  <p>
+    <eng>Allowed time formats: SS, MM:SS, HH:MM:SS
+    (S &mdash; seconds, M &mdash; minutes, H &mdash; hours).
+    Date formats: mm/DD, YY/MM/DD
+    (D &mdash; day, m &mdash; month, Y &mdash; year).</eng>
+    <rus>Возможные форматы времени: СС, ММ:СС, ЧЧ::ММ:СС
+    (C &mdash; секунды, М &mdash; минуты, Ч &mdash; часы).
+    Форматы дат: мм/ДД, ГГГГ/ММ/ДД
+    (Д &mdash; день, м &mdash; месяц, Г &mdash; год).</rus>
+  </p>
+
+  <p>
+    <eng>Playlist file example:</eng>
+    <rus>Пример файла плейлиста:</rus>
+  </p>
+<pre>
+<![CDATA[<playlist>]]>
+<eng><![CDATA[  <!-- Playback starts on 27th of November at 12:00 -->]]></eng><!--
+--><rus><![CDATA[  <!-- Начинаем показ 27-го ноября в 12:00 -->]]></rus>
+<![CDATA[  <item start="11/27 12:00" end="13:00" seek="15">
+    <path>/home/user/video/Movie.avi</path>
+  </item>
+  <item start="13:30" duration="15:00">
+    <uri>rtsp://channel_one.com/live/stream.sdp</uri>
+  </item>
+  <item>
+    <chain>
+      videotestsrc ! ffenc_flv ! fakesink name=video sync=true
+    </chain>
+  </item>
+</playlist>]]>
+</pre>
+
+  <p>
+    <eng><b>playlist</b> parameter with a path to playlist file is used to specify a stream with a playlist:</eng>
+    <rus>Для задания потока с воспроизведением по плейлисту
+    определяем параметр <b>playlist</b>, содержащий путь к файлу плейлиста:</rus>
+  </p>
+<pre>
+mod_gst {
+  streams {
+    {
+      name = "<eng>Online TV</eng><rus>Онлайн-ТВ</rus>"
+      playlist = "/opt/moment/playlist_tv.xml"
+    }
+  }
+}
+</pre>
+
+  <p>
+    <eng>Moment VS allows to update playlists and change playback positions with administrator's HTTP requests
+    (POST or GET). Playlist update request has the following form:</eng>
+    <rus>&laquo;Момент&raquo; позволяет обновлять плейлист и изменять позицию воспроизведения видеопотока
+    во время работы через административные HTTP-запросы (методы POST или GET).
+    Запрос для обновления плейлиста имеет следующий вид:</rus>
+  </p>
+    
+  <moment_params>
+    <span style="word-wrap: break-word">
+    <p>
+      http://<eng>host:port</eng><rus>хост:порт</rus>/moment_admin/<b>update_playlist</b>
+      <eng>or</eng><rus>или</rus>
+      <b>update_playlist_now</b>/<b><eng>channel_name</eng><rus>название_канала</rus></b>
+    </p>
+    </span>
+  </moment_params>
+
+  <p>
+    <eng>update_playlist_now request switches to the new playlist immediately, interrupting playback
+    of an element currently played. update_playlist lets the current element play till its planned end time.
+    Example of an URI for updating a playlist for "my_video" channel:</eng>
+    <rus>Запрос update_playlist_now выполняет переключение на новый плейлист немедленно, прерывая воспроизведение
+    текущего элемента. Запрос update_playlist даёт текущему элементу доиграть до конца. Пример URI
+    для обновления плейлиста для канала "my_video":</rus>
+  </p>
+
+<pre>
+http://localhost:8082/moment_admin/update_playlist_now/my_video
+</pre>
+ 
+  <p>
+    <eng>HTTP request for changing current playback position:</eng>
+    <rus>Запрос для установки позиции воспроизведения:</rus>
+  </p>
+
+  <moment_params>
+    <span style="word-wrap: break-word">
+    <p>
+      http://<eng>host:port</eng><rus>хост:порт</rus>/moment_admin/set_position/<!--
+      --><b><eng>channel_name</eng><rus>название_канала</rus></b>/<!--
+      --><b><eng>element number or id</eng><rus>номер либо id элемента</rus></b>/<!--
+      --><b><eng>time</eng><rus>время</rus></b>
+    </p>
+    </span>
+  </moment_params>
+
+  <p>
+    <eng>Example of an URI for seekng to 1 hour and 45 minutes from the start of the first element
+    of "video" channel's playlist:</eng>
+    <rus>Пример URI для перемотки на позицию 1 час 45 мин первого элемента плейлиста для канала "video":</rus>
+  </p>
+
+<pre>
+http://localhost:8082/moment_admin/set_position/video/1/1:45:00
+</pre>
+ 
+  <a name="recording">
+    <moment_section>
+      <eng>Video recording</eng>
+      <rus>Запись видео</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>Moment VS can record video to a local drive continuosly or by a schedule to .flv files.</eng>
+    <rus>&laquo;Момент&raquo; может записывать транслируемое видео на диск непрерывно или по расписанию
+    в файлы формата flv.</rus>
+  </p>
+
+  <p>
+    <eng>To enable continuous recording, set <b>recording_path</b> parameter in stream description section
+    to a path (filename prefix) where recorded files will be put:</eng>
+    <rus>Для непрерывной записи видео нужно задать в описании потока параметр <b>record_path</b>, содержащий
+    путь к записываемым файлам:</rus>
+  </p>
+<pre>
+  {
+    name = "<eng>Stream</eng><rus>Поток</rus> 1"
+    uri = "rtsp://91.200.224.242/mpeg4/media.amp"
+    record_path = "/home/user/records/stream_1"
+  }
+</pre>
+
+  <p>
+    <eng>Recorded video will be split into several files with a suffix containing date and time when recording started:
+    "_YYYY_mm-DD_HH-MM_SS.flv"</eng>
+    <rus>Запись будет разделяться на отдельные файлы с суффиксом, содержащим дату и время начала записи: "_ГГГГ-мм-ДД_ЧЧ-ММ-СС.flv"</rus>
+  </p>
+
+  <p>
+    <eng>Recording by schedule is requested using a playlist fo the same format as for playback playlists.
+    The main difference of a recording playlist is that instead of specifying video sources in <i>&lt;item&gt;</i>
+    tags, "id" attributes of those tags are set to names of channels to record. Example of a recording playlist:</eng>
+    <rus>Для записи по расписанию используется плейлист такого же формата, как и для списков воспроизведения.
+    Основное отличие &mdash; вместо источников видео в теге <i>item</i> задаётся параметр "id"
+    с названием записываемого канала. Пример плейлиста для записи:</rus>
+  </p>
+<pre>
+<![CDATA[<playlist>
+  <item start="12:00" duration="30" id="channel_one"/>
+  <item duration="20" id="channel_two"/>
+</playlist>]]>
+</pre>
+
+  <p>
+    <eng>In the configuration file, recording by schedule can be requested by adding an unnamed
+    subsection into <b>mod_gst/recordings</b> section. Each unnamed subsection has two parameters:</eng>
+    <rus>В конфигурационном файле запись по расписанию задаётся в секции <b>mod_gst/recordings</b>
+    списком безымянных подсекций. В каждой подсекции определяются два параметра:</rus>
+  </p>
+
+  <moment_params>
+    <p>
+      <b>playlist</b> &mdash;
+      <eng>path to recording playlist file</eng>
+      <rus>путь к файлу плейлиста;</rus>
+    </p>
+    <p>
+      <b>record_path</b> &mdash;
+      <eng>path prefix for recorded files</eng>
+      <rus>путь к записываемым файлам.</rus>
+    </p>
+  </moment_params>
+
+  <p>
+    <eng>Example:</eng>
+    <rus>Пример:</rus>
+  </p>
+
+<pre>
+mod_gst {
+  recordings {
+    {
+      playlist = "recording_playlist.xml"
+      record_path = "/home/user/records/my_stream"
+    }
+  }
+}
+</pre>
+
+</content>
+</moment>
+

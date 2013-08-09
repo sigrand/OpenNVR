@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<download_sidebar/>
+<content>
+	<pagename>
+		<eng>Licensing</eng>
+		<rus>Лицензия</rus>
+	</pagename>
+	<title>
+		<eng>Licensing</eng>
+		<rus>Лицензия</rus>
+	</title>
+	<p>
+		<eng>
+                    <p>
+                    If you want to use Moment Video Server or its libraries in a commercial product,
+                    contact us: <a href="mailto:shatrov@gmail.com">shatrov@gmail.com</a>
+                    </p>
+
+                    <p>
+                    Moment VS team could help you by providing support, adding features you need,
+                    or by developing complete streaming solutions.
+                    Contact us for details:  <a href="mailto:shatrov@gmail.com">shatrov@gmail.com</a>
+                    </p>
+
+                    <p>
+                    Moment Video Server is open source software licensed under the
+                    <a title="GNU General Public License" href="gpl.html">GPL license</a>.
+                    </p>
+		</eng>
+		<rus>
+                    <p>
+                    Если вы хотите использовать видеосервер &laquo;Момент&raquo; или его библиотеки в своём продукте —
+                    свяжитесь с нами: <a href="mailto:shatrov@gmail.com">shatrov@gmail.com</a>
+                    </p>
+
+                    <p>
+                    Команда разработчиков видеосервера &laquo;Момент&raquo; предоставляет поддержку, разрабатывает
+                    новые модули и создаёт законченные решения для вещания потокового видео.
+                    Свяжитесь с нами, чтобы узнать подробности:
+                    <a href="mailto:shatrov@gmail.com">shatrov@gmail.com</a>
+                    </p>
+
+                    <p>
+                    Исходный код видеосервера &laquo;Момент&raquo; доступен под
+                    <a title="GNU General Public License" href="gpl.ru.html">лицензией GPL</a>.
+                    </p>
+		</rus>
+	</p>
+</content>
+</moment>
+

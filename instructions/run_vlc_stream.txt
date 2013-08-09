@@ -1,0 +1,34 @@
+INSTRUCTION HOW TO RUN VLC STREAM SERVER MULTIPLE VIDEOS
+
+http://subnets.ru/blog/?p=12
+
+1. Open first Terminal and write:
+vlc --ttl 12 --color -I telnet --telnet-password 123
+
+2. Open second Terminal and run:
+telnet localhost 4212
+
+3. For example, we need 2 streams. 
+Host ip - 192.168.10.21
+streaming endpoint - 192.168.10.21:8092
+
+In second Terminal write next:
+
+new channel1 broadcast enabled
+setup channel1 input /home/igorp/Downloads/outFashD1.mp4
+setup channel1 output #rtp{dst=192.168.10.21,port=1234,sdp=rtsp://192.168.10.21:8092/test1.sdp}
+setup channel1 loop
+
+new channel2 broadcast enabled
+setup channel2 input /home/igorp/Downloads/boyarskyD1.mp4
+setup channel2 output #rtp{dst=192.168.10.21,port=1236,sdp=rtsp://192.168.10.21:8092/test2.sdp}
+setup channel2 loop
+
+control channel1 play
+control channel2 play
+
+4. Open third Terminal and run:
+
+vlc rtsp://192.168.10.21:8092/test1.sdp
+or
+vlc rtsp://192.168.10.21:8092/test2.sdp

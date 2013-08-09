@@ -1,0 +1,32 @@
+<!-- Character entity references for ISO 8859-1 characters -->
+
+<!ENTITY nbsp "&#160;">
+<!ENTITY sect "&#167;" >
+<!ENTITY copy "&#169;">
+<!ENTITY laquo "&#171;">
+<!ENTITY reg "&#174;">
+<!ENTITY deg "&#176;">
+<!ENTITY plusmn "&#177;">
+<!ENTITY para "&#182;">
+<!ENTITY raquo "&#187;">
+<!ENTITY times "&#215;">
+
+<!-- Character entity references for symbols, mathematical symbols, and Greek letters -->
+
+<!ENTITY bull "&#8226;">
+<!ENTITY hellip "&#8230;">
+
+<!-- Character entity references for markup-significant and internationalization characters -->
+
+<!ENTITY ndash "&#8211;">
+<!ENTITY mdash "&#8212;">
+<!ENTITY lsquo "&#8216;">
+<!ENTITY rsquo "&#8217;">
+<!ENTITY sbquo "&#8218;">
+<!ENTITY ldquo "&#8220;">
+<!ENTITY rdquo "&#8221;">
+<!ENTITY bdquo "&#8222;">
+<!ENTITY lsaquo "&#8249;">
+<!ENTITY rsaquo "&#8250;" >
+<!ENTITY euro "&#8364;">
+

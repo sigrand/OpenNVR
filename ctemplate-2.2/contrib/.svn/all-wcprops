@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 31
+/svn/!svn/ver/100/trunk/contrib
+END
+highlighting.vim
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/15/trunk/contrib/highlighting.vim
+END
+tpl-mode.el
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/100/trunk/contrib/tpl-mode.el
+END
+convert_to_95.pl
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/42/trunk/contrib/convert_to_95.pl
+END
+README.contrib
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/15/trunk/contrib/README.contrib
+END

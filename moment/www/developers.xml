@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<download_sidebar/>
+<content>
+  <pagename>
+    <eng>Developers</eng>
+    <rus>Разработчикам</rus>
+  </pagename>
+  <title>
+    <eng>Information for Developers</eng>
+    <rus>Разработчикам</rus>
+  </title>
+
+  <rus>
+  <moment_toc>
+    <dl>
+      <dt>
+	<a href="developers.ru.html#order">Пояснения по порядку сборки сервера</a>
+      </dt>
+      <dt>
+	<a href="developers.ru.html#deps">Зависимости</a>
+      </dt>
+      <dt>
+	<a href="developers.ru.html#freebsd">Сборка под FreeBSD</a>
+      </dt>
+    </dl>
+  </moment_toc>
+  </rus>
+
+  <rus>
+    <br/>
+    <p>
+      <b>Рекомендуется использовать готовые бинарные сборки сервера,</b> ссылки на которые можно найти
+      в блоке &laquo;Загрузить&raquo; справа на этой странице. Бинарные сборки:
+    </p>
+    <ul>
+      <li>
+        Проверяются под высокой нагрузкой в реальных проектах;
+      </li>
+      <li>
+        Содержат важные исправления для ряда библиотек, которые использует moment (в частности,
+        для захвата MJPEG). Части этих исправлений нет в системных версиях библиотек;
+      </li>
+      <li>
+        Просты в установке и при обновлении &mdash; экономят ваше время;
+      </li>
+      <!--
+      <li>
+        При выявлении ошибок позволяют анализировать дампы ядра на любой системе.
+        В случае ручной сборки для анализа дампа нужен доступ к системе, на которой проявилась ошибка.
+      </li>
+      -->
+    </ul>
+    <br/>
+  </rus>
+
+  <p>
+    <eng>Source code of Moment VS is hosted <a href="http://github.com/erdizz">at GitHub</a>. The server is written in C++.</eng>
+    <rus>Исходный код видеосервера &laquo;Момент&raquo; размещён <a href="http://github.com/erdizz">на GitHub</a>. Сервер написан на C++.</rus>
+  </p>
+
+  <p>
+    <eng>Here's a short description of git modules which constitute Moment VS, in build order:</eng>
+    <rus>Краткое описание git-модулей, из которых состоит сервер в базовой конфигурации, в порядке сборки:</rus>
+  </p>
+
+  <ul>
+    <li>
+      <b>libmary</b> &mdash;
+      <eng>
+        base library. Event loop, files, timers, networking, multithreading, portability.
+      </eng>
+      <rus>
+        базовая библиотека. Цикл обработки событий, файлы, таймеры, работа
+        с сетевыми соединениями, поддержка многопоточности, кроссплатформенность;
+      </rus>
+    </li>
+    <!--
+    <li>
+      <b>mycpp</b> &mdash;
+      <eng>
+        secondary base library inherited from the <a href="http://mync.sourceforge.net">MyNC project</a>.
+      </eng>
+      <rus>
+        вторичная базовая библиотека, унаследованная от
+        <a href="http://mync.sourceforge.net/index.ru.html">проекта MyNC</a>;
+      </rus>
+    </li>
+    <li>
+      <b>mylang</b> &mdash;
+      <eng>library for working with machine languages.</eng>
+      <rus>библиотека для работы с машинными языками;</rus>
+    </li>
+    -->
+    <li>
+      <b>pargen</b> &mdash;
+      <eng>parser generator.</eng>
+      <rus>генератор парсеров;</rus>
+    </li>
+    <li>
+      <b>scruffy</b> &mdash;
+      <eng>preprocessor for configuration files.</eng>
+      <rus>препроцессор для конфигурационных файлов;</rus>
+    </li>
+    <!--
+    <li>
+      <b>libmoment</b> &mdash;
+      <eng>core videoserver library. Implementation of RTMP and RTMPT protocols.</eng>
+      <rus>базовая библиотека видеосервера. Поддержка протоколов RTMP, RTMPT;</rus>
+    </li>
+    -->
+    <li>
+      <b>mconfig</b> &mdash;
+      <eng>configuration file parser.</eng>
+      <rus>парсер конфигурационных файлов;</rus>
+    </li>
+    <li>
+      <b>moment</b> &mdash;
+      <!--
+      <eng>the videoserver itself. mod_rtmp and mod_file modules.</eng>
+      <rus>собственно видеосервер. Модули mod_rtmp и mod_file;</rus>
+      -->
+      <eng>core videoserver library and the videoserver itself. Implementation of RTMP and RTMPT protocols, mod_rtmp and mod_file modules.</eng>
+      <rus>собственно видеосервер и его базовая библиотека. Поддержка протоколов RTMP и RTMPT, модули mod_rtmp и mod_file;</rus>
+    </li>
+    <li>
+      <b>moment-gst</b> &mdash;
+      <eng>integration with <a href="http://gstreamer.freedesktop.org">gstreamer</a> (mod_gst module).</eng>
+      <rus>интеграция с <a href="http://gstreamer.freedesktop.org">gstreamer</a> (модуль mod_gst);</rus>
+    </li>
+    <li>
+      <b>mychat</b> &mdash;
+      <eng>Video Phone application.</eng>
+      <rus>приложение &laquo;Видеозвонки&raquo;.</rus>
+    </li>
+  </ul>
+
+  <p>
+    <eng>
+      Source code of MyPlayer web app is located at "moment" git module, in flash/mysubscriber and web/myplayer subdirs.
+    </eng>
+    <rus>
+      Код приложения &laquo;MyPlayer&raquo; находится в модуле moment, в поддиректориях flash/mysubscriber и web/myplayer.
+    </rus>
+  </p>
+
+  <p>
+    <eng>
+      Source code of VideoChat web app is located at "mychat" git module.
+    </eng>
+    <rus>
+      Код приложения &laquo;Видеозвонки&raquo; находится в модуле mychat.
+    </rus>
+  </p>
+
+  <rus>
+    <a name="order">
+    <moment_section>
+      Пояснения по порядку сборки сервера
+    </moment_section>
+    </a>
+    <ol>
+      <li>
+        При обновлении сервера из git нужно обновлять (git pull) сразу все модули;
+      </li>
+      <li>
+        При сборке сервера после обновления исходников
+        нужно пересобирать все модули строго по порядку.
+        Порядок сборки базовых модулей следующий:<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;<i>libmary, pargen, scruffy, mconfig, moment,
+            moment-gst;</i>
+      </li>
+      <li>
+        Перед сборкой очередного модуля нужно обязательно сделать make install для предыдущего модуля.
+      </li>
+    </ol>
+    <p>
+      Отход от этих правил может привести к получению сборки с ошибками,
+      т.к. межмодульные интерфейсы часто меняются.
+    </p>
+    <p>
+      Для правильной работы модуля <i>mod_gst</i> убедитесь, что в системе не установлен элемент
+      gstreamer <i>bcmdec</i> (плагин <i>crystalhd</i>).
+      Соответствующий пакет в Ubuntu называется <i>gstreamer0.10-crystalhd</i>.
+      Если этот пакет установлен, то его следует удалить.
+    </p>
+    <p>
+      <a href="build.ru.html">Пример последовательности команд для сборки из git.</a>
+    </p>
+
+    <a name="deps">
+    <moment_section>
+      Зависимости
+    </moment_section>
+    </a>
+
+    <p>
+      Для сборки сервера нужны следующие основные библиотеки:
+    </p>
+
+    <ul>
+      <li>
+        <p>
+          <a href="http://www.gtk.org/">Glib</a> последних версий
+          (протестировано с glib 2.30 и выше).
+        </p>
+      </li>
+      <li>
+        <p>
+          Шаблонизатор <a href="https://code.google.com/p/ctemplate/">ctemplate</a> версии >= 2.2.
+          Используется в <i>mod_file</i> для раздачи <i>.tpl</i>-файлов.
+          Использование ctemplate можно отключить параметром <ttt>--disable-ctemplate</ttt>
+          при конфигурировании (./configure) модуля <i>moment</i>.
+          Встроенные приложения moment (видеоплеер, видеозвонки) без ctemplate работать не будут.
+        </p>
+      </li>
+      <li>
+        <p>
+          <a href="http://gstreamer.freedesktop.org/">gstreamer 0.10</a>
+          Если использование gstreamer не требуется, то можно не собирать модуль <i>mod_gst</i>,
+          а <i>moment</i> сконфигурировать с параметром <ttt>--disable-gstreamer</ttt>.
+        </p>
+        <p>
+          Чтобы полностью задействовать возможности по захвату и перекодированию видео,
+          нужно установить все основные плагины gstreamer вместе с их зависимостями.
+          Это модули <i>gst-plugins-base, gst-plugins-good, gst-plugins-bad, gst-plugins-ugly, gst-ffmpeg.</i>
+        </p>
+      </li>
+    </ul>
+
+    <p>
+      Moment можно собрать в однопоточном варианте, что позволяет повысить производительность
+      сервера на один поток за счёт исключения примитивов синхронизации потоков.
+      Для этого <i>libmary</i> нужно конфигурировать с параметром <ttt>--disable-mt-safe</ttt>,
+      а <i>moment</i> &mdash; с параметром <ttt>--disable-gstreamer</ttt>.
+      Модуль <i>mod_gst</i> в однопоточном варианте работать не может.
+    </p>
+
+    <a name="freebsd">
+    <moment_section>
+      Сборка под FreeBSD
+    </moment_section>
+    </a>
+    <p>
+      Moment нужно собирать компилятором gcc версии не ниже 4.4.
+      Для этого можно установить свежую версию gcc/g++ из портов
+      и использовать её, задав переменные среды CC и CXX.
+    </p>
+    <p>
+      При сборке модуля <i>libmary</i> под FreeBSD нужно задать следующие флаги <i>./configure</i>:
+    </p>
+<pre>
+  ./configure --with-poll --disable-epoll
+</pre>
+  </rus>
+</content>
+</moment>
+

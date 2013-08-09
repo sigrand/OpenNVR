@@ -1,0 +1,56 @@
+# Test :)
+
+dependent:
+    {dependent_match_func}
+
+identifier:
+    *
+
+scruffy_nested-name-specifier:
+    identifier nested-name-specifier
+
+nested-name-specifier = scruffy_nested-name-specifier
+
+identifier {
+    match;
+}
+
+type:
+Void)	[void]
+Int32)	[int32]
+Int64)	[int64]
+
+problematic_grammar:
+	<type1> type <type2> type type
+
+function_definition:
+	type identifier [(] [)] function_body_opt [;]
+
+function_body:
+	[{] function_call_seq_opt [}]
+
+function_call:
+	function_name [(] [)] [;]
+
+function_name:
+	identifier) function_name)
+
+function_name {
+    match;
+    accept;
+}
+
+class_definition:
+	[class] identifier [{] function_definition_seq_opt [}] [;]
+
+global:
+A|B|f)	class_definition
+B|	function_definition
+C|)	function_call
+
+a: a) a b) b c) c
+b: a|b|c) a ||c||||d|e|) c) c
+c:
+d:
+e:
+

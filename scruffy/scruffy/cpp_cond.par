@@ -1,0 +1,86 @@
+# Preprocessor conditional expressions
+
+identifier { match }
+identifier:
+    *
+
+literal { match }
+literal:
+    *
+
+primary-expression:
+    Literal) literal
+    Braces)  [(] <expression> conditional-expression [)]
+
+unary-expression:
+    Defined)       [defined] identifier
+    DefinedBraces) [defined] [(] identifier [)]
+    Expression)    <expression> primary-expression
+    UnaryOperator) unary-operator <expression> unary-expression
+
+unary-operator:
+    Plus)       [+]
+    Minus)      [-]
+    Not)        [!]
+    Inversion)  [~]
+
+multiplicative-expression:
+    Expression) <expression> unary-expression
+    Multiply)   <left> multiplicative-expression [*] <right> unary-expression
+    Divide)     <left> multiplicative-expression [/] <right> unary-expression
+    Remainder)  <left> multiplicative-expression [%] <right> unary-expression
+
+additive-expression:
+    Expression) <expression> multiplicative-expression
+    Plus)       <left> additive-expression [+] <right> multiplicative-expression
+    Minus)      <left> additive-expression [-] <right> multiplicative-expression
+
+shift-expression:
+    Expression) <expression> additive-expression
+    LeftShift)  <left> shift-expression [<<] <right> additive-expression
+    RightShift) <left> shift-expression [>>] <right> additive-expression
+
+relational-expression:
+    Expression)     <expression> shift-expression
+    Less)           <left> relational-expression [<]  <right> shift-expression
+    Greater)        <left> relational-expression [>]  <right> shift-expression
+    LessOrEqual)    <left> relational-expression [<=] <right> shift-expression
+    GreaterOrEqual) <left> relational-expression [>=] <right> shift-expression
+
+equality-expression:
+    Expression) <expression> relational-expression
+    Equal)      <left> equality-expression [==] <right> relational-expression
+    NotEqual)   <left> equality-expression [!=] <right> relational-expression
+
+and-expression:
+    Expression) <expression> equality-expression
+    And)        <left> and-expression [&] <right> equality-expression
+
+exclusive-or-expression:
+    Expression)  <expression> and-expression
+    ExclusiveOr) <left> exclusive-or-expression [^] <right> and-expression
+
+inclusive-or-expression:
+    Expression)  <expression> exclusive-or-expression
+    InclusiveOr) <left> inclusive-or-expression [|] <right> exclusive-or-expression
+
+logical-and-expression:
+    Expression) <expression> inclusive-or-expression
+    LogicalAnd) <left> logical-and-expression [&&] <right> inclusive-or-expression
+
+logical-or-expression:
+    LogicalOr)  <left> logical-or-expression [||] <right> logical-and-expression
+    Expression) <expression> logical-and-expression
+
+# Note: this cannot be optimized with a jump from Conditional to Expression,
+# because scruffy's preprocessor expects a consistent AST as input for its
+# expression evaluator.
+conditional-expression:
+    Conditional) <conditionExpression> logical-or-expression [?]
+			 <ifExpression> conditional-expression [:]
+			 <elseExpression> conditional-expression
+    Expression)  <expression> logical-or-expression
+
+*:
+    <expression> conditional-expression
+

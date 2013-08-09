@@ -1,0 +1,5 @@
+Publisher_StreamName = "mytest"
+Publisher_EnableCam  = true
+Publisher_EnableMic  = true
+Publisher_EnableH264 = false
+Publisher_EnableAEC  = false

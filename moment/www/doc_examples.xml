@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<moment_docpage/>
+<content>
+  <pagename>
+    <eng>Documentation - Usage examples</eng>
+    <rus>Документация - Примеры использования</rus>
+  </pagename>
+  <title>
+    <eng>Usage examples</eng>
+    <rus>Примеры использования</rus>
+  </title>
+
+  <moment_toc>
+    <dl>
+      <dt>
+	<eng><a href="doc_examples.html#videochat">Video chat</a></eng>
+	<rus><a href="doc_examples.ru.html#videochat">Видеочат</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_examples.html#tv">Online TV</a></eng>
+	<rus><a href="doc_examples.ru.html#tv">Вещание онлайн ТВ</a></rus>
+      </dt>
+      <dt>
+	<eng><a href="doc_examples.html#surv">Video surveillance</a></eng>
+	<rus><a href="doc_examples.ru.html#surv">Видеонаблюдение</a></rus>
+      </dt>
+    </dl>
+  </moment_toc>
+
+  <a name="videochat">
+    <moment_section>
+      <eng>Video chat</eng>
+      <rus>Видеочат</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>A good example of organizing a video chat service based on Moment Video Server is
+    the <a href="doc_builtin.html#phone">"Video Phone" application</a>.</eng>
+    <rus>Пример организации сервиса видеочата на базе видеосервера &laquo;Момент&raquo; &mdash;
+    встроенное приложение <a href="doc_builtin.ru.html#phone">&laquo;Видеозвонки&raquo;</a>.</rus>
+  </p>
+
+  <p>
+    <eng>Web apps with arbitrary buisiness logics (video chats, broadcasts, conferences, etc.)
+    can be implemented by writing a plugin using <a href="doc_plugins.html">Moment API</a>.</eng>
+    <rus>Веб-приложение с произвольной логикой работы (видеочат, трансляции, конференции и т.п.)
+    можно построить, написав плагин с использованием <a href="doc_plugins.ru.html#api">API видеосервера</a>.</rus>
+  </p>
+
+  <a name="tv">
+    <moment_section>
+      <eng>Online TV</eng>
+      <rus>Вещание онлайн ТВ</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>To stream online TV, one can use the <a href="doc_builtin.html#player">"Video Player"</a>
+    built-in application. For a quick server setup, refer to the <a href="quickstart.html">quickstart guide</a>.</eng>
+    <rus>Для вещания Онлайн-ТВ можно использовать встроенное приложение
+    <a href="doc_builtin.ru.html#player">&laquo;Видеоплеер&raquo;</a>.
+    Для того, чтобы выполнить быструю настройку видеосервера для онлайн-вещания,
+    можно обраться к <a href="quickstart.ru.html">краткому руководству по установке</a>.</rus>
+  </p>
+
+  <a name="surv">
+    <moment_section>
+      <eng>Video surveillance</eng>
+      <rus>Видеонаблюдение</rus>
+    </moment_section>
+  </a>
+
+  <p>
+    <eng>To build a video surveillance system, refer to the following sections of this document:
+    <a href="doc_config.html#transcoding">Video grabbing and transcoding</a> and
+    <a href="doc_config.html#recording">Video recording</a>.</eng>
+    <rus>Для построения системы видеонаблюдения обратитесь к разделам документации
+    <a href="doc_config.ru.html#transcoding">о захвате видео</a> и
+    <a href="doc_config.ru.html#recording">о записи видео на диск</a>.</rus>
+  </p>
+
+</content>
+</moment>
+

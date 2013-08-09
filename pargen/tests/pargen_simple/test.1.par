@@ -1,0 +1,15 @@
+class:
+    	[class]
+
+template:
+	[template] [{] class [}]
+
+file:
+	class
+	template
+
+choice:
+One)	[one] file
+Two)	[two] file
+Three)	[three] file
+

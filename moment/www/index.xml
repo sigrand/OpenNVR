@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mync SYSTEM "entities.dtd">
+
+<moment>
+<download_sidebar/>
+<content>
+  <pagename>
+    <eng>Home</eng>
+    <rus>Главная</rus>
+  </pagename>
+  <title>
+    <eng>Welcome!</eng>
+    <rus>Видеосервер &laquo;Момент&raquo;</rus>
+  </title>
+
+  <p>
+    <eng>Moment Video Server lets you organize live video streaming on the Internet with ease.</eng>
+    <!--All the user has to do to watch the video is to open server's web page in a browser.-->
+    <eng>The server can be used as a base for video communication services (video chat, conferencing),
+    online broadcasting, video surveillance systems.
+    <!--Here's a screenshot
+    of what the user sees when using MyPlayer web app, which is bundled with Moment VS:--></eng>
+    <rus>С помощью видеосервера &laquo;Момент&raquo; можно с минимальными усилиями организовать
+    вещание потокового видео в Интернете.</rus>
+<!--    Для просмотра видео
+    пользователю достаточно открыть страницу видеосервера в интернет-браузере. -->
+    <rus>На основе видеосервера можно построить сервисы для живого общения (трансляции, конференции, видеочат),
+    организовать вещание онлайн-ТВ, создать систему видеонаблюдения.
+    <!--Скриншот плеера &laquo;MyPlayer&raquo;, входящего в комплект видеосервера:--></rus>
+  </p>
+
+  <div style="width: 800px">
+    <a style="float: left; margin: 50px; margin-left: -50px; margin-top: 50px; margin-bottom: 45px; vertical-align: middle;" href="img/mychat_big.png"><img src="img/mychat.png"/></a>
+    <div style="padding-top: 20px; padding-bottom: 30px"><a style="margin-left: 15px; vertical-align: middle;" href="img/myplayer_big.png"><img src="img/myplayer.png"/></a></div>
+  <p>
+    <eng>Moment VS can stream video from numerous sources: video files, IP cameras, web cameras, from other streaming servers.
+    <!-- Moment VS is easy to install and easy to use. It is a robust high-performance solution.-->
+    For a more complete list of features see the <a href="doc_desc.html">technical description</a>.</eng>
+    <rus>&laquo;Момент&raquo; может транслировать видео из самых разных источников &mdash; из видеофайлов,
+    с IP-камер, с веб-камер, с других серверов потокового вещания.
+    <!--&laquo;Момент&raquo; прост в установке и использовании, отличается высокой производительностью и надёжностью.--></rus>
+    <rus>Подробная информация о возможностях,
+    предоставляемых видеосервером, изложена в <a href="doc_desc.ru.html">техническом описании</a>.</rus>
+  </p>
+  </div>
+
+<!--    <div style="text-align: center; padding-top: 1em; padding-bottom: 1em"> -->
+<!--
+  <div style="background-color: white; width: 900px; margin-left: -40px;">
+    <table border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td>
+	  <a style="vertical-align: middle;" href="img/mychat_big.png"><img src="img/mychat.png"/></a>
+	</td>
+	<td>
+	  <a style="vertical-align: middle;" href="img/myplayer_big.png"><img src="img/myplayer.png"/></a>
+	</td>
+      </tr>
+    </table>
+  <div>
+-->
+
+<!--
+  <p>
+    <eng>Moment VS can stream video from various sources: files on disk, IP cameras, web cameras, from other streaming servers.
+    Moment VS is easy to install and easy to use. It is a robust high-performance solution.
+    For a more complete list of server features see the technical description.</eng>
+    <rus>&laquo;Moment&raquo; может транслировать видео из самых разных источников &mdash; из видеофайлов
+    на диске, с IP-камер, с веб-камеры, с других серверов потокового вещания
+    (например, для ретрансляции телеканалов).
+    &laquo;Moment&raquo; прост в установке и использовании, отличается высокой производительностью и надёжностью.
+    Подробная информация о возможностях,
+    предоставляемых видеосервером, изложена в <a href="wiki/index.php?title=Moment:Features:Ru">техническом описании</a></rus>
+  </p>
+  -->
+  <div style="clear: both">
+
+  <eng>
+  <p>
+    <eng>To start streaming with Moment Video Server, follow the <a href="quickstart.html">quick start guide</a>.</eng><br/>
+    <eng>Moment VS works under Linux, Windows and FreeBSD.</eng>
+  </p>
+  </eng>
+
+  <rus>
+  <p>
+    <rus>Чтобы начать вещание с помощью сервера &laquo;Момент&raquo;, следуйте
+    <a href="quickstart.ru.html">краткой инструкции</a> по установке.</rus>
+    <rus>&laquo;Момент&raquo; работает под управлением ОС Linux, Windows и FreeBSD.</rus>
+  </p>
+  </rus>
+  </div>
+
+</content>
+</moment>
+

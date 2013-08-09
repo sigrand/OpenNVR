@@ -1,0 +1,1414 @@
+#   Scruffy - C/C++ parser and source code analyzer
+#   Copyright (C) 2011 Dmitry Shatrov
+#
+#   This library is free software; you can redistribute it and/or
+#   modify it under the terms of the GNU Lesser General Public
+#   License as published by the Free Software Foundation; either
+#   version 2.1 of the License, or (at your option) any later version.
+#
+#   This library is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#   Lesser General Public License for more details.
+#
+#   You should have received a copy of the GNU Lesser General Public
+#   License along with this library; if not, write to the Free Software
+#   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+
+# Deprecated
+#literal { match }
+
+# Deprecated
+#identifier { match }
+
+# Deprecated
+#declaration { accept }
+
+
+# Scruffy grammars
+
+    # TODO Use TokenMatchFunc ("{cpp_scruffy_not_a_brace_token_match_func}")
+    scruffy_not-a-brace: *
+    scruffy_not-a-brace { match }
+
+    scruffy_not-a-parenthesis: *
+    scruffy_not-a-parenthesis { match }
+
+    scruffy_skip-compound-statement { accept }
+    scruffy_skip-compound-statement:
+	A) scruffy_not-a-brace_seq
+	B) [{] scruffy_skip-compound-statement_seq_opt [}]
+
+    scruffy_skip_excpression-list { accept }
+    scruffy_skip-expression-list:
+	A) scruffy_not-a-parenthesis_seq
+	B) [(] scruffy_skip-expression-list_seq_opt [)]
+
+    scruffy_skip-exception-declaration { accept }
+    scruffy_skip-exception-declaration:
+	A) scruffy_not-a-parenthesis_seq
+	B) [(] scruffy_skip-exception-declaration_seq_opt [)]
+
+    # Part of nested-name-specifier
+    scruffy_global-scope { accept }
+    scruffy_global-scope:
+	[::]
+
+#    scruffy_test_global-scope:
+#	[::]
+
+#    scruffy_test_opening-parenthesis:
+#	[(]
+
+# (end of scruffy grammars)
+
+
+literal:
+    {cpp_literal_token_match_func}
+
+string-literal:
+    *
+# TODO
+#    {cpp_string_literal_token_match_func}
+
+
+# Keywords
+
+identifier:
+    {cpp_identifier_token_match_func}
+
+
+# Basic concepts
+
+translation-unit:
+    declaration_seq
+
+
+# Expressions
+
+primary-expression:
+    Literal)      literal /cpp_accept_primary_expression/
+
+    This)         [this] /!cpp_accept_primary_expression/
+
+    Braces)       [(] expression [)] /!cpp_accept_primary_expression/
+
+    IdExpression) /*cpp_begin_id/ id-expression /!cpp_accept_primary_expression/
+
+id-expression:
+    QualifiedId)   qualified-id
+
+		   # Adding dummy nested name state, because some subgrammars
+		   # in unqualified-id require nested name state.
+    UnqualifiedId) /*cpp_begin_nested_name/ unqualified-id
+
+unqualified-id:
+    Destructor)         [~] class-name
+
+    OperatorFunction)   operator-function-id
+
+    ConversionFunction) conversion-function-id
+
+    # This is used only for function template explicit instantiation,
+    # explicit specialization, and calls for function templates with
+    # an explicit list of template arguments.
+    # I.e., this form is never used in declarators or using declarations.
+    Template)           template-id
+
+    Identifier)         identifier
+
+qualified-id:
+    NestedNameSpecifier) /!*cpp_begin_nested_name/
+			 scruffy_global-scope_opt
+			 scruffy_nested-name-specifier
+			 / cpp_accept_qualified_id_nested_name/
+			 [template]_opt unqualified-id
+
+    Identifier)          /!*cpp_begin_nested_name/
+			 scruffy_global-scope
+			 /!cpp_accept_qualified_id_nested_name/
+			 (qualified-id:OperatorFunction@A)
+			 identifier
+
+    OperatorFunction)    /!*cpp_begin_nested_name/
+			 scruffy_global-scope
+			 /!cpp_accept_qualified_id_nested_name/
+			 @A
+			 (qualified-id:Template@A)
+			 operator-function-id
+
+    # See the comment for unqualified-id:Template above. The same applies here.
+    Template)            /!*cpp_begin_nested_name/
+			 scruffy_global-scope
+			 /!cpp_accept_qualified_id_nested_name/
+			 @A
+			 template-id
+
+nested-name-specifier:
+    Template) class-or-namespace-name
+	      (nested-name-specifier:Generic@A)
+	      [::]
+	      /cpp_NestedNameSpecifier_ClassOrNamespaceName_accept_func/
+	      (nested-name-specifier:Generic@B)
+	      [template]
+	      nested-name-specifier
+
+    Generic)  class-or-namespace-name
+	      @A
+	      [::]
+	      /!cpp_NestedNameSpecifier_ClassOrNamespaceName_accept_func/
+	      @B
+	      nested-name-specifier_opt
+
+#scruffy_nested-name-specifier {begin}
+scruffy_nested-name-specifier = nested-name-specifier
+
+class-or-namespace-name:
+    ClassName)     class-name
+    NamespaceName) namespace-name
+
+
+# Expressions
+
+# Deprecated postfix-expression { accept }
+postfix-expression:
+    Subscripting)              postfix-expression
+			       [[] / *cpp_begin_expression/ expression []]
+			       /cpp_accept_postfix_expression/
+
+    FunctionCall)              postfix-expression
+			       [(] /!*cpp_begin_expression/ expression-list_opt [)]
+			       /!cpp_accept_postfix_expression/
+
+    TypeConversion)            /*cpp_begin_declaration/ simple-type-specifier
+			       [(] /!*cpp_begin_expression/ expression-list_opt [)]
+			       /!cpp_accept_postfix_expression/
+
+    TypenameTypeConversion)    [typename]
+			       /!*cpp_begin_nested_name/
+			       scruffy_global-scope_opt
+			       scruffy_nested-name-specifier
+			       (postfix-expression:TemplateTypeConversion@A)
+			       identifier [(] expression-list_opt [)]
+			       /!cpp_accept_postfix_expression/
+
+    TemplateTypeConversion)    [typename]
+			       /!*cpp_begin_nested_name/
+			       scruffy_global-scope_opt
+			       scruffy_nested-name-specifier
+			       @A
+			       [template]_opt
+			       template-id [(] expression-list_opt [)]
+			       /!cpp_accept_postfix_expression/
+
+    DotMemberAccess)           postfix-expression
+			       [.]
+			       (postfix-expression:DotPseudoDestructorCall@A)
+			       [template]_opt /!*cpp_begin_id/ id-expression
+			       /!cpp_accept_postfix_expression/
+
+    ArrowMemberAccess)         postfix-expression
+			       [->] [template]_opt /!*cpp_begin_id/ id-expression
+			       /!cpp_accept_postfix_expression/
+
+    DotPseudoDestructorCall)   postfix-expression
+			       [.]
+			       @A
+			       pseudo-destructor-name
+			       /!cpp_accept_postfix_expression/
+
+    ArrowPseudoDestructorCall) postfix-expression
+			       [->]
+			       pseudo-destructor-name
+			       /!cpp_accept_postfix_expression/
+
+    PostfixIncrement)          postfix-expression
+			       [++]
+			       /!cpp_accept_postfix_expression/
+
+    PostfixDecrement)          postfix-expression
+			       [--]
+			       /!cpp_accept_postfix_expression/
+
+    DynamicCast)               [dynamic_cast]
+			       [<] / *cpp_begin_typeid/ type-id [>]
+			       [(] /!*cpp_begin_expression/ expression [)]
+			       /!cpp_accept_postfix_expression/
+
+    StaticCast)                [static_cast]
+			       [<] /!*cpp_begin_typeid/ type-id [>]
+			       [(] /!*cpp_begin_expression/ expression [)]
+			       /!cpp_accept_postfix_expression/
+
+    ReinterpretCast)           [reinterpret_cast]
+			       [<] /!*cpp_begin_typeid/ type-id [>]
+			       [(] /!*cpp_begin_expression/ expression [)]
+			       /!cpp_accept_postfix_expression/
+
+    ConstCast)                 [const_cast]
+			       [<] /!*cpp_begin_typeid/ type-id [>]
+			       [(] /!*cpp_begin_expression/ expression [)]
+			       /!cpp_accept_postfix_expression/
+
+    TypeidTypeid)              [typeid] [(] /!*cpp_begin_typeid/ type-id [)]
+			       /!cpp_accept_postfix_expression/
+
+    TypeidExpression)          [typeid] [(] /!*cpp_begin_expression/ expression [)]
+			       /!cpp_accept_postfix_expression/
+
+    Expression)                primary-expression
+
+expression-list:
+# TODO special acceptor for lists
+    ExpressionList) assignment-expression
+		    (expression-list:Expression@A)
+		    [,] expression-list
+
+    Expression)     assignment-expression
+		    @A
+
+pseudo-destructor-name:
+    TypeName) /!*cpp_begin_nested_name/
+	      scruffy_global-scope_opt
+	      scruffy_nested-name-specifier_opt
+	      (pseudo-destructor-name:Template@A)
+	      type-name [::] [~] <destructorTypeName> type-name
+
+    Template) /!*cpp_begin_nested_name/
+	      scruffy_global-scope_opt
+	      scruffy_nested-name-specifier
+	      @A
+	      (pseudo-destructor-name:Basic@A)
+	      [template] template-id [::] [~] type-name
+
+    Basic)     /!*cpp_begin_nested_name/
+	       scruffy_global-scope_opt
+	       scruffy_nested-name-specifier_opt
+	       @A
+	       [~] type-name
+
+unary-expression:
+    PrefixIncrement)  [++]           /!*cpp_begin_expression/ cast-expression  / cpp_accept_unary_expression/
+    PrefixDecrement)  [--]           /!*cpp_begin_expression/ cast-expression  /!cpp_accept_unary_expression/
+    UnaryOperator)    unary-operator /!*cpp_begin_expression/ cast-expression  /!cpp_accept_unary_expression/
+    SizeofExpression) [sizeof]       /!*cpp_begin_expression/ unary-expression /!cpp_accept_unary_expression/
+    SizeofTypeid)     [sizeof] [(] /!*cpp_begin_typeid/ type-id [)]            /!cpp_accept_unary_expression/
+    NewExpression)    new-expression
+    DeleteExpression) delete-expression
+    Expression)       postfix-expression
+
+unary-operator:
+    Indirection)     [*]
+    PointerTo)       [&]
+    UnaryPlus)       [+]
+    UnaryMinus)      [-]
+    LogicalNegation) [!]
+    OnesComplement)  [~]
+
+new-expression:
+    Basic)  /!*cpp_begin_nested_name/
+	    scruffy_global-scope_opt
+	    [new] new-placement_opt
+	    (new-expression:Braces@A)
+	    new-type-id new-initializer_opt
+
+    Braces) /!*cpp_begin_nested_name/
+	    scruffy_global-scope_opt
+	    [new] new-placement_opt
+	    @A
+	    [(] /!*cpp_begin_typeid/ type-id [)] new-initializer_opt
+
+new-placement:
+    [(] expression-list [)]
+
+new-type-id:
+    /!*cpp_begin_declaration/ scruffy_type-specifier-seq new-declarator_opt
+
+new-declarator:
+    PtrOperator)         ptr-operator new-declarator_opt
+    DirectNewDeclarator) direct-new-declarator
+
+direct-new-declarator:
+    Expression)          [[] expression []]
+    DirectNewDeclarator) direct-new-declarator [[] constant-expression []]
+
+new-initializer:
+    [(] expression-list_opt [)]
+
+delete-expression:
+    Delete)      /!*cpp_begin_nested_name/
+		 scruffy_global-scope_opt
+		 [delete]
+		 (delete-expression:DeleteArray@A)
+		 cast-expression
+
+    DeleteArray) /!*cpp_begin_nested_name/
+		 scruffy_global-scope_opt
+		 [delete]
+		 @A
+		 [[] []]
+		 cast-expression
+
+cast-expression:
+    Cast)       [(] /!*cpp_begin_typeid/ type-id [)]
+		/!*cpp_begin_expression/
+		cast-expression
+		/cpp_accept_cast_expression/
+
+    Expression) unary-expression
+
+pm-expression:
+    DotPm)      pm-expression [.*]  /!*cpp_begin_expression/ cast-expression
+    ArrowPm)    pm-expression [->*] /!*cpp_begin_expression/ cast-expression
+    Expression) cast-expression
+
+multiplicative-expression:
+    Multiplication) multiplicative-expression [*]
+		    /!*cpp_begin_expression/ pm-expression
+		    /cpp_accept_multiplicative_expression/
+
+    Division)       multiplicative-expression [/]
+		    /!*cpp_begin_expression/ pm-expression
+		    /!cpp_accept_multiplicative_expression/
+
+    Remainder)      multiplicative-expression [%]
+		    /!*cpp_begin_expression/ pm-expression
+		    /!cpp_accept_multiplicative_expression/
+
+    Expression)     pm-expression
+
+additive-expression:
+    Addition)    additive-expression [+]
+		 /!*cpp_begin_expression/ multiplicative-expression
+		 /cpp_accept_additive_expression/
+
+    Subtraction) additive-expression [-]
+		 /!*cpp_begin_expression/ multiplicative-expression
+		 /!cpp_accept_additive_expression/
+
+    Expression)  multiplicative-expression
+
+shift-expression:
+    LeftShift)  shift-expression [<<]
+		/!*cpp_begin_expression/ additive-expression
+		/cpp_accept_shift_expression/
+
+    RightShift) shift-expression [>>]
+		/!*cpp_begin_expression/ additive-expression
+		/!cpp_accept_shift_expression/
+
+    Expression) additive-expression
+
+relational-expression:
+    Less)           relational-expression [<]
+		    /!*cpp_begin_expression/ shift-expression
+		    /cpp_accept_relational_expression/
+
+    Greater)        relational-expression [>]
+		    /!*cpp_begin_expression/ shift-expression
+		    /!cpp_accept_relational_expression/
+
+    LessOrEqual)    relational-expression [<=]
+		    /!*cpp_begin_expression/ shift-expression
+		    /!cpp_accept_relational_expression/
+
+    GreaterOrEqual) relational-expression [>=]
+		    /!*cpp_begin_expression/ shift-expression
+		    /!cpp_accept_relational_expression/
+
+    Expression)     shift-expression
+
+equality-expression:
+    Equal)      equality-expression [==]
+		/!*cpp_begin_expression/ relational-expression
+		/cpp_accept_equality_expression/
+
+    NotEqual)   equality-expression [!=]
+		/!*cpp_begin_expression/ relational-expression
+		/!cpp_accept_equality_expression/
+
+    Expression) relational-expression
+
+and-expression:
+    BitwiseAnd) and-expression [&]
+		/!*cpp_begin_expression/ equality-expression
+		/cpp_accept_and_expression/
+
+    Expression) equality-expression
+
+exclusive-or-expression:
+    BitwiseExclusiveOr) exclusive-or-expression [^]
+			/!*cpp_begin_expression/ and-expression
+			/cpp_accept_exclusive_or_expression/
+
+    Expression)         and-expression
+
+inclusive-or-expression:
+    BitwiseInclusiveOr) inclusive-or-expression [|]
+			/!*cpp_begin_expression/ exclusive-or-expression
+			/cpp_accept_inclusive_or_expression/
+
+    Expression)         exclusive-or-expression
+
+logical-and-expression:
+    LogicalAnd) logical-and-expression [&&]
+		/!*cpp_begin_expression/ inclusive-or-expression
+		/cpp_accept_logical_and_expression/
+
+    Expression) inclusive-or-expression
+
+logical-or-expression:
+    LogicalOr)  logical-or-expression [||]
+		/!*cpp_begin_expression/ logical-and-expression
+		/cpp_accept_logical_or_expression/
+
+    Expression) logical-and-expression
+
+# TODO Handle conditional-expression in cpp_parser.cpp
+conditional-expression:
+#    Conditional) /!*cpp_begin_expression/ logical-or-expression
+    Conditional) logical-or-expression
+		 (conditional-expression:Expression@A)
+		 [?]
+		 /!*cpp_begin_expression/ expression [:]
+		 /!*cpp_begin_expression/ assignment-expression
+
+    Expression)  logical-or-expression
+		 @A
+
+assignment-expression:
+    Assignment) /!*cpp_begin_expression/ logical-or-expression
+# TODO An optimization is possible if we jumped from here right to conditional-expression:Conditional
+		assignment-operator
+		/!*cpp_begin_expression/ assignment-expression
+		/cpp_accept_assignment_expression/
+
+    Throw)      throw-expression
+
+    Expression) conditional-expression
+
+assignment-operator:
+    Generic)            [=]
+    Multiplication)     [*=]
+    Division)           [/=]
+    Remainder)          [%=]
+    Addition)           [+=]
+    Subtraction)        [-=]
+    RightShift)         [>>=]
+    LeftShift)          [<<=]
+    BitwiseAnd)         [&=]
+    BitwiseExclusiveOr) [^=]
+    BitwiseInclusiveOr) [|=]
+
+expression:
+    Comma)      expression [,]
+		/!*cpp_begin_expression/ assignment-expression
+		/cpp_accept_comma_expression/
+
+    Expression) assignment-expression
+
+constant-expression:
+    conditional-expression
+
+
+# Statements
+
+statement:
+    LabeledStatement)     labeled-statement
+    DeclarationStatement) declaration-statement
+    ExpressionStatement)  expression-statement
+    CompoundStatement)    compound-statement
+    SelectionStatement)   selection-statement
+    IterationStatement)   iteration-statement
+    JumpStatement)        jump-statement
+    TryBlock)             try-block
+
+labeled-statement:
+    Label)   identifier                 [:] / cpp_LabeledStatement_accept_func/ / *cpp_begin_statement/ statement
+    Case)    [case] constant-expression [:] /!cpp_LabeledStatement_accept_func/ /!*cpp_begin_statement/ statement
+    Default) [default]                  [:] /!cpp_LabeledStatement_accept_func/ /!*cpp_begin_statement/ statement
+
+expression-statement { accept }
+expression-statement:
+    /!*cpp_begin_expression/ expression_opt [;]
+
+compound-statement:
+#    [{] /cpp_CompoundStatement_accept_func/ statement_seq_opt [}]
+
+    [{]
+    /*cpp_begin_function_definition/
+    /*cpp_begin_temporal_namespace/
+    /!*cpp_begin_statement/
+    statement_seq_opt
+    [}]
+    /cpp_accept_compound_statement/
+
+#    [{] /cpp_CompoundStatement_accept_func/ statement-seq_opt [}]
+
+#statement-seq:
+#    StatementSeq) statement-seq statement
+#    Statement)    statement
+
+selection-statement:
+    IfElse) [if] [(] /!*cpp_begin_temporal_namespace/ / *cpp_begin_condition/ condition [)]
+		    /!*cpp_begin_statement/ statement
+		    (selection-statement:If@A)
+		    [else] <elseStatement> statement
+		    /cpp_accept_selection_statement/
+
+    If)     [if] [(] /!*cpp_begin_temporal_namespace/ /!*cpp_begin_condition/ condition [)]
+		    /!*cpp_begin_statement/ statement
+		    @A
+		    /!cpp_accept_selection_statement/
+
+    Switch) [switch] [(] /!*cpp_begin_temporal_namespace/ /!*cpp_begin_condition/ condition [)]
+		    /!*cpp_begin_statement/ statement
+		    /!cpp_accept_selection_statement/
+
+condition:
+    Expression) /!*cpp_begin_expression/ expression /cpp_accept_condition/
+
+    Declarator) /!*cpp_begin_declaration/
+		scruffy_type-specifier-seq
+		/*cpp_begin_dummy_constructor_ambiguity/
+		scruffy_declarator
+		[=]
+		/!*cpp_begin_expression/
+		assignment-expression
+		/!cpp_accept_condition/
+
+iteration-statement:
+    While)   [while] /!*cpp_begin_temporal_namespace/ [(] /!*cpp_begin_condition/ condition [)]
+		     /!*cpp_begin_statement/ statement
+		     /cpp_accept_iteration_statement/
+
+    DoWhile) [do] /!*cpp_begin_temporal_namespace/ /!*cpp_begin_statement/ statement
+		     [while] [(] /!*cpp_begin_expression/ expression [)] [;]
+		     /!cpp_accept_iteration_statement/
+
+    For)     [for] /!*cpp_begin_temporal_namespace/
+		     [(] /*cpp_begin_for_init_statement/ for-init-statement
+		     /!*cpp_begin_condition/ condition_opt [;] /!*cpp_begin_expression/ expression_opt [)]
+		     /!*cpp_begin_statement/ statement
+		     /!cpp_accept_iteration_statement/
+
+for-init-statement:
+    Declaration) /!*cpp_begin_declaration/ simple-declaration /cpp_accept_for_init_statement/
+
+    Expression)  /!*cpp_begin_statement/ expression-statement /!cpp_accept_for_init_statement/
+
+jump-statement { accept }
+jump-statement:
+    Break)    [break] [;]
+    Continue) [continue] [;]
+    Return)   [return] expression_opt [;]
+    Goto)     [goto] identifier [;]
+
+declaration-statement { begin; accept }
+declaration-statement:
+    block-declaration
+
+
+# Declarations
+
+declaration-seq:
+    DeclarationSeq) declaration-seq declaration
+    Declaration)    declaration
+
+declaration:
+	BlockDeclaration)       block-declaration
+    AST|FunctionDefinition)     function-definition
+	TemplateDeclaration)    template-declaration
+	ExplicitInstantiation)  explicit-instantiation
+	ExplicitSpecialization) explicit-specialization
+	LinkageSpecification)   linkage-specification
+	NamespaceDefinition)    namespace-definition
+
+block-declaration:
+    SimpleDeclaration)        simple-declaration
+    AsmDefinition)            asm-definition
+    NamespaceAliasDefinition) namespace-alias-definition
+    UsingDeclaration)         using-declaration
+    UsingDirective)           using-directive
+
+simple-declaration:
+    / *cpp_begin_constructor_ambiguity/
+    /!*cpp_begin_declaration/
+    scruffy_decl-specifier-seq_opt
+    init-declarator-list_opt
+    (function-definition:FunctionBody@FunctionDefinition cpp_simple_declaration__function_definition_jump)
+    [;]
+
+decl-specifier { match }
+decl-specifier:
+    StorageClassSpecifier) storage-class-specifier
+			   /cpp_accept_decl_specifier__storage_class_specifier/
+
+    TypeSpecifier)         type-specifier
+
+    FunctionSpecifier)     function-specifier
+			   /cpp_accept_decl_specifier__function_specifier/
+
+    Friend)                [friend]
+			   /cpp_accept_decl_specifier__friend/
+
+    Typedef)               [typedef]
+			   /cpp_accept_decl_specifier__typedef/
+
+decl-specifier-seq:
+    decl-specifier decl-specifier-seq_opt
+
+#scruffy_decl-specifier-seq { accept }
+scruffy_decl-specifier-seq { begin accept }
+scruffy_decl-specifier-seq = decl-specifier-seq
+
+storage-class-specifier:
+    Auto)     [auto]
+    Register) [register]
+    Static)   [static]
+    Extern)   [extern]
+    Mutable)  [mutable]
+
+function-specifier:
+    Inline)   [inline]
+    Virtual)  [virtual]
+    Explicit) [explicit]
+
+typedef-name { match }
+typedef-name:
+    identifier
+
+type-specifier:
+    SimpleTypeSpecifier)     simple-type-specifier
+    ClassSpecifier)          class-specifier
+    EnumSpecifier)           enum-specifier
+    ElaboratedTypeSpecifier) elaborated-type-specifier
+    CvQualifier)             cv-qualifier /cpp_accept_type_specifier__cv_qualifier/
+
+simple-type-specifier:
+    Void)       [void]     / cpp_accept_simple_type_specifier/
+    Bool)       [bool]     /!cpp_accept_simple_type_specifier/
+    Int)        [int]      /!cpp_accept_simple_type_specifier/
+    Char)       [char]     /!cpp_accept_simple_type_specifier/
+    Unsigned)   [unsigned] /!cpp_accept_simple_type_specifier/
+    Long)       [long]     /!cpp_accept_simple_type_specifier/
+    Float)      [float]    /!cpp_accept_simple_type_specifier/
+    Double)     [double]   /!cpp_accept_simple_type_specifier/
+    Short)      [short]    /!cpp_accept_simple_type_specifier/
+    WcharT)     [wchar_t]  /!cpp_accept_simple_type_specifier/
+    Signed)     [signed]   /!cpp_accept_simple_type_specifier/
+
+    TypeName)   /!*cpp_begin_nested_name/
+		scruffy_global-scope_opt
+		(simple-type-specifier:TemplateId@A)
+		scruffy_nested-name-specifier_opt
+		(simple-type-specifier:TemplateId@B cpp_simple_type_specifier__template_id_jump)
+		type-name
+		/!cpp_accept_simple_type_specifier/
+
+    TemplateId) /!*cpp_begin_nested_name/
+		scruffy_global-scope_opt
+		@A
+		scruffy_nested-name-specifier
+		@B
+		[template]
+		template-id
+		/!cpp_accept_simple_type_specifier/
+
+type-name:
+    ClassName)   class-name
+    EnumName)    enum-name
+    TypedefName) typedef-name
+
+elaborated-type-specifier:
+    Class)            class-key
+		      /!*cpp_begin_nested_name/
+		      scruffy_global-scope_opt
+		      scruffy_nested-name-specifier_opt
+		      identifier
+		      /cpp_accept_elaborated_type_specifier/
+
+    Enum)             [enum]
+		      /!*cpp_begin_nested_name/
+		      scruffy_global-scope_opt
+		      scruffy_nested-name-specifier_opt
+		      identifier
+		      /!cpp_accept_elaborated_type_specifier/
+
+    Typename)         [typename]
+		      /!*cpp_begin_nested_name/
+		      scruffy_global-scope_opt
+		      scruffy_nested-name-specifier
+		      (elaborated-type-specifier:TypenameTemplate@A)
+		      identifier
+		      /!cpp_accept_elaborated_type_specifier/
+
+    TypenameTemplate) [typename]
+		      /!*cpp_begin_nested_name/
+		      scruffy_global-scope_opt
+		      scruffy_nested-name-specifier
+		      @A
+		      [template]_opt
+		      template-id
+		      /!cpp_accept_elaborated_type_specifier/
+
+enum-name { match }
+enum-name:
+    identifier
+
+enum-specifier:
+    [enum] identifier_opt [{] enumerator-list_opt [}] /cpp_accept_enum_specifier/
+
+enumerator-list:
+    EnumeratorList)       enumerator-definition
+			  (enumerator-list:EnumeratorDefinition@A)
+			  [,] enumerator-list
+
+    EnumeratorDefinition) enumerator-definition
+			  @A
+
+enumerator-definition:
+    Initializer) enumerator
+		 (enumerator-definition:Enumerator@A)
+		 [=] constant-expression
+
+    Enumerator)  enumerator
+		 @A
+
+enumerator:
+    identifier
+
+#namespace-name:
+#a)    original-namespace-name
+#b)    namespace-alias
+
+namespace-name { match }
+namespace-name:
+    identifier
+
+#original-namespace-name:
+#    identifier
+
+namespace-definition:
+    NamedNamespaceDefinition)   named-namespace-definition
+    UnnamedNamespaceDefinition) unnamed-namespace-definition
+
+#named-namespace-definition:
+#a)    original-namespace-definition
+#b)    extension-namespace-definition
+
+named-namespace-definition { accept }
+named-namespace-definition:
+    [namespace] identifier [{] /cpp_NamedNamespaceDefinition_Identifier_accept_func/ namespace-body [}]
+
+#original-namespace-definition:
+#    [namespace] identifier [{] namespace-body [}]
+
+#extension-namespace-definition:
+#    [namespace] original-namespace-name [{] namespace-body [}]
+
+unnamed-namespace-definition:
+    [namespace] [{] namespace-body [}]
+
+namespace-body:
+    declaration-seq_opt
+
+#namespace-alias:
+#    identifier
+
+namespace-alias-definition:
+    [namespace] identifier [=] qualified-namespace-specifier [;]
+
+qualified-namespace-specifier:
+    /!*cpp_begin_nested_name/ scruffy_global-scope_opt scruffy_nested-name-specifier_opt namespace-name
+
+using-declaration:
+    NestedNameSpecifier) [using] [typename]_opt
+			  /!*cpp_begin_nested_name/
+			  scruffy_global-scope_opt
+			  scruffy_nested-name-specifier
+			  unqualified-id [;]
+
+    Using)               [using]
+			 /!*cpp_begin_nested_name/
+			 scruffy_global-scope
+			 unqualified-id [;]
+
+using-directive:
+    [using] [namespace]
+    /!*cpp_begin_nested_name/ scruffy_global-scope_opt scruffy_nested-name-specifier_opt
+    namespace-name [;]
+
+asm-definition:
+    [asm] [(] string-literal [)] [;]
+
+linkage-specification:
+    DeclarationSeq) [extern] string-literal
+		    (linkage-specification:Declaration@A)
+		    [{] declaration-seq_opt [}]
+
+    Declaration)    [extern] string-literal
+		    @A
+		    declaration
+
+
+# Declarators
+
+# 1) Fine caching would solve this.
+# 2) The problem is not in right-recursion.
+#    The problem is that this is actually a list.
+init-declarator-list:
+    InitDeclaratorList) init-declarator
+			(init-declarator-list:InitDeclarator@A)
+			[,]
+			/*cpp_reset_declarator/
+			init-declarator-list
+
+    InitDeclarator)     init-declarator
+			@A
+
+# --- ALT ---
+
+# The first variant (the following one) looks fine...
+#___init-declarator-list:
+#    init-declarator ___init-declarator-ext_opt
+
+#___init-declarator-ext:
+#    [,] ___init-declarator-list
+
+# (anonymous subgrammar)
+#__init-declarator-list:
+#    init-declarator ([,] init-declarator-list)_opt
+
+#_init-declarator-list:
+#    init-declarator _next-init-declarator_opt
+
+#_next_init-declarator:
+#a)    _next-init-declarator [,] init-declarator
+#b)    [,] init-declarator
+
+# --- (ALT) ---
+
+init-declarator:
+    scruffy_declarator
+    /*cpp_begin_initializer/ initializer_opt
+    /cpp_accept_init_declarator_initializer/
+
+declarator:
+    PtrOperator)      ptr-operator declarator_opt
+    DirectDeclarator) direct-declarator
+
+# Deprecated
+#
+#scruffy_declarator_common { begin, match }
+#scruffy_declarator_common = declarator
+#
+#scruffy_declarator { match }
+#scruffy_declarator = scruffy_declarator_common
+#
+#scruffy_abstract-declarator { match }
+#scruffy_abstract-declarator = scruffy_declarator_common
+#
+#scruffy_any-declarator = scruffy_declarator_common
+
+scruffy_declarator_common { begin }
+scruffy_declarator_common = declarator
+
+scruffy_declarator { match }
+scruffy_declarator = scruffy_declarator_common
+
+scruffy_abstract-declarator { match }
+scruffy_abstract-declarator = scruffy_declarator_common
+
+scruffy_any-declarator { match }
+scruffy_any-declarator = scruffy_declarator_common
+
+direct-declarator:
+    Identifier)  declarator-id
+
+    Function)    direct-declarator_opt
+		 [(] /*cpp_begin_function_parameters/ parameter-declaration-clause [)]
+		 cv-qualifier-seq_opt exception-specification_opt
+		 /cpp_accept_function_declarator/
+
+    Array)       direct-declarator_opt
+		 [[] /!*cpp_begin_expression/ constant-expression_opt []]
+
+    Declarator)  [(] declarator [)]
+
+ptr-operator:
+    Pointer)         [*] cv-qualifier-seq_opt
+    Reference)       [&]
+
+    PointerToMember) /!*cpp_begin_nested_name/ scruffy_global-scope_opt scruffy_nested-name-specifier
+		     [*] cv-qualifier-seq_opt
+
+cv-qualifier-seq:
+    cv-qualifier cv-qualifier-seq_opt
+
+cv-qualifier:
+    Const)    [const]
+    Volatile) [volatile]
+
+declarator-id { accept }
+declarator-id:
+    IdExpression) /!*cpp_begin_id/ id-expression
+# This is a sub of the first subgrammar
+#    TypeName)     /!*cpp_begin_nested_name/ scruffy_global-scope_opt scruffy_nested-name-specifier_opt type-name
+
+type-id:
+    /!*cpp_begin_declaration/
+    scruffy_type-specifier-seq scruffy_abstract-declarator_opt
+    /*cpp_accept_declaration/
+    /cpp_accept_typeid/
+
+type-specifier-seq:
+    type-specifier type-specifier-seq_opt
+
+#scruffy_type-specifier-seq { accept }
+scruffy_type-specifier-seq { begin accept }
+scruffy_type-specifier-seq = type-specifier-seq
+
+parameter-declaration-clause:
+    Ellipsis)                 parameter-declaration-list
+			      (parameter-declaration-clause:ParameterDeclarationList@A)
+			      [,] [...]
+
+    ParameterDeclarationList) parameter-declaration-list_opt
+			      @A
+			      [...]_opt
+
+parameter-declaration-list:
+    ParameterDeclarationList) parameter-declaration
+			      (parameter-declaration-list:ParameterDeclaration@A)
+			      [,] parameter-declaration-list
+
+    ParameterDeclaration)     parameter-declaration
+			      @A
+
+# TODO ______________________________ VERTICAL OPTIMIZATION ___________________________________
+
+parameter-declaration:
+    DeclaratorAssignment) / *cpp_begin_parameter_declaration/
+			  scruffy_decl-specifier-seq
+			  scruffy_any-declarator_opt
+			  /!*cpp_accept_declaration/
+			  (parameter-declaration:Declarator@A)
+			  [=]
+			  /!*cpp_begin_expression/
+			  assignment-expression
+			  /cpp_accept_parameter_declaration_declarator_assignment/
+
+    Declarator)           /!*cpp_begin_parameter_declaration/
+			  scruffy_decl-specifier-seq
+			  scruffy_any-declarator_opt
+			  /!*cpp_accept_declaration/
+			  @A
+
+function-definition:
+    FunctionBody)     /!*cpp_begin_constructor_ambiguity/
+		      /!*cpp_begin_declaration/
+		      scruffy_decl-specifier-seq_opt
+		      scruffy_declarator
+		      (function-definition:FunctionTryBlock@FunctionDefinition)
+		      @FunctionDefinition
+		      ctor-initializer_opt
+		      /!*cpp_begin_statement/
+		      function-body
+		      /cpp_function_definition_match_func/
+
+    FunctionTryBlock)
+		      /!*cpp_begin_constructor_ambiguity/
+		      /!*cpp_begin_declaration/
+		      scruffy_decl-specifier-seq_opt
+		      scruffy_declarator
+		      @FunctionDefinition
+		      /!*cpp_begin_statement/
+		      function-try-block
+		      /!cpp_function_definition_match_func/
+
+function-body:
+# TODO Make "default" an equivalent of the current default variant.
+    default|AST|Default)              compound-statement
+    class-prematch|ClassPrematch) scruffy_skip-compound-statement
+
+# 'initializer' appears in 'init-declarator' only.
+# {
+initializer:
+    InitializerClause) [=] /!*cpp_begin_expression/ initializer-clause  / cpp_accept_initializer/
+    ExpressionList)    [(] /!*cpp_begin_expression/ expression-list [)] /!cpp_accept_initializer/
+
+    initializer-clause:
+	Expression)      assignment-expression
+	InitializerList) [{] initializer-list [,]_opt [}]
+
+    initializer-list:
+	InitializerClause) initializer-clause
+	InitializerList)   initializer-clause [,] initializer-list
+# }
+
+
+# Classes
+
+class-name:
+    ClassNameIdentifier) class-name-identifier
+    TemplateId)          template-id
+
+class-name-identifier { match }
+class-name-identifier:
+    identifier
+
+class-specifier:
+    class-head
+    /cpp_accept_class_head/
+    [{]
+    /cpp_begin_class_definition/
+    member-specification_opt
+    [}]
+    /cpp_accept_class_definition/
+
+class-head:
+    Simple)              class-key
+			 /!*cpp_begin_nested_name/
+			 identifier_opt
+			 /cpp_accept_class_identifier/
+			 base-clause_opt
+
+    NestedNameSpecifier) class-key
+			 /!*cpp_begin_nested_name/
+			 scruffy_nested-name-specifier
+			 identifier
+			 /!cpp_accept_class_identifier/
+			 base-clause_opt
+
+    TemplateId)          class-key
+			 /!*cpp_begin_nested_name/
+			 scruffy_nested-name-specifier_opt
+			 template-id
+			 /!cpp_accept_class_identifier/
+			 base-clause_opt
+
+class-key:
+    Class)  [class]
+    Struct) [struct]
+    Union)  [union]
+
+member-specification:
+    MemberDeclaration)  member-declaration member-specification_opt
+    AccessSpecifier)    access-specifier [:] member-specification_opt
+
+member-declaration:
+    MemberDeclaratorList) /!*cpp_begin_constructor_ambiguity/
+			  /!*cpp_begin_declaration/
+			  scruffy_decl-specifier-seq_opt
+			  member-declarator-list_opt
+			  # TODO [;]_opt at the end is not handled by this jump
+# Note: we fail here because of non-optional scruffy_declarator's in member-declarator
+#			  (function-definition:FunctionBody@FunctionDefinition)
+			  [;]
+
+    FunctionDefinition) function-definition [;]_opt
+
+    # This is an access declaration (11.3), which is a deprecated language
+    # feature (according to the wording in the standard).
+    #
+    # Note:
+    # This is absoultely equivalent to member-declaration:MemberDeclaratorList
+    # with no scruffy_decl-specifier-seq and with a single member-declarator
+    # of the form qualified-id:NestedNameSpecifier.
+    NestedNameSpecifier)  /!*cpp_begin_nested_name/
+			  scruffy_global-scope_opt scruffy_nested-name-specifier
+			  [template]_opt
+			  unqualified-id [;]
+
+    UsingDeclaration)     using-declaration
+
+    TemplateDeclaration)  template-declaration
+
+member-declarator-list:
+    MemberDeclaratorList) member-declarator
+			  (member-declarator-list:MemberDeclarator@A)
+			  [,]
+			  /!*cpp_reset_declarator/
+			  member-declarator-list
+
+    MemberDeclarator)     member-declarator
+			  @A
+
+# TODO Rules for PureSpecifier and ConstantInitializer overlap.
+member-declarator:
+    PureSpecifier)       scruffy_declarator pure-specifier_opt
+    ConstantInitializer) scruffy_declarator constant-initializer_opt
+    Bitfield)            identifier_opt [:] constant-expression
+
+pure-specifier:
+    [=] [0]
+
+constant-initializer:
+    [=] constant-expression
+
+
+# Derived classes
+
+base-clause:
+    [:] base-specifier-list
+
+base-specifier-list:
+    BaseSpecifierList) base-specifier [,] base-specifier-list
+    BaseSpecifier)     base-specifier
+
+base-specifier { accept }
+base-specifier:
+    Base)            /!*cpp_begin_nested_name/
+		     scruffy_global-scope_opt scruffy_nested-name-specifier_opt
+		     class-name
+
+    Virtual)         [virtual] access-specifier_opt
+		     /!*cpp_begin_nested_name/
+		     scruffy_global-scope_opt scruffy_nested-name-specifier_opt
+		     class-name
+
+    AccessSpecifier) access-specifier [virtual]_opt
+		     /!*cpp_begin_nested_name/
+		     scruffy_global-scope_opt scruffy_nested-name-specifier_opt
+		     class-name
+
+access-specifier:
+    Private)   [private]
+    Protected) [protected]
+    Public)    [public]
+
+
+# Special member functions
+
+conversion-function-id:
+    [operator] conversion-type-id
+
+conversion-type-id:
+    /!*cpp_begin_declaration/ scruffy_type-specifier-seq conversion-declarator_opt
+
+conversion-declarator:
+    ptr-operator conversion-declarator_opt
+
+ctor-initializer:
+    [:] mem-initializer-list
+
+mem-initializer-list:
+    List)           mem-initializer [,] mem-initializer-list
+    MemInitializer) mem-initializer
+
+#mem-initializer { accept }
+mem-initializer:
+    default|AST|Default)              mem-initializer-id [(]
+				  /!*cpp_begin_expression/
+				  expression-list_opt [)]
+				  /cpp_MemInitializer_accept_func/
+
+    class-prematch|ClassPrematch) scruffy_not-a-parenthesis_seq
+				  [(] scruffy_skip-expression-list_opt [)]
+
+mem-initializer-id:
+    ClassName)    /!*cpp_begin_nested_name/
+		  scruffy_global-scope_opt scruffy_nested-name-specifier_opt
+		  class-name
+
+    Identifier)   identifier
+
+
+# Overloading
+
+operator-function-id:
+    [operator] <_operator> operator
+
+operator:
+    New)               [new]
+    Delete)            [delete]
+    NewArray)          [new] [[] []]
+    DeleteArray)       [delete] [[] []]
+    Plus)              [+]
+    Minus)             [-]
+    Multiply)          [*]
+    Divide)            [/]
+    Remainder)         [%]
+    ExclusiveOr)       [^]
+    And)               [&]
+    InclusiveOr)       [|]
+    Inversion)         [~]
+    Not)               [!]
+    Set)               [=]
+    Less)              [<]
+    Greater)           [>]
+    PlusSet)           [+=]
+    MinusSet)          [-=]
+    MultiplySet)       [*=]
+    DivideSet)         [/=]
+    RemainderSet)      [%=]
+    ExclusiveOrSet)    [^=]
+    AndSet)            [&=]
+    InclusiveOrSet)    [|=]
+    LeftShift)         [<<]
+    RightShift)        [>>]
+    RightShiftSet)     [>>=]
+    LeftShiftSet)      [<<=]
+    Equal)             [==]
+    NotEqual)          [!=]
+    LessOrEqual)       [<=]
+    GreaterOrEqual)    [>=]
+    LogicalAnd)        [&&]
+    LogicalOr)         [||]
+    Increment)         [++]
+    Decrement)         [--]
+    Comma)             [,]
+    MemberDereference) [->*]
+    Dereference)       [->]
+    FunctionCall)      [(] [)]
+    Subscripting)      [[] []]
+
+
+# Templates
+
+template-declaration:
+    [export]_opt [template] [<]
+    /*cpp_begin_template_declaration/
+    template-parameter-list [>]
+    /*cpp_accept_template_parameter_list/
+    declaration
+    /cpp_accept_template_declaration/
+
+template-parameter-list:
+    TemplateParameterList) template-parameter [,] template-parameter-list
+    TemplateParameter)     template-parameter
+
+template-parameter:
+    TypeParameter)        type-parameter
+    ParameterDeclaration) parameter-declaration
+
+type-parameter:
+    Class_Default)    [class] identifier_opt [=] /!*cpp_begin_typeid/ type-id
+		      /cpp_accept_type_template_parameter/
+
+    Class)            [class] identifier_opt
+		      /!cpp_accept_type_template_parameter/
+
+    Typename_Default) [typename] identifier_opt
+# TODO 'identifier' gets lost after this jump.
+#		      (type-parameter:Typename@A)
+		      [=] /!*cpp_begin_typeid/ type-id
+		      /!cpp_accept_type_template_parameter/
+
+    Typename)         [typename] identifier_opt
+		      @A
+		      /!cpp_accept_type_template_parameter/
+
+    Template_Default) [template] [<]
+		      /!*cpp_begin_template_declaration/
+		      template-parameter-list [>]
+		      /!*cpp_accept_template_parameter_list/
+		      [class] identifier_opt
+# TODO 'identifier' gets lost after this jump.
+#		      (type-parameter:Template@A)
+		      [=] /!*cpp_begin_id/ id-expression
+		      /!cpp_accept_type_template_parameter/
+
+    Template)         [template] [<]
+		      /!*cpp_begin_template_declaration/
+		      template-parameter-list [>]
+		      /!*cpp_accept_template_parameter_list/
+		      [class] identifier_opt
+		      @A
+		      /!cpp_accept_type_template_parameter/
+
+template-id:
+    template-name [<]
+    /cpp_begin_template_id/
+    template-argument-list_opt [>]
+    # Sets a flag indicating that the id being parsed is a template-id.
+    /cpp_accept_template_id/
+
+template-name { match }
+template-name:
+    identifier
+
+template-argument-list:
+    TemplateArgumentList) template-argument
+			  (template-argument-list:TemplateArgument@A)
+			  [,] template-argument-list
+
+    TemplateArgument)     template-argument
+			  @A
+
+template-argument:
+    # Template type argument.
+    #
+    # 14.3:2 "In a template-argument, an ambiguity between a type-id and
+    # an expression is resolved to a type-id." Hence, 'TypeId' phrase should be
+    # ahead of '*Expression' phrases.
+    TypeId)               /!*cpp_begin_typeid/ type-id /cpp_accept_template_argument/
+
+    # Template non-type argument.
+    AssignmentExpression) /!*cpp_begin_expression/ assignment-expression /!cpp_accept_template_argument/
+
+    # Template template argument.
+    #
+    # TODO After binding of id-expressions on-the-fly is implemented, introduce
+    # a special parsing mode for id-expressions, in which the identifier may
+    # correspond to a matching template name. Until then, this path is
+    # effectively unreachable, because 'AssignmentExpression' subphrase will
+    # always match first.
+    IdExpression)         /!*cpp_begin_id/ id-expression /!cpp_accept_template_argument/
+
+explicit-instantiation:
+    [template] declaration
+
+explicit-specialization:
+    [template] [<] [>] declaration
+
+
+# Exception handling
+
+try-block:
+    [try] compound-statement handler-seq
+
+function-try-block:
+    [try] /!*cpp_begin_function_definition/ ctor-initializer_opt function-body handler-seq
+#    [try] ctor-initializer_opt function-body handler-seq
+
+handler-seq:
+    handler handler-seq_opt
+
+handler:
+    default|AST|Default)          [catch] [(] exception-declaration [)]
+				  compound-statement
+
+    class-prematch|ClassPrematch) [catch] [(] scruffy_skip-exception-declaration [)]
+				  scruffy_skip-compound-statement
+
+exception-declaration:
+    Declarator) /!*cpp_begin_declaration/
+		scruffy_type-specifier-seq
+		scruffy_any-declarator_opt
+		/!*cpp_accept_declaration/
+
+    Ellipsis)   [...]
+
+throw-expression:
+    [throw] /!*cpp_begin_expression/ assignment-expression_opt /cpp_accept_throw_expression/
+
+exception-specification:
+    [throw] [(] type-id-list_opt [)]
+
+type-id-list:
+    TypeIdList) /!*cpp_begin_typeid/ type-id [,] type-id-list
+    TypeId)     /!*cpp_begin_typeid/ type-id
+
+
+*:
+    translation-unit
+
+
+# _________________________________ M grammars _________________________________
+
+# TODO
+
+
