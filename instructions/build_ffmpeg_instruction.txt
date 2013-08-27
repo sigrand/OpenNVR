@@ -1,0 +1,88 @@
+http://ffmpeg.org/trac/ffmpeg/wiki/UbuntuCompilationGuide
+http://wiki.serviio.org/doku.php?id=build_ffmpeg_linux
+
+some packages, maybe some of them are not needed:
+
+sudo apt-get update
+sudo apt-get -y install autoconf automake build-essential git libass-dev libgpac-dev libtheora-dev libtool libvorbis-dev \
+pkg-config texi2html zlib1g-dev \
+libfaac-dev libjack-jackd2-dev \
+libmp3lame-dev libopencore-amrnb-dev libopencore-amrwb-dev \
+libssl1.0.0 libssl-dev libxvidcore-dev libxvidcore4
+
+mkdir ./ffmpeg_sources
+
+
+1) YASM
+
+cd ./ffmpeg_sources
+wget http://www.tortall.net/projects/yasm/releases/yasm-1.2.0.tar.gz
+tar xzvf yasm-1.2.0.tar.gz
+cd yasm-1.2.0
+./configure --prefix="$HOME/Sigrand/NVR/ffmpeg_build"
+make
+make install
+make distclean
+
+2) X264
+
+export PATH="$HOME/Sigrand/NVR/ffmpeg_build/bin:$PATH"
+
+cd ./ffmpeg_sources
+git clone --depth 1 git://git.videolan.org/x264.git
+cd x264
+./configure --prefix="$HOME/Sigrand/NVR/ffmpeg_build" --enable-static --enable-pic
+make
+make install
+make distclean
+
+3) LAME (not needed for now)
+
+sudo apt-get install libmp3lame-dev
+
+OR (for Ubuntu 10.04 and Debian Squeeze users)
+
+sudo apt-get install nasm
+cd ~/ffmpeg_sources
+wget http://downloads.sourceforge.net/project/lame/lame/3.99/lame-3.99.5.tar.gz
+tar xzvf lame-3.99.5.tar.gz
+cd lame-3.99.5
+./configure --prefix="$HOME/Sigrand/NVR/ffmpeg_build" --enable-nasm --disable-shared
+make
+make install
+make distclean
+
+4) RTMPDUMP
+
+cd ./ffmpeg_sources
+git clone git://git.ffmpeg.org/rtmpdump
+cd rtmpdump
+
+in Makefile change prefix to "/home/YOUR_USERNAME/Sigrand/NVR/ffmpeg_build"
+
+make
+make install
+
+5) FFMPEG
+
+cd ./ffmpeg_sources
+wget http://ffmpeg.org/releases/ffmpeg-2.0.1.tar.gz
+unpack ffmpeg-2.0.1.tar.gz to ffmpeg
+cd ffmpeg
+export PKG_CONFIG_PATH="$HOME/Sigrand/NVR/ffmpeg_build/lib/pkgconfig"
+./configure --prefix="$HOME/Sigrand/NVR/ffmpeg_build" \
+  --extra-cflags="-I$HOME/Sigrand/NVR/ffmpeg_build/include -fPIC" \
+  --extra-ldflags="-L$HOME/Sigrand/NVR/ffmpeg_build/lib -fPIC" \
+  --bindir="$HOME/Sigrand/NVR/ffmpeg_build/bin" --extra-libs="-ldl" --enable-gpl \
+  --enable-libx264 \
+  --enable-librtmp \
+  --enable-static \
+  --enable-pic \
+  --disable-shared 
+make
+make install
+
+To make ffmpeg binary look in this directory for linked libraries, edit /etc/ld.so.conf and add this path
+
+include /etc/ld.so.conf.d/*.conf
+/home/igorp/Sigrand/NVR/ffmpeg_build/lib

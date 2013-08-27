@@ -21,9 +21,9 @@ then
 	CLEAN=1
 fi
 
-if [ "$4" = "ffmpeg" ]
+if [ "$4" = "ffmpegbuild" ]
 then
-	FFMPEG=1
+	FFBUILD=1
 fi
 
 function autogen()
@@ -42,6 +42,14 @@ function makeclean()
 	fi
 }
 
+function ffmpegrebuild()
+{
+	if [ -n "$1" ]
+	then
+		sh ./build_ffmpeg.sh
+	fi
+}
+
 # check required tools 
 test -e /usr/bin/java
 test -e /opt/flex/bin/mxmlc
@@ -49,12 +57,16 @@ test -e /opt/flex/bin/mxmlc
 CHECK_GLIB="`pkg-config --exists glib-2.0 --print-errors`"
 CHECK_XML="`pkg-config --exists libxml-2.0 --print-errors`"
 CHECK_JSON="`pkg-config --exists jsoncpp --print-errors`"
-CHECK_GST="`pkg-config --exists gstreamer-0.10 --print-errors`"
 
-if [ -n "${CHECK_GLIB}" || "${CHECK_XML}" || "${CHECK_JSON}" || "${CHECK_GST}" ]; then
-    echo "Not all prerequisites were installed; ${CHECK_GLIB} ${CHECK_XML} ${CHECK_JSON} ${CHECK_GST}"
+
+if [ -n "${CHECK_GLIB}" || "${CHECK_XML}" || "${CHECK_JSON}" ]; then
+    echo "Not all prerequisites were installed; ${CHECK_GLIB} ${CHECK_XML} ${CHECK_JSON} "
 	exit 1
 fi
+
+# build ffmpeg
+
+ffmpegrebuild FFBUILD
 
 # Generate projects
 cd libmary
@@ -67,14 +79,8 @@ cd ../mconfig
 autogen "$AUTOGEN"
 cd ../moment  
 autogen "$AUTOGEN"
-if [ -z "$FFMPEG" ]
-then
-cd ../moment-gst
-autogen "$AUTOGEN"
-else
 cd ../moment-ffmpeg
 autogen "$AUTOGEN"
-fi
 cd ../moment-nvr
 autogen "$AUTOGEN"
 cd ../moment-onvif
@@ -86,20 +92,19 @@ make
 make install
 
 
-
 I_GLIB=`pkg-config --cflags glib-2.0`
 L_GLIB=`pkg-config --libs glib-2.0`
 I_XML=`pkg-config --cflags libxml-2.0`
 L_XML=`pkg-config --libs libxml-2.0`
 I_JSON=`pkg-config --cflags jsoncpp`
 L_JSON=`pkg-config --libs jsoncpp`
-I_GST=`pkg-config --cflags gstreamer-0.10` 
-L_GST=`pkg-config --libs gstreamer-0.10`
 
 export THIS_CFLAGS=""
 export THIS_LIBS=""
 export CFLAGS="-O2"
 export CXXFLAGS="${CFLAGS}"
+
+
 
 cd ../libmary
 makeclean "$CLEAN"
@@ -163,14 +168,7 @@ export THIS_LIBS="${L_GLIB} ${L_XML} ${L_JSON} \
 	-L${OUTDIR}/lib -lmconfig-1.0 \
 	-L${OUTDIR}/ctemplate/lib -lctemplate"
 
-if [ -n "$FFMPEG" ]
-then
 ./configure --prefix="${OUTDIR}" --disable-gstreamer
-else
-export THIS_CFLAGS+=" ${I_GST}"
-export THIS_LIBS+=" ${L_GST}"
-./configure --prefix="${OUTDIR}"
-fi
 
 make
 make install
@@ -191,16 +189,22 @@ export THIS_LIBS="${L_GLIB} ${L_XML} ${L_JSON} \
 	-L${OUTDIR}/lib -lmconfig-1.0 \
 	-L${OUTDIR}/lib -lpargen-1.0"
 
-if [ -z "$FFMPEG" ]
-then
-cd ../moment-gst
-export THIS_CFLAGS+=" ${I_GST}"
-export THIS_LIBS+=" ${L_GST}"
-else
+
 cd ../moment-ffmpeg
-export THIS_CFLAGS+=" -I../ffmpeg-sdk/include"
-export THIS_LIBS+=" -L../ffmpeg-sdk/lib -lavformat -lavcodec -lz -lm -lswscale"
-fi
+export THIS_CFLAGS+=" -I../../ffmpeg/ffmpeg_build/include -I../../ffmpeg/ffmpeg_build/include/libavformat"
+export THIS_LIBS+=" -Wl,--whole-archive \
+	../../ffmpeg/ffmpeg_build/lib/libavformat.a \
+	../../ffmpeg/ffmpeg_build/lib/libavdevice.a \
+	../../ffmpeg/ffmpeg_build/lib/libavcodec.a \
+	../../ffmpeg/ffmpeg_build/lib/libavfilter.a \
+	../../ffmpeg/ffmpeg_build/lib/libswscale.a \
+	../../ffmpeg/ffmpeg_build/lib/libavutil.a \
+	../../ffmpeg/ffmpeg_build/lib/libpostproc.a \
+	../../ffmpeg/ffmpeg_build/lib/librtmp.a \
+	../../ffmpeg/ffmpeg_build/lib/libswresample.a \
+	../../ffmpeg/ffmpeg_build/lib/libx264.a \
+	-Wl,--no-whole-archive -Wl,-Bsymbolic -lz -lm"
+
 makeclean "$CLEAN"
 
 ./configure --prefix="${OUTDIR}"
@@ -221,11 +225,6 @@ export THIS_LIBS="${L_GLIB} ${L_XML} \
 	-L${OUTDIR}/lib -lmconfig-1.0 \
 	-L${OUTDIR}/lib -lpargen-1.0"
 
-if [ -z "$FFMPEG" ]
-then
-export THIS_CFLAGS+=" ${I_GST} -I${OUTDIR}/include/moment-gst-1.0"
-export THIS_LIBS+=" ${L_GST} -L${OUTDIR}/lib/moment-1.0 -lmoment-gst-1.0"
-fi
 
 ./configure --prefix="${OUTDIR}"
 make
@@ -252,12 +251,6 @@ then
 	export THIS_LIBS+=" -L../onvif-sdk/lib/x64 -lWsDiscovery -lOnvifSDK"
 else
 	export THIS_LIBS+=" -L../onvif-sdk/lib/x86 -lWsDiscovery -lOnvifSDK"
-fi
-
-if [ -z "$FFMPEG" ]
-then
-export THIS_CFLAGS+=" ${I_GST} -I${OUTDIR}/include/moment-gst-1.0"
-export THIS_LIBS+=" ${L_GST} -L${OUTDIR}/lib/moment-1.0 -lmoment-gst-1.0"
 fi
 
 ./configure --prefix="${OUTDIR}"
