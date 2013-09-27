@@ -453,7 +453,7 @@ GetFileSession::init (MomentServer * const mt_nonnull moment,
     this->req_client_addr = req->getClientAddress();
     this->req_request_line = st_grab (new (std::nothrow) String (req->getRequestLine()));
 
-    media_reader.init (page_pool, vfs, stream_name, start_unixtime_sec, 0 /* burst_size_limit */);
+    media_reader.init (page_pool, vfs, stream_name, start_unixtime_sec, 0 /* burst_size_limit */, st_makeString(""));
     mp4_muxer.init (page_pool, duration_sec * 1000);
 
     thread_ctx = moment->getReaderThreadPool()->grabThreadContext (stream_name);

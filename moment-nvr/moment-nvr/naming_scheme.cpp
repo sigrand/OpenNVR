@@ -18,6 +18,7 @@
 
 
 #include <moment-nvr/naming_scheme.h>
+#include <string>
 
 
 using namespace M;
@@ -89,6 +90,45 @@ DefaultNamingScheme::getPath (ConstMemory   const channel_name,
 //    logD_ (_func, "res_str: ", res_str);
 
     return res_str;
+}
+
+Result FileNameToUnixTimeStamp::Convert(const StRef<String> & fileName, /*output*/ Time & timeOfRecord)
+{
+    if(fileName == NULL || !fileName->len())
+        return Result::Failure;
+
+    Result res = Result::Success;
+    std::string stdStr(fileName->cstr());
+    std::string delimiter1 = "_";
+    std::string delimiter2 = ".";
+    size_t pos = 0;
+    std::string token;
+    pos = stdStr.find(delimiter1);
+
+    if(pos != std::string::npos)
+    {
+        token = stdStr.substr(0, pos);
+        stdStr.erase(0, pos + delimiter1.length());
+        pos = stdStr.find(delimiter2);
+
+        if(pos != std::string::npos)
+        {
+            token = stdStr.substr(0, pos);
+            res = strToUint64_safe(token.c_str(), &timeOfRecord);
+        }
+        else
+        {
+            logE_(_func_,"Didn't find '.' symbol in file_name = ", fileName->mem());
+            res = Result::Failure;
+        }
+    }
+    else
+    {
+        logE_(_func_,"Didn't find '_' symbol in file_name = ", fileName->mem());
+        res = Result::Failure;
+    }
+
+    return res;
 }
 
 }

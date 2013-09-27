@@ -31,8 +31,15 @@ libmoment_ffmpeg_1_0_la_SOURCES =	\
         moment_ffmpeg_module.h          \
         ffmpeg_stream.h                 \
         mod_ffmpeg.cpp                  \
-        ffmpeg_stream.cpp
-
+        ffmpeg_stream.cpp               \
+        segment_muxer.c                 \
+        naming_scheme.cpp               \
+        naming_scheme.h                 \
+        nvr_cleaner.h                   \
+        nvr_cleaner.cpp                 \
+        nvr_file_iterator.h             \
+        nvr_file_iterator.cpp           \
+        inc.h
 
 moment_ffmpeg_extra_dist =
 

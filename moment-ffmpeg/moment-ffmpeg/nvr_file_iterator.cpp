@@ -17,14 +17,14 @@
 */
 
 
-#include <moment-nvr/nvr_file_iterator.h>
+#include <moment-ffmpeg/nvr_file_iterator.h>
 #include <map>
 #include <math.h>
 
 using namespace M;
 using namespace Moment;
 
-namespace MomentNvr {
+namespace MomentFFmpeg {
 
 static LogGroup libMary_logGroup_file_iter ("mod_nvr.file_iter", LogLevel::I);
 

@@ -52,7 +52,7 @@ public:
 
     } ChannelFileSummary;
 
-    mt_const void init (Vfs * const vfs);
+    mt_const void init (Vfs * const vfs, StRef<String> & record_dir);
     std::vector<std::pair<int,int>> * getChannelExistence (ConstMemory const channel_name);
     std::vector<ChannelFileSummary> * getChannelFilesExistence (ConstMemory const channel_name);
     ChannelChecker ();
@@ -60,6 +60,7 @@ public:
 
 private:
      Vfs * vfs;
+     StRef<String> m_record_dir;
      std::vector<std::pair<int,int>> existence;
      std::vector<ChannelFileSummary> files_existence;
 

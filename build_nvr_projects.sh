@@ -66,7 +66,7 @@ fi
 
 # build ffmpeg
 
-ffmpegrebuild FFBUILD
+ffmpegrebuild "$FFBUILD"
 
 # Generate projects
 cd libmary
@@ -225,6 +225,19 @@ export THIS_LIBS="${L_GLIB} ${L_XML} \
 	-L${OUTDIR}/lib -lmconfig-1.0 \
 	-L${OUTDIR}/lib -lpargen-1.0"
 
+export THIS_CFLAGS+=" -I../../ffmpeg/ffmpeg_build/include -I../../ffmpeg/ffmpeg_build/include/libavformat"
+export THIS_LIBS+=" -Wl,--whole-archive \
+	../../ffmpeg/ffmpeg_build/lib/libavformat.a \
+	../../ffmpeg/ffmpeg_build/lib/libavdevice.a \
+	../../ffmpeg/ffmpeg_build/lib/libavcodec.a \
+	../../ffmpeg/ffmpeg_build/lib/libavfilter.a \
+	../../ffmpeg/ffmpeg_build/lib/libswscale.a \
+	../../ffmpeg/ffmpeg_build/lib/libavutil.a \
+	../../ffmpeg/ffmpeg_build/lib/libpostproc.a \
+	../../ffmpeg/ffmpeg_build/lib/librtmp.a \
+	../../ffmpeg/ffmpeg_build/lib/libswresample.a \
+	../../ffmpeg/ffmpeg_build/lib/libx264.a \
+	-Wl,--no-whole-archive -Wl,-Bsymbolic -lz -lm"
 
 ./configure --prefix="${OUTDIR}"
 make

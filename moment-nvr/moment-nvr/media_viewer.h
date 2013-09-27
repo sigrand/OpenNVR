@@ -71,6 +71,7 @@ private:
     mt_const DataDepRef<Timers> timers;
 
     mt_const Ref<Vfs> vfs;
+    StRef<String> record_dir;
 
     static MediaReader::ReadFrameResult endFrame (Session              * mt_nonnull session,
                                                   VideoStream::Message * mt_nonnull msg);
@@ -164,7 +165,8 @@ private:
 
 public:
     void init (MomentServer * mt_nonnull moment,
-               Vfs          * mt_nonnull vfs);
+               Vfs          * mt_nonnull vfs,
+               StRef<String>  record_dir);
 
     MediaViewer ();
 };

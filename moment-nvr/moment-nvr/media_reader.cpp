@@ -18,6 +18,8 @@
 
 
 #include <moment-nvr/media_reader.h>
+#include <moment-nvr/naming_scheme.h>
+#include <string>
 
 
 using namespace M;
@@ -25,7 +27,535 @@ using namespace Moment;
 
 namespace MomentNvr {
 
-static LogGroup libMary_logGroup_reader ("mod_nvr.media_reader", LogLevel::I);
+static LogGroup libMary_logGroup_reader ("mod_nvr.media_reader", LogLevel::D);
+
+#define AV_RB32(x)									\
+        (((Uint32)((const Byte*)(x))[0] << 24) |	\
+        (((const Byte*)(x))[1] << 16) |				\
+        (((const Byte*)(x))[2] <<  8) |				\
+        ( (const Byte*)(x))[3])
+
+#define AV_RB24(x)									\
+        ((((const Byte*)(x))[0] << 16) |			\
+        ( ((const Byte*)(x))[1] <<  8) |			\
+        (  (const Byte*)(x))[2])
+
+static void RegisterFFMpeg(void)
+{
+    static Uint32 uiInitialized = 0;
+
+    if(uiInitialized != 0)
+        return;
+
+    uiInitialized = 1;
+
+    // global ffmpeg initialization
+    av_register_all();
+    avformat_network_init();
+}
+
+int FileReader::WriteB8ToBuffer(Int32 b, MemoryEx & memory)
+{
+    if(memory.size() >= memory.len())
+        return -1;
+
+    Size curPos = memory.size();
+    Byte * pMem = memory.mem();
+    pMem[curPos] = (Byte)b;
+
+    memory.setSize(curPos + 1);
+
+    if(memory.size() >= memory.len())
+    {
+        logE_ (_func, "Fail, size(", memory.size(), ") > memoryOut.len(", memory.len(), ")");
+        return Result::Failure;
+    }
+
+    return Result::Success;
+}
+
+int FileReader::WriteB16ToBuffer(Uint32 val, MemoryEx & memory)
+{
+    if( WriteB8ToBuffer((Byte)(val >> 8 ), memory) == Result::Success &&
+        WriteB8ToBuffer((Byte) val       , memory) == Result::Success)
+    {
+        return Result::Success;
+    }
+
+    return Result::Failure;
+}
+
+int FileReader::WriteB32ToBuffer(Uint32 val, MemoryEx & memory)
+{
+    if( WriteB8ToBuffer(       val >> 24 , memory) == Result::Success &&
+        WriteB8ToBuffer((Byte)(val >> 16), memory) == Result::Success &&
+        WriteB8ToBuffer((Byte)(val >> 8 ), memory) == Result::Success &&
+        WriteB8ToBuffer((Byte) val       , memory) == Result::Success)
+    {
+        return Result::Success;
+    }
+
+    return Result::Failure;
+}
+
+int FileReader::WriteDataToBuffer(ConstMemory const memory, MemoryEx & memoryOut)
+{
+    Size inputSize = memory.len();
+
+    if(memoryOut.size() + inputSize >= memoryOut.len())
+    {
+        logE_ (_func, "Fail, size(", memoryOut.size(), ") + inputSize(", inputSize, ") > memoryOut.len(", memoryOut.len(), ")");
+        return Result::Failure;
+    }
+
+    if(inputSize >= memoryOut.len())
+    {
+        logE_ (_func, "inputSize(", inputSize, ") >= memoryOut.len(", memoryOut.len(), ")");
+        return Result::Failure;
+    }
+    else if(inputSize > 0)
+    {
+        memcpy(memoryOut.mem() + memoryOut.size(), memory.mem(), inputSize);
+
+        memoryOut.setSize(memoryOut.size() + inputSize);
+    }
+
+    return Result::Success;
+}
+
+static const Byte * AvcFindStartCodeInternal(const Byte *p, const Byte *end)
+{
+    const Byte *a = p + 4 - ((intptr_t)p & 3);
+
+    for (end -= 3; p < a && p < end; p++) {
+        if (p[0] == 0 && p[1] == 0 && p[2] == 1)
+            return p;
+    }
+
+    for (end -= 3; p < end; p += 4)
+    {
+        Uint32 x = *(const Uint32*)p;
+        //      if ((x - 0x01000100) & (~x) & 0x80008000) // little endian
+        //      if ((x - 0x00010001) & (~x) & 0x00800080) // big endian
+        if ((x - 0x01010101) & (~x) & 0x80808080)
+        {
+            // generic
+            if (p[1] == 0)
+            {
+                if (p[0] == 0 && p[2] == 1)
+                    return p;
+                if (p[2] == 0 && p[3] == 1)
+                    return p+1;
+            }
+
+            if (p[3] == 0)
+            {
+                if (p[2] == 0 && p[4] == 1)
+                    return p+2;
+                if (p[4] == 0 && p[5] == 1)
+                    return p+3;
+            }
+        }
+    }
+
+    for (end += 3; p < end; p++)
+    {
+        if (p[0] == 0 && p[1] == 0 && p[2] == 1)
+            return p;
+    }
+
+    return end + 3;
+}
+
+static const Byte * AvcFindStartCode(const Byte *p, const Byte *end)
+{
+    const Byte * out = AvcFindStartCodeInternal(p, end);
+
+    if(p < out && out < end && !out[-1])
+        out--;
+
+    return out;
+}
+
+int FileReader::AvcParseNalUnits(ConstMemory const mem, MemoryEx * pMemoryOut)
+{
+    const Byte *p = mem.mem();
+    const Byte *end = p + mem.len();
+    const Byte *nal_start, *nal_end;
+
+    Int32 size = 0;
+
+    nal_start = AvcFindStartCode(p, end);
+
+    for (;;)
+    {
+        while (nal_start < end && !*(nal_start++));
+
+        if (nal_start == end)
+            break;
+
+        nal_end = AvcFindStartCode(nal_start, end);
+
+        if(pMemoryOut)
+        {
+            WriteB32ToBuffer(nal_end - nal_start, *pMemoryOut);
+            WriteDataToBuffer(ConstMemory(nal_start, nal_end - nal_start), *pMemoryOut);
+        }
+
+        size += 4 + nal_end - nal_start;
+        nal_start = nal_end;
+    }
+
+    //logD (reader, _func, "Returned size = ", size);
+
+    return size;
+}
+
+int FileReader::IsomWriteAvcc(ConstMemory const memory, MemoryEx & memoryOut)
+{
+    //logD (reader, _func, "IsomWriteAvcc = ", memory.len());
+
+    if (memory.len() > 6)
+    {
+        Byte const * data = memory.mem();
+
+        // check for h264 start code
+        if (AV_RB32(data) == 0x00000001 || AV_RB24(data) == 0x000001)
+        {
+            MemorySafe allocMemory(memory.len() * 2);
+            MemoryEx localMemory((Byte *)allocMemory.cstr(), allocMemory.len());
+
+            if(AvcParseNalUnits(memory, &localMemory) < 0)
+            {
+                logE_ (_func, "AvcParseNalUnits fails");
+                return Result::Failure;
+            }
+
+            Byte * buf = localMemory.mem();
+            Byte * end = buf + localMemory.size();
+            Uint32 sps_size = 0, pps_size = 0;
+            Byte * sps = 0, *pps = 0;
+            // look for sps and pps
+            while (end - buf > 4)
+            {
+                Uint32 size;
+                Byte nal_type;
+
+                size = std::min((Uint32)AV_RB32(buf), (Uint32)(end - buf - 4));
+
+                buf += 4;
+                nal_type = buf[0] & 0x1f;
+
+                if (nal_type == 7)
+                {
+                    // SPS
+                    sps = buf;
+                    sps_size = size;
+                }
+                else if (nal_type == 8)
+                {
+                    // PPS
+                    pps = buf;
+                    pps_size = size;
+                }
+
+                buf += size;
+            }
+
+            //logD (reader, _func, "sps = ", sps ? "valid" : "invalid", ", pps = ", pps ? "valid" : "invalid", ", sps_size = ", sps_size, ", pps_size = ", pps_size);
+
+            if (!sps || !pps || sps_size < 4 || sps_size > Uint16_Max || pps_size > Uint16_Max)
+            {
+                logE_ (_func, "Failed to get sps, pps");
+                return Result::Failure;
+            }
+
+            WriteB8ToBuffer(1, memoryOut);			// version
+            WriteB8ToBuffer(sps[1], memoryOut);	// profile
+            WriteB8ToBuffer(sps[2], memoryOut);	// profile compat
+            WriteB8ToBuffer(sps[3], memoryOut);	// level
+            WriteB8ToBuffer(0xff, memoryOut);		// 6 bits reserved (111111) + 2 bits nal size length - 1 (11)
+            WriteB8ToBuffer(0xe1, memoryOut);		// 3 bits reserved (111) + 5 bits number of sps (00001)
+
+            WriteB16ToBuffer(sps_size, memoryOut);
+            WriteDataToBuffer(ConstMemory(sps, sps_size), memoryOut);
+            WriteB8ToBuffer(1, memoryOut);			// number of pps
+            WriteB16ToBuffer(pps_size, memoryOut);
+            WriteDataToBuffer(ConstMemory(pps, pps_size), memoryOut);
+        }
+        else
+        {
+            //logD (reader, _func, "AVC header, ONLY WriteDataInternal, ", data[0], ", ", data[1], ", ", data[2], ", ", data[3], ", ");
+            WriteDataToBuffer(memory, memoryOut);
+        }
+    }
+
+    return Result::Success;
+}
+
+void FileReader::CloseCodecs(AVFormatContext * pAVFrmtCntxt)
+{
+    if(!pAVFrmtCntxt)
+        return;
+
+    for(unsigned int uiCnt = 0; uiCnt < pAVFrmtCntxt->nb_streams; ++uiCnt)
+    {
+        // close each AVCodec
+        if(pAVFrmtCntxt->streams[uiCnt])
+        {
+            AVStream * pAVStream = pAVFrmtCntxt->streams[uiCnt];
+
+            if(pAVStream->codec)
+                avcodec_close(pAVStream->codec);
+        }
+    }
+}
+
+bool FileReader::IsInit()
+{
+    return (format_ctx != NULL);
+}
+
+bool FileReader::Init(StRef<String> & fileName)
+{
+    DeInit();
+
+    m_fileName = st_grab (new (std::nothrow) String (fileName->mem()));
+
+    const char * file_name_path = m_fileName->cstr();
+
+    Result res = Result::Success;
+    if(avformat_open_input(&format_ctx, file_name_path, NULL, NULL) == 0)
+    {
+        // Retrieve stream information
+        if(avformat_find_stream_info(format_ctx, NULL) >= 0)
+        {
+            // Dump information about file onto standard error
+            av_dump_format(format_ctx, 0, file_name_path, 0);
+        }
+        else
+        {
+            logE_(_func_,"Fail to retrieve stream info");
+            res = Result::Failure;
+        }
+    }
+    else
+    {
+        logE_(_func_,"Fail to open file: ", m_fileName);
+        res = Result::Failure;
+    }
+
+    if(res == Result::Success)
+    {
+        // Find the first video stream
+        for(int i = 0; i < format_ctx->nb_streams; i++)
+        {
+            if(format_ctx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
+            {
+                video_stream_idx = i;
+                break;
+            }
+        }
+
+        if(video_stream_idx == -1)
+        {
+            logE_(_func_,"ffmpegStreamData::Init, Didn't find a video stream");
+            res = Result::Failure;
+        }
+    }
+    else
+    {
+        logE_(_func_,"ffmpegStreamData::Init, Didn't find a video stream");
+    }
+
+    if(res == Result::Success)
+    {
+        m_dDuration = (double)(format_ctx->duration) / AV_TIME_BASE;
+        logD_(_func_,"m_dDuration: ", m_dDuration);
+        res = (m_dDuration >= 0.0)? Result::Success: Result::Failure;
+    }
+
+    if(res == Result::Success)
+    {
+        res = FileNameToUnixTimeStamp().Convert(m_fileName, m_initTimeOfRecord);
+    }
+
+    if(res != Result::Success)
+    {
+        DeInit();
+    }
+
+    return (res == Result::Success);
+}
+
+void FileReader::DeInit()
+{
+    if(!avc_codec_data.isNull())
+    {
+        // free memory
+        avc_codec_data.allocate(0);
+    }
+
+    if(format_ctx)
+    {
+        CloseCodecs(format_ctx);
+
+        avformat_close_input(&format_ctx);
+
+        format_ctx = NULL;
+    }
+
+    m_fileName = NULL;
+
+    m_initTimeOfRecord = 0;
+
+    video_stream_idx = -1;
+
+    m_dDuration = -1.0;
+
+    first_key_frame_received = false;
+}
+
+FileReader::FileReader()
+{
+    RegisterFFMpeg();
+
+    format_ctx = NULL;
+
+    m_initTimeOfRecord = 0;
+
+    video_stream_idx = -1;
+
+    m_dDuration = -1.0;
+
+    first_key_frame_received = false;
+}
+
+FileReader::~FileReader()
+{
+    DeInit();
+}
+
+bool FileReader::ReadFrame(Frame & readframe)
+{
+    if(!IsInit())
+        return false;
+
+    AVPacket packet = {};
+
+    while(true)
+    {
+        AVPacket readpacket = {};
+        int err = 0;
+
+        if((err = av_read_frame(format_ctx, &readpacket)) < 0)
+        {
+            if((size_t)err == AVERROR(EAGAIN))
+            {
+                 logD (reader, _func, "av_read_frame, err == AVERROR(EAGAIN), err = ", err);
+                 usleep(100000);
+                 continue;
+            }
+            else
+            {
+                char errmsg[4096] = {};
+                av_strerror (err, errmsg, 4096);
+                logE_(_func_, "Error while av_read_frame: ", errmsg);
+                return false;
+            }
+        }
+
+        // let it be just video for now
+        if(readpacket.stream_index == video_stream_idx)
+        {
+            if(!first_key_frame_received)
+            {
+                if(readpacket.flags & AV_PKT_FLAG_KEY)
+                {
+                    first_key_frame_received = true;
+                }
+                else
+                {
+                    logD (reader, _func, "SKIPPED PACKET");
+                    av_free_packet(&readpacket);
+                    // we skip first frames until we get key frame to avoid corrupted playing
+                    continue;
+                }
+            }
+
+            packet = readpacket;
+
+            break;
+        }
+    }   // while(1)
+
+    AVCodecContext * pctx = format_ctx->streams[video_stream_idx]->codec;
+
+    if(pctx->extradata_size > 0)
+    {
+        MemorySafe allocMemory(pctx->extradata_size * 2);
+        MemoryEx memEx((Byte *)allocMemory.cstr(), allocMemory.len());
+        memset(memEx.mem(), 0, memEx.len());
+        bool bEmptyHeader = false;
+
+        IsomWriteAvcc(ConstMemory(pctx->extradata, pctx->extradata_size), memEx);
+
+        if(memEx.len())
+        {
+            if (avc_codec_data.len() && // we have old header data
+                memEx.len() == avc_codec_data.len() &&
+                !memcmp(memEx.mem(), avc_codec_data.cstr(), avc_codec_data.len()))
+            {
+                // Codec data has not changed.
+                //logD_ (_func, "Codec data has not changed");
+                readframe.header = ConstMemory();
+                bEmptyHeader = true;
+            }
+        }
+        else
+        {
+            bEmptyHeader = true;
+        }
+
+        if(!bEmptyHeader)
+        {
+            avc_codec_data.allocate(memEx.len());
+
+            memcpy(avc_codec_data.cstr(), memEx.mem(), memEx.len());
+            avc_codec_data.setLength(memEx.len());
+            readframe.header = ConstMemory(avc_codec_data.cstr(), avc_codec_data.len());
+        }
+    }
+
+    // retrive frame
+    readframe.frame = ConstMemory(packet.data, packet.size);
+    readframe.bKeyFrame = (packet.flags & AV_PKT_FLAG_KEY);
+    readframe.timestamp_nanosec = m_initTimeOfRecord + packet.pts / (double)format_ctx->streams[video_stream_idx]->time_base.den * 1000000000LL;
+    readframe.src_packet = packet;
+
+    return true;
+}
+
+void FileReader::FreeFrame(Frame & readframe)
+{
+    av_free_packet(&readframe.src_packet);
+    memset(&readframe.src_packet, 0, sizeof(readframe.src_packet));
+}
+
+bool FileReader::Seek(double dSeconds)
+{
+    if(!IsInit())
+        return false;
+
+    int64_t llTimeStamp = (int64_t)(dSeconds * AV_TIME_BASE);
+    int res = avformat_seek_file(format_ctx, -1, Int64_Min, llTimeStamp, Int64_Max, 0);
+
+    // alter variant: avformat_seek_file(ic, -1, INT64_MIN, llTimeStamp, llTimeStamp, 0);
+
+    return (res >= 0);
+}
+
+// end of FileReader implementation
 
 mt_mutex (mutex) bool
 MediaReader::tryOpenNextFile ()
@@ -36,439 +566,112 @@ MediaReader::tryOpenNextFile ()
         return false;
     }
 
-    session_state = SessionState_FileHeader;
+    cur_filename = st_makeString(record_dir, "/", filename, ".flv");
 
-    logD (reader, _func, "filename: ", filename);
+    logD (reader, _func, "new filename: ", cur_filename);
 
+    if(!m_fileReader.Init(cur_filename))
     {
-        StRef<String> const vdat_filename = st_makeString (filename, ".vdat");
-        vdat_file = vfs->openFile (vdat_filename->mem(), 0 /* open_flags */, FileAccessMode::ReadOnly);
-        if (!vdat_file) {
-            logE_ (_func, "vfs->openFile() failed for filename ",
-                   vdat_filename, ": ", exc->toString());
-            return false;
-        }
+        logD (reader, _func,"m_fileReader.Init failed");
+        return false;
+    }
 
-        cur_filename = filename;
+    Time unix_time_stamp = 0;
+
+    if(FileNameToUnixTimeStamp().Convert(cur_filename, unix_time_stamp) == Result::Success)
+    {
+        unix_time_stamp /= 1000000000LL;
+        if(unix_time_stamp < start_unixtime_sec)
+        {
+            logD (reader, _func,"unix_time_stamp(", unix_time_stamp, ") < start_unixtime_sec (", start_unixtime_sec, ")");
+            double dNumSeconds = (start_unixtime_sec - unix_time_stamp);
+            logD (reader, _func,"we will skip ", dNumSeconds, "seconds");
+            // DISCUSSION: may be we must get duration from m_fileReader and if it less than dNumSeconds
+            // call tryOpenNextFile again (recursively).
+
+            if(!m_fileReader.Seek(dNumSeconds))
+            {
+                return false;
+            }
+        }
+    }
+    else
+    {
+        return false;
     }
 
     return true;
 }
 
-mt_mutex (mutex) Result
-MediaReader::readFileHeader ()
-{
-    File * const file = vdat_file->getFile();
-
-    FileSize fpos = 0;
-    if (!file->tell (&fpos)) {
-        logE_ (_func, "tell() failed: ", exc->toString());
-        return Result::Failure;
-    }
-
-    Byte header [20];
-    Size bytes_read = 0;
-    IoResult const res = file->readFull (Memory::forObject (header), &bytes_read);
-    if (res == IoResult::Error) {
-        logE_ (_func, "vdat file read error: ", exc->toString());
-        if (!file->seek (fpos, SeekOrigin::Beg))
-            logE_ (_func, "seek() failed: ", exc->toString());
-        return Result::Failure;
-    } else
-    if (res != IoResult::Normal) {
-        logE_ (_func, "Could not read vdat header");
-        if (!file->seek (fpos, SeekOrigin::Beg))
-            logE_ (_func, "seek() failed: ", exc->toString());
-        return Result::Failure;
-    }
-
-    if (bytes_read < sizeof (header)) {
-        if (!file->seek (fpos, SeekOrigin::Beg))
-            logE_ (_func, "seek() failed: ", exc->toString());
-        return Result::Failure;
-    }
-
-    if (!equal (ConstMemory (header, 4), "MMNT")) {
-        logE_ (_func, "Invalid vdat header: no magic bytes");
-        return Result::Failure;
-    }
-
-    // TODO Parse format version and header length.
-
-    if (!sequence_headers_sent && first_frame)
-        session_state = SessionState_SequenceHeaders;
-    else
-        session_state = SessionState_Frame;
-
-    vdat_data_start = sizeof (header);
-
-    return Result::Success;
-}
-
-mt_mutex (mutex) Result
-MediaReader::readIndexAndSeek (bool * const mt_nonnull ret_seeked)
-{
-    *ret_seeked = false;
-
-    if (!first_file) {
-        return Result::Success;
-    }
-    first_file = false;
-
-    logD_ (_func_);
-
-    StRef<String> const idx_filename = st_makeString (cur_filename, ".idx");
-    Ref<Vfs::VfsFile> const idx_file = vfs->openFile (idx_filename->mem(),
-                                                      0 /* open_flags */,
-                                                      FileAccessMode::ReadOnly);
-    if (!idx_file) {
-        logE_ (_func, "vfs->openFile() failed for filename ",
-               idx_filename, ": ", exc->toString());
-        return Result::Failure;
-    }
-
-    Uint64 last_offset = 0;
-
-    Byte buf [1 << 16 /* 64 Kb */];
-    File * const file = idx_file->getFile();
-    for (;;) {
-        Size bytes_read = 0;
-        IoResult const res = file->readFull (Memory::forObject (buf), &bytes_read);
-        if (res == IoResult::Error) {
-            logE_ (_func, "idx file read error: ", exc->toString());
-            return Result::Failure;
-        }
-
-        if (res == IoResult::Eof) {
-            logD_ (_func, "idx eof");
-            break;
-        }
-
-        for (Size i = 0; i + 16 <= bytes_read; i += 16) {
-            Uint64 const unixtime_timestamp_nanosec = ((Uint64) buf [i + 0] << 56) |
-                                                      ((Uint64) buf [i + 1] << 48) |
-                                                      ((Uint64) buf [i + 2] << 40) |
-                                                      ((Uint64) buf [i + 3] << 32) |
-                                                      ((Uint64) buf [i + 4] << 24) |
-                                                      ((Uint64) buf [i + 5] << 16) |
-                                                      ((Uint64) buf [i + 6] <<  8) |
-                                                      ((Uint64) buf [i + 7] <<  0);
-
-            Uint64 const data_offset = ((Uint64) buf [i +  8] << 56) |
-                                       ((Uint64) buf [i +  9] << 48) |
-                                       ((Uint64) buf [i + 10] << 40) |
-                                       ((Uint64) buf [i + 11] << 32) |
-                                       ((Uint64) buf [i + 12] << 24) |
-                                       ((Uint64) buf [i + 13] << 16) |
-                                       ((Uint64) buf [i + 14] <<  8) |
-                                       ((Uint64) buf [i + 15] <<  0);
-
-            logD_ (_func, "idx ts ", unixtime_timestamp_nanosec, " offs ", data_offset);
-
-            if (unixtime_timestamp_nanosec > start_unixtime_sec * 1000000000) {
-                logD_ (_func, "idx hit");
-                break;
-            }
-
-            last_offset = data_offset;
-        }
-    }
-
-    if (last_offset > 0) {
-        *ret_seeked = true;
-
-        logD_ (_func, "seek (", last_offset, ")");
-        if (!vdat_file->getFile()->seek (vdat_data_start + last_offset, SeekOrigin::Beg)) {
-            logE_ (_func, "seek() failed: ", exc->toString());
-            return Result::Failure;
-        }
-    } else {
-        logD_ (_func, "no seek");
-    }
-
-    return Result::Success;
-}
-
 mt_mutex (mutex) MediaReader::ReadFrameResult
-MediaReader::readFrame (ReadFrameBackend const * const read_frame_cb,
+MediaReader::sendFrame (const FileReader::Frame & inputFrame,
+                        ReadFrameBackend const * const read_frame_cb,
                         void                   * const read_frame_cb_data)
 {
-    File * const file = vdat_file->getFile();
+    ReadFrameResult client_res = ReadFrameResult_Success;
+    VideoStream::VideoCodecId video_codec_id = VideoStream::VideoCodecId::AVC;
 
-    Size total_read = 0;
-    for (;;) {
-        FileSize fpos = 0;
-        if (!file->tell (&fpos)) {
-            logE_ (_func, "tell() failed: ", exc->toString());
-            return ReadFrameResult_Failure;
-        }
+    if (inputFrame.header.len())
+    {
+        Size msg_len = 0;
 
-        Byte frame_header [14];
-        Size bytes_read = 0;
-        IoResult const res = file->readFull (Memory::forObject (frame_header), &bytes_read);
-        if (res == IoResult::Error) {
-            logE_ (_func, "vdat file read error: ", exc->toString());
-            return ReadFrameResult_Failure;
-        }
+        PagePool::PageListHead page_list;
 
-        if (res != IoResult::Normal) {
-//            logE_ (_func, "Could not read media header");
-            if (!file->seek (fpos, SeekOrigin::Beg))
-                logE_ (_func, "seek() failed: ", exc->toString());
-            return ReadFrameResult_Failure;
-        }
+        page_pool->getFillPages (&page_list,
+                                 inputFrame.header);
+        msg_len += inputFrame.header.len();
 
-        if (bytes_read < sizeof (frame_header)) {
-            if (!file->seek (fpos, SeekOrigin::Beg))
-                logE_ (_func, "seek() failed: ", exc->toString());
-            return ReadFrameResult_Failure;
-        }
+        VideoStream::VideoMessage msg;
+        msg.timestamp_nanosec = inputFrame.timestamp_nanosec;
+        msg.prechunk_size = 0;
+        msg.frame_type = VideoStream::VideoFrameType::AvcSequenceHeader;
+        msg.codec_id = video_codec_id;
 
-        Time const msg_unixtime_ts_nanosec = ((Time) frame_header [0] << 56) |
-                                             ((Time) frame_header [1] << 48) |
-                                             ((Time) frame_header [2] << 40) |
-                                             ((Time) frame_header [3] << 32) |
-                                             ((Time) frame_header [4] << 24) |
-                                             ((Time) frame_header [5] << 16) |
-                                             ((Time) frame_header [6] <<  8) |
-                                             ((Time) frame_header [7] <<  0);
-//        logD_ (_func, "msg ts: ", msg_unixtime_ts_nanosec);
+        msg.page_pool = page_pool;
+        msg.page_list = page_list;
+        msg.msg_len = msg_len;
+        msg.msg_offset = 0;
+        msg.is_saved_frame = false;
 
-        Size const msg_ext_len = ((Size) frame_header [ 8] << 24) |
-                                 ((Size) frame_header [ 9] << 16) |
-                                 ((Size) frame_header [10] <<  8) |
-                                 ((Size) frame_header [11] <<  0);
-//        logD_ (_func, "msg_ext_len: ", msg_ext_len);
+        client_res = read_frame_cb->videoFrame (&msg, read_frame_cb_data);
 
-        if (session_state == SessionState_SequenceHeaders) {
-            if (!(   (frame_header [12] == 2 && frame_header [13] == AudioRecordFrameType::AacSequenceHeader)
-                  || (frame_header [12] == 1 && frame_header [13] == VideoRecordFrameType::AvcSequenceHeader)))
-            {
-                session_state = SessionState_Frame;
-                bool seeked = false;
-                if (!readIndexAndSeek (&seeked))
-                    return ReadFrameResult_Failure;
+        page_pool->msgUnref (page_list.first);
+    }
 
-                if (seeked)
-                    continue;
-            }
-        }
+    VideoStream::VideoMessage msg;
+    msg.frame_type = VideoStream::VideoFrameType::InterFrame;
+    msg.codec_id = video_codec_id;
 
-        if (session_state == SessionState_Frame) {
-            if (msg_unixtime_ts_nanosec < start_unixtime_sec * 1000000000) {
-//                logD_ (_func, "skipping ts ", msg_unixtime_ts_nanosec, " < ", start_unixtime_sec * 1000000000);
-                if (!file->seek (msg_ext_len - 2, SeekOrigin::Cur)) {
-                    logE_ (_func, "seek() failed: ", exc->toString());
-                    if (!file->seek (fpos, SeekOrigin::Beg))
-                        logE_ (_func, "seek() failed: ", exc->toString());
-                    return ReadFrameResult_Failure;
-                }
-                continue;
-            }
+    if (inputFrame.bKeyFrame)
+    {
+        msg.frame_type = VideoStream::VideoFrameType::KeyFrame;
+    }
 
-            if (first_frame)
-                first_frame = false;
-        }
+    PagePool::PageListHead page_list;
 
-        ReadFrameResult client_res = ReadFrameResult_Success;
+    page_pool->getFillPages (&page_list,
+                             inputFrame.frame);
 
-        if (msg_ext_len <= (1 << 25 /* 32 Mb */)
-            && msg_ext_len >= 2)
-        {
-            PagePool::PageListHead page_list;
-            Size const page_size = page_pool->getPageSize ();
-            page_pool->getPages (&page_list, msg_ext_len - 2);
+    Size msg_len = inputFrame.frame.len();
+    msg.timestamp_nanosec = inputFrame.timestamp_nanosec;
 
-            PagePool::Page *cur_page = page_list.first;
-            Size msg_read = 0;
-            Size page_read = 0;
-            for (;;) {
-                if (msg_read >= msg_ext_len - 2)
-                    break;
+    msg.prechunk_size = 0;
 
-                Size nread = 0;
-                Size toread = page_size - page_read;
-                if (toread > msg_ext_len - 2 - msg_read)
-                    toread = msg_ext_len - 2 - msg_read;
-                IoResult const res = file->readFull (Memory (cur_page->getData() + page_read,
-                                                             toread),
-                                                     &nread);
-                if (res == IoResult::Error) {
-                    logE_ (_func, "vdat file read error: ", exc->toString());
-                    page_pool->msgUnref (page_list.first);
-                    return ReadFrameResult_Failure;
-                }
+    msg.page_pool = page_pool;
+    msg.page_list = page_list;
+    msg.msg_len = msg_len;
+    msg.msg_offset = 0;
+    msg.is_saved_frame = false;
 
-                if (res != IoResult::Normal) {
-                    logE_ (_func, "Could not read frame");
-                    if (!file->seek (fpos, SeekOrigin::Beg))
-                        logE_ (_func, "seek() failed: ", exc->toString());
-                    page_pool->msgUnref (page_list.first);
-                    return ReadFrameResult_Failure;
-                }
+    client_res = read_frame_cb->videoFrame (&msg, read_frame_cb_data);
 
-                page_read += nread;
-                msg_read  += nread;
+    page_pool->msgUnref (page_list.first);
 
-                cur_page->data_len = page_read;
-
-                if (page_read >= page_size) {
-                    cur_page = cur_page->getNextMsgPage();
-                    page_read = 0;
-                }
-            }
-
-//            logD_ (_func, "msg_read: ", msg_read);
-
-//            Byte * const hdr = page_list.first->getData();
-            Byte * const hdr = frame_header + 12;
-            if (hdr [0] == 2) {
-              // Audio frame
-                VideoStream::AudioFrameType const frame_type = toAudioFrameType (hdr [1]);
-                logS_ (_func, "ts ", msg_unixtime_ts_nanosec, " ", frame_type);
-
-                bool skip = false;
-                if (frame_type == VideoStream::AudioFrameType::AacSequenceHeader) {
-                    if (got_aac_seq_hdr
-                        && PagePool::msgEqual (aac_seq_hdr.first, page_list.first))
-                    {
-                        skip = true;
-                    } else {
-                        if (got_aac_seq_hdr)
-                            page_pool->msgUnref (aac_seq_hdr.first);
-
-                        aac_seq_hdr_sent = true;
-                        aac_seq_hdr = page_list;
-                        aac_seq_hdr_len = msg_ext_len - 2;
-                        page_pool->msgRef (aac_seq_hdr.first);
-                    }
-                }
-
-                if (!skip && frame_type.isAudioData()) {
-                    if (read_frame_cb && read_frame_cb->audioFrame) {
-                        if (got_aac_seq_hdr && !aac_seq_hdr_sent) {
-                            aac_seq_hdr_sent = true;
-
-                            VideoStream::AudioMessage msg;
-                            msg.timestamp_nanosec = msg_unixtime_ts_nanosec;
-
-                            msg.page_pool = page_pool;
-                            msg.page_list = aac_seq_hdr;
-                            msg.msg_len = aac_seq_hdr_len;
-                            msg.msg_offset = 0;
-                            msg.prechunk_size = 0;
-
-                            msg.codec_id = VideoStream::AudioCodecId::AAC;
-                            msg.frame_type = frame_type;
-
-                            // Note that callback's return value is not used.
-                            read_frame_cb->audioFrame (&msg, read_frame_cb_data);
-                        }
-
-                        VideoStream::AudioMessage msg;
-                        msg.timestamp_nanosec = msg_unixtime_ts_nanosec;
-
-                        msg.page_pool = page_pool;
-                        msg.page_list = page_list;
-                        msg.msg_len = msg_ext_len - 2;
-                        msg.msg_offset = 0;
-                        msg.prechunk_size = 0;
-
-                        msg.codec_id = VideoStream::AudioCodecId::AAC;
-                        msg.frame_type = frame_type;
-
-                        client_res = read_frame_cb->audioFrame (&msg, read_frame_cb_data);
-                    }
-                }
-            } else
-            if (hdr [0] == 1) {
-              // Video frame
-                VideoStream::VideoFrameType const frame_type = toVideoFrameType (hdr [1]);
-                logS_ (_func, "ts ", msg_unixtime_ts_nanosec, " ", frame_type);
-
-                bool skip = false;
-                if (frame_type == VideoStream::VideoFrameType::AvcSequenceHeader) {
-                    if (got_avc_seq_hdr
-                        && PagePool::msgEqual (avc_seq_hdr.first, page_list.first))
-                    {
-                        skip = true;
-                    } else {
-                        if (got_avc_seq_hdr)
-                            page_pool->msgUnref (avc_seq_hdr.first);
-
-                        got_avc_seq_hdr = true;
-                        avc_seq_hdr = page_list;
-                        avc_seq_hdr_len = msg_ext_len - 2;
-                        page_pool->msgRef (avc_seq_hdr.first);
-                    }
-                }
-
-                if (!skip && frame_type.isVideoData()) {
-                    if (read_frame_cb && read_frame_cb->videoFrame) {
-                        if (got_avc_seq_hdr && !avc_seq_hdr_sent) {
-                            avc_seq_hdr_sent = true;
-
-                            VideoStream::VideoMessage msg;
-                            msg.timestamp_nanosec = msg_unixtime_ts_nanosec;
-
-                            msg.page_pool = page_pool;
-                            msg.page_list = avc_seq_hdr;
-                            msg.msg_len = avc_seq_hdr_len;
-                            msg.msg_offset = 0;
-                            msg.prechunk_size = 0;
-
-                            msg.codec_id = VideoStream::VideoCodecId::AVC;
-                            msg.frame_type = VideoStream::VideoFrameType::AvcSequenceHeader;
-                            msg.is_saved_frame = false;
-
-                            // Note that callback's return value is not used.
-                            read_frame_cb->videoFrame (&msg, read_frame_cb_data);
-                        }
-
-                        VideoStream::VideoMessage msg;
-                        msg.timestamp_nanosec = msg_unixtime_ts_nanosec;
-
-                        msg.page_pool = page_pool;
-                        msg.page_list = page_list;
-                        msg.msg_len = msg_ext_len - 2;
-                        msg.msg_offset = 0;
-                        msg.prechunk_size = 0;
-
-                        msg.codec_id = VideoStream::VideoCodecId::AVC;
-                        msg.frame_type = frame_type;
-                        msg.is_saved_frame = false;
-
-                        client_res = read_frame_cb->videoFrame (&msg, read_frame_cb_data);
-                    }
-                }
-            } else {
-                logE_ (_func, "unknown frame type: ", hdr [0]);
-            }
-
-            page_pool->msgUnref (page_list.first);
-
-            // TODO Handle AVC/AAC codec data
-        } else {
-            logE_ (_func, "frame is too large (", msg_ext_len, " bytes), skipping");
-            if (!file->seek (msg_ext_len - 2, SeekOrigin::Cur)) {
-                logE_ (_func, "seek() failed: ", exc->toString());
-                if (!file->seek (fpos, SeekOrigin::Beg))
-                    logE_ (_func, "seek() failed: ", exc->toString());
-                return ReadFrameResult_Failure;
-            }
-        }
-
-        total_read += msg_ext_len - 2;
-        if (burst_size_limit) {
-            if (total_read >= burst_size_limit) {
-                logD_ (_func, "BurstLimit");
-                return ReadFrameResult_BurstLimit;
-            }
-        }
-
-        if (client_res != ReadFrameResult_Success)
-            return client_res;
-    } // for (;;)
+    if (client_res != ReadFrameResult_Success)
+    {
+        //logD (reader, _func, "return burst");
+        return client_res;
+    }
 
     return ReadFrameResult_Success;
 }
@@ -477,41 +680,44 @@ MediaReader::ReadFrameResult
 MediaReader::readMoreData (ReadFrameBackend const * const read_frame_cb,
                            void                   * const read_frame_cb_data)
 {
-    if (!vdat_file) {
+    if (!m_fileReader.IsInit())
+    {
         if (!tryOpenNextFile ())
+        {
             return ReadFrameResult_NoData;
+        }
     }
 
-    for (;;) {
-        assert (vdat_file);
-
+    // read packets from file
+    while (1)
+    {
         Result res = Result::Failure;
-        switch (session_state) {
-            case SessionState_FileHeader:
-                res = readFileHeader ();
-                break;
-            case SessionState_SequenceHeaders:
-            case SessionState_Frame:
-                ReadFrameResult const rf_res = readFrame (read_frame_cb, read_frame_cb_data);
-                if (rf_res == ReadFrameResult_BurstLimit) {
-                    logD (reader, _func, "session 0x", fmt_hex, (UintPtr) this, ": BurstLimit");
-                    return ReadFrameResult_BurstLimit;
-                } else
-                if (rf_res == ReadFrameResult_Finish) {
-                    return ReadFrameResult_Finish;
-                } else
-                if (rf_res == ReadFrameResult_Success) {
-                    res = Result::Success;
-                } else {
-                    res = Result::Failure;
-                }
+        FileReader::Frame frame;
 
-                break;
+        if(m_fileReader.ReadFrame(frame))
+        {
+            ReadFrameResult const rf_res = sendFrame (frame, read_frame_cb, read_frame_cb_data);
+            if (rf_res == ReadFrameResult_BurstLimit) {
+                logD (reader, _func, "session 0x", fmt_hex, (UintPtr) this, ": BurstLimit, ", "Filename: ", m_fileReader.GetFilename());
+                return ReadFrameResult_BurstLimit;
+            } else
+            if (rf_res == ReadFrameResult_Finish) {
+                return ReadFrameResult_Finish;
+            } else
+            if (rf_res == ReadFrameResult_Success) {
+                res = Result::Success;
+            } else {
+                res = Result::Failure;
+            }
+
+            m_fileReader.FreeFrame(frame);
         }
-
-        if (!res) {
+        else
+        {
             if (!tryOpenNextFile ())
+            {
                 return ReadFrameResult_NoData;
+            }
         }
     }
 
@@ -523,14 +729,16 @@ MediaReader::init (PagePool    * const mt_nonnull page_pool,
                    Vfs         * const mt_nonnull vfs,
                    ConstMemory   const stream_name,
                    Time          const start_unixtime_sec,
-                   Size          const burst_size_limit)
+                   Size          const burst_size_limit,
+                   StRef<String> const record_dir)
 {
     this->page_pool = page_pool;
     this->vfs = vfs;
     this->start_unixtime_sec = start_unixtime_sec;
     this->burst_size_limit = burst_size_limit;
+    this->record_dir = record_dir;
 
-    logD_ (_func, "start_unixtime_sec: ", start_unixtime_sec);
+    logD (reader, _func, "start_unixtime_sec: ", start_unixtime_sec, "stream_name: ", (const char *)stream_name.mem());
     file_iter.init (vfs, stream_name, start_unixtime_sec);
 }
 
@@ -553,6 +761,7 @@ MediaReader::~MediaReader ()
     mutex.lock ();
     releaseSequenceHeaders_unlocked ();
     mutex.unlock ();
+
 }
 
 }

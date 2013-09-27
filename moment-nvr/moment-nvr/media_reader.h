@@ -24,11 +24,115 @@
 #include <moment-nvr/types.h>
 #include <moment-nvr/nvr_file_iterator.h>
 
+extern "C" {
+#ifndef INT64_C
+#define INT64_C(c) (c ## LL)
+#define UINT64_C(c) (c ## ULL)
+#endif
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+}
+
 
 namespace MomentNvr {
 
 using namespace M;
 using namespace Moment;
+
+class MemoryEx : public Memory
+{
+
+private:
+
+    Size cur_size;
+
+public:
+
+    Size size() const { return cur_size; }
+    void setSize(Size newPos) { cur_size = newPos; }
+
+    MemoryEx ()
+        : Memory()
+        , cur_size(0)
+    {
+    }
+
+    MemoryEx (Byte * const mem, Size const len)
+        : Memory(mem, len)
+        , cur_size(0)
+    {
+    }
+};
+
+class FileReader
+{
+
+private:
+
+    typedef String MemorySafe;
+
+    AVFormatContext *   format_ctx;
+    int                 video_stream_idx;
+    MemorySafe          avc_codec_data;
+    bool                first_key_frame_received;
+
+    StRef<String> m_fileName;
+    Time m_initTimeOfRecord;
+    double m_dDuration;
+
+    int WriteB8ToBuffer(Int32 b, MemoryEx & memory);
+    int WriteB16ToBuffer(Uint32 val, MemoryEx & memory);
+    int WriteB32ToBuffer(Uint32 val, MemoryEx & memory);
+    int WriteDataToBuffer(ConstMemory const memory, MemoryEx & memoryOut);
+    int AvcParseNalUnits(ConstMemory const mem, MemoryEx * pMemoryOut);
+    int IsomWriteAvcc(ConstMemory const memory, MemoryEx & memoryOut);
+
+    static void CloseCodecs(AVFormatContext * pAVFrmtCntxt);
+
+public:
+
+    class Frame
+    {
+        friend class FileReader;
+
+    public:
+
+        Frame(void) : timestamp_nanosec(0), bKeyFrame(false)
+        {
+            memset(&src_packet, 0, sizeof(src_packet));
+        }
+
+        ConstMemory header;
+        ConstMemory frame;
+        Uint64 timestamp_nanosec;
+        bool bKeyFrame;
+
+    private:
+
+        AVPacket src_packet;
+    };
+
+    FileReader();
+    ~FileReader();
+
+    bool Init(StRef<String> & fileName);
+    void DeInit();
+    bool IsInit();
+    bool Seek(double dSeconds);
+    double GetDuration(void) const
+    {
+        return m_dDuration;
+    }
+    StRef<String> GetFilename() const
+    {
+        return m_fileName;
+    };
+
+    // if ReadFrame returns 'true' use FreeFrame() function after using of Frame object.
+    bool ReadFrame(Frame & readframe);
+    void FreeFrame(Frame & readframe);
+};
 
 class MediaReader : public DependentCodeReferenced
 {
@@ -68,12 +172,10 @@ private:
     // 0 means no limit
     mt_const Size burst_size_limit;
 
-    mt_mutex (mutex) SessionState session_state;
     mt_mutex (mutex) NvrFileIterator file_iter;
 
-    mt_mutex (mutex) Ref<Vfs::VfsFile> vdat_file;
     mt_mutex (mutex) StRef<String> cur_filename;
-    mt_mutex (mutex) Uint64 vdat_data_start;
+    mt_mutex (mutex) StRef<String> record_dir;
 
     mt_mutex (mutex) bool first_file;
 
@@ -90,24 +192,25 @@ private:
     mt_mutex (mutex) PagePool::PageListHead avc_seq_hdr;
     mt_mutex (mutex) Size avc_seq_hdr_len;
 
+    FileReader m_fileReader;
+
     mt_mutex (mutex) void releaseSequenceHeaders_unlocked ();
 
     mt_mutex (mutex) void reset_unlocked ()
     {
-        session_state = SessionState_FileHeader;
         releaseSequenceHeaders_unlocked ();
         first_file = true;
         sequence_headers_sent = false;
         first_frame = true;
         file_iter.reset (start_unixtime_sec);
-        vdat_file = NULL;
     }
 
-    mt_mutex (mutex) bool tryOpenNextFile  ();
+    mt_mutex (mutex) bool tryOpenNextFile ();
     mt_mutex (mutex) Result readFileHeader ();
     mt_mutex (mutex) Result readIndexAndSeek (bool * mt_nonnull ret_seeked);
 
-    mt_mutex (mutex) ReadFrameResult readFrame (ReadFrameBackend const *read_frame_cb,
+    mt_mutex (mutex) ReadFrameResult sendFrame (const FileReader::Frame & inputFrame,
+                                                ReadFrameBackend const *read_frame_cb,
                                                 void                   *read_frame_cb_data);
 
 public:
@@ -125,15 +228,14 @@ public:
                         Vfs         * mt_nonnull vfs,
                         ConstMemory  stream_name,
                         Time         start_unixtime_sec,
-                        Size         burst_size_limit);
+                        Size         burst_size_limit,
+                        StRef<String> record_dir);
 
     MediaReader (Object * const coderef_container)
         : DependentCodeReferenced (coderef_container),
           page_pool             (coderef_container),
           start_unixtime_sec    (0),
           burst_size_limit      (0),
-          session_state         (SessionState_FileHeader),
-          vdat_data_start       (0),
           first_file            (true),
           sequence_headers_sent (false),
           first_frame           (true),

@@ -17,14 +17,14 @@
 */
 
 
-#ifndef MOMENT_NVR__NVR_FILE_ITERATOR__H__
-#define MOMENT_NVR__NVR_FILE_ITERATOR__H__
+#ifndef MOMENT_FFMPEG__FFMPEG_FILE_ITERATOR__H__
+#define MOMENT_FFMPEG__FFMPEG_FILE_ITERATOR__H__
 
 
 #include <moment/libmoment.h>
 
 
-namespace MomentNvr {
+namespace MomentFFmpeg {
 
 using namespace M;
 using namespace Moment;
@@ -36,7 +36,7 @@ private:
     StRef<String> stream_name;
 
     bool got_first;
-    // year/month/day/hour
+    // year/month/day/hour/minute/seconds
     unsigned cur_pos [4];
 
     static StRef<String> makePathForDepth (ConstMemory  stream_name,
@@ -67,5 +67,5 @@ public:
 }
 
 
-#endif /* MOMENT_NVR__NVR_FILE_ITERATOR__H__ */
+#endif /* MOMENT_FFMPEG__NVR_FILE_ITERATOR__H__ */
 

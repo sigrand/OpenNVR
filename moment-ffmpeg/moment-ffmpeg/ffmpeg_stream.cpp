@@ -18,7 +18,8 @@
 
 
 #include <moment-ffmpeg/ffmpeg_stream.h>
-
+#include "naming_scheme.h"
+#include <libmary/vfs.h>
 
 
 using namespace M;
@@ -47,6 +48,105 @@ static LogGroup libMary_logGroup_plug     ("mod_ffmpeg.autoplug", LogLevel::D);
         ( ((const Byte*)(x))[1] <<  8) |			\
         (  (const Byte*)(x))[2])
 
+
+extern "C"
+{
+    extern AVOutputFormat ff_segment2_muxer;
+    extern AVOutputFormat ff_stream_segment2_muxer;
+
+    int MakeFullPath(const char * channel_name, int const file_duration_sec, char * fullPath, int iBufSize)
+    {
+        int i, indExtension = -1;
+        int filenameSize = strlen(channel_name);
+        for(i = filenameSize - 1; i >= 0; --i)
+        {
+            if(channel_name[i] == '.')
+            {
+                indExtension = i;
+                break;
+            }
+        }
+
+        if(indExtension == -1)
+        {
+            logE_ (_func, "<.> is not found, failed");
+            return -1;
+        }
+
+        ConstMemory fmt(channel_name + indExtension, filenameSize - indExtension);
+        ConstMemory rest(channel_name, indExtension);
+
+        indExtension = -1;
+
+        for(i = rest.len(); i >= 0; --i)
+        {
+            if(rest.mem()[i] == '/')
+            {
+                indExtension = i;
+                break;
+            }
+        }
+
+        if(indExtension == -1)
+        {
+            logE_ (_func, "</> is not found, failed");
+            return -1;
+        }
+
+        ConstMemory record_dir(rest.mem(), indExtension + 1);
+        ConstMemory channelName(rest.mem() + indExtension + 1, rest.len() - indExtension - 1);
+
+        struct timeval  tv;
+        gettimeofday(&tv, NULL);
+        Time next_unixtime_sec;
+
+        StRef<String> const filename = DefaultNamingScheme(file_duration_sec).getPath(channelName, tv, &next_unixtime_sec);
+        if (filename == NULL || !filename->len())
+        {
+            logE_ (_func, "naming_scheme->getPath() failed");
+            return -1;
+        }
+
+        Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (record_dir);
+
+        if (!vfs->createSubdirsForFilename (filename->mem()))
+        {
+            logE_ (_func, "vfs->createSubdirsForFilename() failed, filename: ",
+                   channelName, ": ", exc->toString());
+            return -1;
+        }
+
+        StRef<String> sFullPath = st_makeString(record_dir, filename->mem(), fmt);
+
+        if(sFullPath->len() >= iBufSize)
+        {
+            logE_ (_func, "sFullPath->len(", sFullPath->len(), ") >= iBufSize(", iBufSize,  ")");
+            return -1;
+        }
+
+        strcpy(fullPath, sFullPath->cstr());
+
+        logD_ (_func, "new fullfilename: ", fullPath, ", "
+               "next_unixtime_sec: ", next_unixtime_sec, ", cur unixtime: ", tv.tv_sec);
+
+        return 0;
+    }
+
+
+    void CustomAVLogCallback(void * /*ptr*/, int /*level*/, const char * outFmt, va_list vl)
+    {
+        if(outFmt)
+        {
+            // TODO: need to use 'level'
+            //char chLogBuffer[2048] = {};
+            //vsnprintf(chLogBuffer, sizeof(chLogBuffer), outFmt, vl);
+            //logD_(_func_, "ffmpeg LOG: ", chLogBuffer);
+        }
+    }
+}   // extern "C" ]
+
+
+
 static void RegisterFFMpeg(void)
 {
     static Uint32 uiInitialized = 0;
@@ -55,6 +155,10 @@ static void RegisterFFMpeg(void)
         return;
 
     uiInitialized = 1;
+
+    av_register_output_format(&ff_segment2_muxer);
+    av_register_output_format(&ff_stream_segment2_muxer);
+    av_log_set_callback(CustomAVLogCallback);
 
     // global ffmpeg initialization
     av_register_all();
@@ -68,8 +172,8 @@ FFmpegStream::ffmpegStreamData::ffmpegStreamData(void)
     RegisterFFMpeg();
 
     format_ctx = NULL;
+
     video_stream_idx = -1;
-    video_codec = NULL;
 }
 
 FFmpegStream::ffmpegStreamData::~ffmpegStreamData()
@@ -84,7 +188,7 @@ void FFmpegStream::ffmpegStreamData::CloseCodecs(AVFormatContext * pAVFrmtCntxt)
 
     for(unsigned int uiCnt = 0; uiCnt < pAVFrmtCntxt->nb_streams; ++uiCnt)
     {
-        // close each pCodec
+        // close each AVCodec
         if(pAVFrmtCntxt->streams[uiCnt])
         {
             AVStream * pAVStream = pAVFrmtCntxt->streams[uiCnt];
@@ -97,6 +201,9 @@ void FFmpegStream::ffmpegStreamData::CloseCodecs(AVFormatContext * pAVFrmtCntxt)
 
 void FFmpegStream::ffmpegStreamData::Deinit()
 {
+    // close writer before any actions with reader
+    m_nvrData.Deinit();
+
     if(format_ctx)
     {
         CloseCodecs(format_ctx);
@@ -106,16 +213,11 @@ void FFmpegStream::ffmpegStreamData::Deinit()
         format_ctx = NULL;
     }
 
-    if(video_codec)
-    {
-        //avcodec_close(video_codec);
-        video_codec = NULL;
-    }
 
     video_stream_idx = -1;
 }
 
-Result FFmpegStream::ffmpegStreamData::Init(const char * uri)
+Result FFmpegStream::ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config, Timers * timers)
 {
     if(!uri || !uri[0])
         return Result::Failure;
@@ -123,29 +225,29 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri)
     Deinit();
 
     // Open video file
-    logD_(_func_, "uri ", uri);
+    logD_(_func_, "ffmpegStreamData::Init, uri ", uri);
     Result res = Result::Success;
 
     if(avformat_open_input(&format_ctx, uri, NULL, NULL) == 0)
     {
-        logD_(_func_,"TEST_OPEN_VIDEO");
+        logD_(_func_, "ffmpegStreamData::Init, avformat_open_input, success");
         // Retrieve stream information
         if(avformat_find_stream_info(format_ctx, NULL) >= 0)
         {
-            logD_(_func_,"TEST_STREAM_INFO");
+            logD_(_func_,"ffmpegStreamData::Init, avformat_find_stream_info, success");
 
             // Dump information about file onto standard error
             av_dump_format(format_ctx, 0, uri, 0);
         }
         else
         {
-            logE_(_func_,"Couldn't find stream information");
+            logE_(_func_, "ffmpegStreamData::Init, Couldn't find stream information");
             res = Result::Failure;
         }
     }
     else
     {
-        logE_(_func_,"Couldn't open uri");
+        logE_(_func_, "ffmpegStreamData::Init, Couldn't open uri");
         res = Result::Failure;
     }
 
@@ -154,7 +256,6 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri)
         // Find the first video stream
         for(int i = 0; i < format_ctx->nb_streams; i++)
         {
-            logE_(_func_,"COUNT_STREAMS");
             if(format_ctx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
             {
                 video_stream_idx = i;
@@ -164,41 +265,62 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri)
 
         if(video_stream_idx == -1)
         {
-            logE_(_func_,"Didn't find a video stream");
+            logE_(_func_,"ffmpegStreamData::Init, Didn't find a video stream");
             res = Result::Failure;
         }
     }
 
-    if(res == Result::Success)
+    // reading configs
+
+    ConstMemory record_dir;
+    Uint64 max_age_minutes = 120;
+    Uint64 file_duration_sec = 3600;
+
+    // get cycle time
     {
-        logD_(_func_,"TEST_FIND_VIDEO_STREAM");
-
-        // Get a pointer to the codec context for the video stream
-        AVCodecContext * pCodecCtx = format_ctx->streams[video_stream_idx]->codec;
-
-        // Find the decoder for the video stream
-        logD_(_func_, "is AV_CODEC_ID_H264: ", pCodecCtx->codec_id == AV_CODEC_ID_H264);
-        video_codec = avcodec_find_decoder(pCodecCtx->codec_id);
-
-        if(video_codec != NULL)
-        {
-            // Open codec
-            if(avcodec_open2(pCodecCtx, video_codec, NULL) < 0)
-            {
-                logE_(_func_,"Could not open codec!");
-                res = Result::Failure;
-            }
-        }
+        ConstMemory const opt_name = "mod_nvr/max_age";
+        MConfig::GetResult const res =
+                config->getUint64_default (opt_name, &max_age_minutes, max_age_minutes);
+        if (!res)
+            logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
         else
+            logI_ (_func, opt_name, ": ", max_age_minutes);
+    }
+
+    // get path for recording
+    {
+        ConstMemory const opt_name = "mod_nvr/record_dir"; // TODO: change mod_nvr to mod_ffmpeg?
+        bool record_dir_is_set = false;
+        record_dir = config->getString (opt_name, &record_dir_is_set);
+        if (!record_dir_is_set)
         {
-            logE_(_func_,"Unsupported codec!");
-            res = Result::Failure;
+            logE_ (_func, opt_name, " config option is not set, disabling writing");
+            // we can not write without output path
+            return Result::Failure;
         }
+        logI_ (_func, opt_name, ": [", record_dir, "]");
+    }
+
+    // get duration for each recorded file
+    {
+        ConstMemory const opt_name = "mod_nvr/file_duration";
+        MConfig::GetResult const res =
+                config->getUint64_default (opt_name, &file_duration_sec, file_duration_sec);
+        if (!res)
+            logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
+        else
+            logI_ (_func, opt_name, ": ", file_duration_sec);
     }
 
     if(res == Result::Success)
     {
-        uri_name = st_grab (new (std::nothrow) String (uri));
+        StRef<String> recdir = st_makeString(record_dir);
+        Result nvrResult = m_nvrData.Init(format_ctx, channel_name, recdir->cstr(), file_duration_sec, max_age_minutes);
+        logD_(_func_, "ffmpegStreamData::Init, m_nvrData.Init = ", (nvrResult == Result::Success) ? "Success" : "Failed");
+
+        Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir);
+        m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
+        m_nvr_cleaner->init (timers, vfs, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
     }
     else
     {
@@ -223,10 +345,19 @@ bool FFmpegStream::ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
 
         if(bVideo)
         {
+            // write to moment videostream
             pParent->doVideoData(packet,
                                  format_ctx->streams[video_stream_idx]->codec,
                                  format_ctx->streams[video_stream_idx]->time_base.den);
         }
+
+//        logD_ (_func, "PACKET,indx=", packet.stream_index,
+//                            ",pts=", packet.pts,
+//                            ",dts=", packet.dts,
+//                            ",size=", packet.size,
+//                            ",flags=", packet.flags);
+        // write to file
+        m_nvrData.WritePacket(format_ctx, packet);
 
         // Free the packet that was allocated by av_read_frame
         av_free_packet(&packet);
@@ -236,9 +367,205 @@ bool FFmpegStream::ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
             video_found = true;
             break;
         }
+
+        memset(&packet, 0, sizeof(packet));
     }
 
     return video_found;
+}
+
+FFmpegStream::ffmpegStreamData::nvrData::nvrData(void)
+{
+    m_file_duration_sec = 0;
+    m_max_age_minutes = 0;
+
+    m_out_format_ctx = NULL;
+
+    m_bIsInit = false;
+}
+
+FFmpegStream::ffmpegStreamData::nvrData::~nvrData(void)
+{
+    Deinit();
+}
+
+Result FFmpegStream::ffmpegStreamData::nvrData::Init(AVFormatContext * format_ctx, const char * channel_name,
+                                                     const char * record_dir, Uint64 file_duration_sec, Uint64 max_age_minutes)
+{
+    if(!format_ctx || !channel_name || !record_dir)
+        return Result::Failure;
+
+    if(format_ctx->nb_streams <= 0)
+    {
+        logE_ (_func, "input number of streams = 0!");
+        return Result::Failure;
+    }
+
+    // set internal members
+    m_record_dir = st_makeString(record_dir);
+    m_channel_name = st_makeString(channel_name);
+    m_file_duration_sec = file_duration_sec;
+    m_max_age_minutes = max_age_minutes;
+
+    const char OUTPUT_FILE_FORMAT[] = ".flv"; // TODO: may be mp4?
+    StRef<String> const path = st_makeString (m_record_dir->cstr(), "/", m_channel_name->cstr(), OUTPUT_FILE_FORMAT);
+
+    logD_ (_func, "The output path: ", path);
+    Result res = Result::Success;
+
+    if(avformat_alloc_output_context2(&m_out_format_ctx, NULL, "segment2", path->cstr()) >= 0)
+    {
+        for (int i = 0; i < format_ctx->nb_streams; ++i)
+        {
+            AVStream * pStream = NULL;
+
+            if (!(pStream = avformat_new_stream(m_out_format_ctx, NULL)))
+            {
+                logE_(_func_, "avformat_new_stream failed!");
+                res = Result::Failure;
+                break;
+            }
+
+            AVCodecContext * pInpCodec = format_ctx->streams[i]->codec;
+            AVCodecContext * pOutCodec = pStream->codec;
+
+            if(avcodec_copy_context(pOutCodec, pInpCodec) == 0)
+            {
+
+                if (!m_out_format_ctx->oformat->codec_tag ||
+                    av_codec_get_id (m_out_format_ctx->oformat->codec_tag, pInpCodec->codec_tag) == pOutCodec->codec_id ||
+                    av_codec_get_tag(m_out_format_ctx->oformat->codec_tag, pInpCodec->codec_id) <= 0)
+                {
+                    pOutCodec->codec_tag = pInpCodec->codec_tag;
+                }
+                else
+                {
+                    pOutCodec->codec_tag = 0;
+                }
+
+                pStream->sample_aspect_ratio = format_ctx->streams[i]->sample_aspect_ratio;
+            }
+            else
+            {
+                logE_(_func_, "avcodec_copy_context failed!");
+                res = Result::Failure;
+                break;
+            }
+        }
+    }
+    else
+    {
+        logE_(_func_, "avformat_alloc_output_context2 failed!");
+        res = Result::Failure;
+    }
+
+    if(res == Result::Success)
+    {
+        av_dump_format(m_out_format_ctx, 0, path->cstr(), 1);
+
+        AVOutputFormat * fmt = m_out_format_ctx->oformat;
+
+        if (!(fmt->flags & AVFMT_NOFILE))
+        {
+            assert(false);
+            logE_(_func_, "fmt->flags doesnt contain AVFMT_NOFILE");
+            res = Result::Failure;
+        }
+    }
+
+    if(res == Result::Success)
+    {
+        AVDictionary * pOptions = NULL;
+
+        av_dict_set(&pOptions, "segment_time", st_makeString(m_file_duration_sec)->cstr(), 0);
+
+        int ret = avformat_write_header(m_out_format_ctx, &pOptions);
+
+        av_dict_free(&pOptions);
+
+        if (ret < 0)
+        {
+            logE_(_func_, "Error occurred when opening output file");
+            res = Result::Failure;
+        }
+    }
+
+    if(res == Result::Success)
+    {
+        m_bIsInit = true;
+    }
+    else
+    {
+        Deinit();
+    }
+
+    return res;
+}
+
+void FFmpegStream::ffmpegStreamData::nvrData::Deinit()
+{
+    if(m_out_format_ctx)
+    {
+        av_write_trailer(m_out_format_ctx);
+
+        FFmpegStream::ffmpegStreamData::CloseCodecs(m_out_format_ctx);
+
+        avformat_free_context(m_out_format_ctx);
+
+        m_out_format_ctx = NULL;
+    }
+
+    m_record_dir = NULL;
+    m_channel_name = NULL;
+
+    m_file_duration_sec = 0;
+    m_max_age_minutes = 0;
+
+    m_bIsInit = false;
+}
+
+bool FFmpegStream::ffmpegStreamData::nvrData::IsInit() const
+{
+    return m_bIsInit;
+}
+
+Result FFmpegStream::ffmpegStreamData::nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & packet)
+{
+    if(!IsInit())
+        return Result::Failure;
+
+//    AVPacket opkt;
+//    av_init_packet(&opkt);
+
+//    if (packet.pts != AV_NOPTS_VALUE)
+//    {
+//        opkt.pts = av_rescale_q(packet.pts, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
+//        av_log(NULL, 0, "**********packet.pts != AV_NOPTS_VALUE\n");
+//    }
+//    else
+//    {
+//        opkt.pts = AV_NOPTS_VALUE;
+//        av_log(NULL, 0, "**********packet.pts == AV_NOPTS_VALUE\n");
+//    }
+
+//    if (packet.dts == AV_NOPTS_VALUE)
+//    {
+//        opkt.dts = AV_NOPTS_VALUE;//av_rescale_q(inCtx->dts, AV_TIME_BASE_Q, m_out_format_ctx->streams[packet.stream_index]->time_base);
+//        av_log(NULL, 0, "**********packet.dts == AV_NOPTS_VALUE\n");
+//    }
+//    else
+//    {
+//        opkt.dts = av_rescale_q(packet.dts, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
+//        av_log(NULL, 0, "**********packet.dts != AV_NOPTS_VALUE\n");
+//    }
+
+//    opkt.duration = av_rescale_q(packet.duration, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
+//    opkt.flags    = packet.flags;
+//    opkt.data = packet.data;
+//    opkt.size = packet.size;
+//    opkt.stream_index = packet.stream_index;
+
+    return (av_interleaved_write_frame(m_out_format_ctx, &/*opkt*/packet) == 0) ? Result::Success : Result::Failure;
 }
 
 int FFmpegStream::WriteB8ToBuffer(Int32 b, MemoryEx & memory)
@@ -615,7 +942,7 @@ FFmpegStream::createSmartPipelineForUri ()
 
     logD_ (_func, "uri: ", playback_item->stream_spec);
 
-    if(m_ffmpegStreamData.Init(playback_item->stream_spec->cstr()) != Result::Success)
+    if(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(), this->config, this->timers) != Result::Success)
     {
         mutex.lock ();
         logE_ (_this_func, "stream is not initialized, uri \"", playback_item->stream_spec->cstr(), "\"");
@@ -737,17 +1064,17 @@ FFmpegStream::reportMetaData ()
     logD (stream, _func_);
 
     if (metadata_reported) {
-	return;
+    return;
     }
     metadata_reported = true;
 
     if (!playback_item->send_metadata)
-	return;
+    return;
 
     VideoStream::VideoMessage msg;
     if (!RtmpServer::encodeMetaData (&metadata, page_pool, &msg)) {
-	logE_ (_func, "encodeMetaData() failed");
-	return;
+    logE_ (_func, "encodeMetaData() failed");
+    return;
     }
 
     logD (stream, _func, "Firing video message");
@@ -808,7 +1135,7 @@ FFmpegStream::doVideoData (AVPacket & packet, AVCodecContext * pctx, int time_ba
             do {
                 MemorySafe allocMemory(pctx->extradata_size * 2);
                 MemoryEx m_OutMemory((Byte *)allocMemory.cstr(), allocMemory.len());
-                memset(m_OutMemory.mem(), 0, m_OutMemory.len()-1);
+                memset(m_OutMemory.mem(), 0, m_OutMemory.len());
                 IsomWriteAvcc(ConstMemory(pctx->extradata, pctx->extradata_size), m_OutMemory);
 
 
@@ -964,8 +1291,8 @@ FFmpegStream::doVideoData (AVPacket & packet, AVCodecContext * pctx, int time_ba
 #if 0
 gboolean
 FFmpegStream::videoDataCb (GstPad    * const /* pad */,
-			GstBuffer * const buffer,
-			gpointer    const _self)
+            GstBuffer * const buffer,
+            gpointer    const _self)
 {
     FFmpegStream * const self = static_cast <FFmpegStream*> (_self);
     self->doVideoData (buffer);
@@ -974,9 +1301,9 @@ FFmpegStream::videoDataCb (GstPad    * const /* pad */,
 
 void
 FFmpegStream::handoffVideoDataCb (GstElement * const /* element */,
-			       GstBuffer  * const buffer,
-			       GstPad     * const /* pad */,
-			       gpointer     const _self)
+                   GstBuffer  * const buffer,
+                   GstPad     * const /* pad */,
+                   gpointer     const _self)
 {
     FFmpegStream * const self = static_cast <FFmpegStream*> (_self);
     self->doVideoData (buffer);
@@ -999,7 +1326,7 @@ FFmpegStream::noVideoTimerTick (void * const _self)
     }
 
     if (time > self->last_frame_time &&
-	time - self->last_frame_time >= 15 /* TODO Config param for the timeout */)
+    time - self->last_frame_time >= 15 /* TODO Config param for the timeout */)
     {
         logD (novideo, _func, "firing \"no video\" event");
 
@@ -1239,12 +1566,13 @@ mt_const void
 FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
                  Timers            * const timers,
                  DeferredProcessor * const deferred_processor,
-		 PagePool          * const page_pool,
-		 VideoStream       * const video_stream,
-		 VideoStream       * const mix_video_stream,
-		 Time                const initial_seek,
+                 PagePool          * const page_pool,
+                 VideoStream       * const video_stream,
+                 VideoStream       * const mix_video_stream,
+                 Time                const initial_seek,
                  ChannelOptions    * const channel_opts,
-                 PlaybackItem      * const playback_item)
+                 PlaybackItem      * const playback_item,
+                 const Ref<MConfig::Config> & config)
 {
     logD (pipeline, _this_func_);
 
@@ -1256,11 +1584,14 @@ FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
     this->mix_video_stream = mix_video_stream;
 
     this->channel_opts  = channel_opts;
+
     this->playback_item = playback_item;
 
     this->initial_seek = initial_seek;
     if (initial_seek == 0)
         initial_seek_complete = true;
+
+    this->config = config;
 
     deferred_reg.setDeferredProcessor (deferred_processor);
 

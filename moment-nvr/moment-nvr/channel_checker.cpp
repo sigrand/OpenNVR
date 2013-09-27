@@ -2,6 +2,8 @@
 #include <moment-nvr/inc.h>
 
 #include <moment-nvr/channel_checker.h>
+#include <moment-nvr/media_reader.h>
+#include <moment-nvr/naming_scheme.h>
 
 
 using namespace M;
@@ -56,46 +58,62 @@ ChannelChecker::checkIdxFile(StRef<String> path, CheckMode mode)
 {
     logD (channelcheck, _func, "under processing idx file:", path->cstr());
 
-    StRef<String> const idx_filename = st_makeString (path, ".idx");
-    Ref<Vfs::VfsFile> const idx_file = this->vfs->openFile (idx_filename->mem(),
-                                                      0 /* open_flags */,
-                                                      FileAccessMode::ReadOnly);
-    if (!idx_file)
-    {
-        logE_ (_func, "this->vfs->openFile() failed for filename ",
-               idx_filename, ": ", exc->toString());
-        return CheckResult_Failure;
-    }
+    StRef<String> const flv_filename = st_makeString (path, ".flv");
+//    Ref<Vfs::VfsFile> const flv_file = this->vfs->openFile (flv_filename->mem(),
+//                                                      0 /* open_flags */,
+//                                                      FileAccessMode::ReadOnly);
+//    if (!flv_file)
+//    {
+//        logE_ (_func, "this->vfs->openFile() failed for filename ",
+//               flv_filename, ": ", exc->toString());
+//        return CheckResult_Failure;
+//    }
 
-    Size bytes_read = 0;
-    Byte bufferStart [8];
-    Byte bufferEnd [8];
-    FileOffset offsetForEnd = -16;
-    IoResult res;
-    File * const file = idx_file->getFile();
+//    Size bytes_read = 0;
+//    Byte bufferStart [8];
+//    Byte bufferEnd [8];
+//    FileOffset offsetForEnd = -16;
+//    IoResult res;
+//    File * const file = flv_file->getFile();
 
 
-    res = file->read (Memory::forObject (bufferStart), &bytes_read);
-    if (res == IoResult::Error) {
-        logE_ (_func, "idx file read error: ", exc->toString());
-        return CheckResult_Failure;
-    }
+//    res = file->read (Memory::forObject (bufferStart), &bytes_read);
+//    if (res == IoResult::Error) {
+//        logE_ (_func, "idx file read error: ", exc->toString());
+//        return CheckResult_Failure;
+//    }
 
-    if (!file->seek (offsetForEnd, SeekOrigin::End))
-    {
-        logE_ (_func, "seek failed", exc->toString());
-        return CheckResult_Failure;
-    }
+//    if (!file->seek (offsetForEnd, SeekOrigin::End))
+//    {
+//        logE_ (_func, "seek failed", exc->toString());
+//        return CheckResult_Failure;
+//    }
 
-    res = file->read (Memory::forObject (bufferEnd), &bytes_read);
-    if (res == IoResult::Error) {
-        logE_ (_func, "idx file read error: ", exc->toString());
-        return CheckResult_Failure;
-    }
+//    res = file->read (Memory::forObject (bufferEnd), &bytes_read);
+//    if (res == IoResult::Error) {
+//        logE_ (_func, "idx file read error: ", exc->toString());
+//        return CheckResult_Failure;
+//    }
 
-    int const unixtime_timestamp_start = readTime (bufferStart);
-    int const unixtime_timestamp_end = readTime (bufferEnd);
+//    int const unixtime_timestamp_start = readTime (bufferStart);
+//    int const unixtime_timestamp_end = readTime (bufferEnd);
+
+    StRef<String> flv_filenameFull = st_makeString(m_record_dir, "/", flv_filename);
+
+    FileReader fileReader;
+    bool bRes = fileReader.Init(flv_filenameFull);
+    logD_ (_func, "fileReader.Init bRes: ", bRes? 1: 0);
+    Time timeOfRecord;
+
+    FileNameToUnixTimeStamp().Convert(flv_filenameFull, timeOfRecord);
+    int const unixtime_timestamp_start = timeOfRecord / 1000000000LL;
+    int const unixtime_timestamp_end = unixtime_timestamp_start + (int)fileReader.GetDuration();
+
+//    logD_ (_func, "unixtime_timestamp_start", unixtime_timestamp_start);
+//    logD_ (_func, "(int)fileReader.GetDuration()", (int)fileReader.GetDuration());
+//    logD_ (_func, "unixtime_timestamp_end", unixtime_timestamp_end);
     logD_ (_func, "idx ts for start and end [", unixtime_timestamp_start, ":", unixtime_timestamp_end, "]");
+
     switch(mode)
     {
         case CheckMode_Timings:
@@ -156,9 +174,10 @@ ChannelChecker::readTime (Byte * buf)
 }
 
 mt_const void
-ChannelChecker::init (Vfs * const vfs)
+ChannelChecker::init (Vfs * const vfs, StRef<String> & record_dir)
 {
     this->vfs = vfs;
+    this->m_record_dir = record_dir;
 }
 
 ChannelChecker::ChannelChecker(){}

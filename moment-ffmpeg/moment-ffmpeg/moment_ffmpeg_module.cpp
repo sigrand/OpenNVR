@@ -568,242 +568,129 @@ MomentFFmpegModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
 
     MOMENT_FFMPEG__HEADERS_DATE
 
-    if (req->getNumPathElems() == 3
-        && (equal (req->getPath (1), "update_playlist") ||
-            equal (req->getPath (1), "update_playlist_now")))
+//    if (req->getNumPathElems() >= 2
+//        && (equal (req->getPath (1), "rec_on") ||
+//            equal (req->getPath (1), "rec_off")))
+//    {
+//        ConstMemory const channel_name = req->getParameter ("stream");
+//        ConstMemory const seq = req->getParameter ("seq");
+
+//        ChannelRecorder::ChannelState channel_state;
+
+//        bool const set_on = equal (req->getPath (1), "rec_on");
+
+//        if(!recording_state_dir->isNullString())
+//        {
+//            StRef<String> const path = st_makeString (recording_state_dir->mem(), "/", channel_name);
+
+//            bool file_exist = false;
+//            if (FILE *file = fopen(path->cstr(), "r")) {
+//                fclose(file);
+//                file_exist = true;
+//            }
+
+//            if(file_exist && set_on)
+//            {
+//                if( remove( path->cstr() ) != 0 )
+//                    logE_ (_func, "could not delete file", path->cstr());
+//                else
+//                    logD_ (_func, "removed file", path->cstr());
+//            }
+//            else if (!file_exist && !set_on)
+//            {
+//                FILE * fp = fopen( path->cstr(), "w");
+//                if(fp == NULL)
+//                    logE_ (_func, "could not create file [", path->cstr(),"]\n");
+//                else
+//                {
+//                    logD_ (_func, "created file [", path->cstr(),"]\n");
+//                    fclose(fp);
+//                }
+//            }
+//        }
+
+
+//        ChannelRecorder::ChannelResult res = self->channel_recorder->setRecording (channel_name, set_on);
+//        if (res == ChannelRecorder::ChannelResult_Success)
+//            res = self->channel_recorder->getChannelState (channel_name, &channel_state);
+
+//        if (res == ChannelRecorder::ChannelResult_ChannelNotFound) {
+//            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr_admin)";
+//            conn_sender->send (self->page_pool,
+//                               true /* do_flush */,
+//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+//                               "\r\n",
+//                               reply_body);
+//            logA_ ("mod_nvr_admin 404 ", req->getClientAddress(), " ", req->getRequestLine());
+//            goto _return;
+//        } else
+//        if (res == ChannelRecorder::ChannelResult_Failure) {
+//            ConstMemory const reply_body = "500 Internal Server Error (mod_nvr_admin)";
+//            conn_sender->send (self->page_pool,
+//                               true /* do_flush */,
+//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+//                               "\r\n",
+//                               reply_body);
+//            logA_ ("mod_nvr_admin 500 ", req->getClientAddress(), " ", req->getRequestLine());
+//            goto _return;
+//        }
+//        assert (res == ChannelRecorder::ChannelResult_Success);
+
+//        StRef<String> const reply_body = channelStateToJson (&channel_state, seq);
+//        logD_ (_func, "reply: ", reply_body);
+//        conn_sender->send (self->page_pool,
+//                           true /* do_flush */,
+//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+//                           "\r\n",
+//                           reply_body->mem());
+
+//        logA_ ("mod_nvr_admin 200 ", req->getClientAddress(), " ", req->getRequestLine());
+//    } else
+//    if(req->getNumPathElems() >= 2 &&
+//            (equal (req->getPath (1), "files_existence"))) {
+//        ConstMemory const channel_name = req->getParameter ("stream");
+//        std::vector<ChannelChecker::ChannelFileSummary> * files_existence =
+//            self->channel_checker->getChannelFilesExistence (channel_name);
+
+//        if (files_existence == NULL) {
+//            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
+//            conn_sender->send (self->page_pool,
+//                               true /* do_flush */,
+//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+//                               "\r\n",
+//                               reply_body);
+//            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
+//            goto _return;
+//        }
+
+//        StRef<String> const reply_body = channelFilesExistenceToJson (files_existence);
+//        logD_ (_func, "reply: ", reply_body);
+//        conn_sender->send (self->page_pool,
+//                           true /* do_flush */,
+//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+//                           "\r\n",
+//                           reply_body->mem());
+//    }
+//    else
     {
-	ConstMemory const playlist_name = req->getPath (2);
+        logE_ (_func, "Unknown request: ", req->getFullPath());
 
-	bool const keep_cur_item = equal (req->getPath (1), "update_playlist");
-	Ref<String> err_msg;
-	if (!self->updatePlaylist (playlist_name, keep_cur_item, &err_msg)) {
-	    conn_sender->send (self->page_pool,
-			       true /* do_flush */,
-			       MOMENT_FFMPEG__500_HEADERS (err_msg->mem().len()),
-			       "\r\n",
-			       err_msg->mem());
+        ConstMemory const reply_body = "404 Not Found (mod_nvr_admin) [ffmpeg]";
+        conn_sender->send (self->page_pool,
+                           true /* do_flush */,
+                           MOMENT_SERVER__404_HEADERS (reply_body.len()),
+                           "\r\n",
+                           reply_body);
 
-	    logA_ ("ffmpeg_admin 500 ", req->getClientAddress(), " ", req->getRequestLine());
-	} else {
-            ConstMemory const reply_body = "OK";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_FFMPEG__OK_HEADERS ("text/plain", reply_body.len()),
-                               "\r\n",
-                               reply_body);
-
-            logA_ ("ffmpeg_admin 200 ", req->getClientAddress(), " ", req->getRequestLine());
-        }
-    } else
-    if (req->getNumPathElems() == 5
-	&& (equal (req->getPath (1), "set_position") ||
-	    equal (req->getPath (1), "set_position_id")))
-    {
-	ConstMemory const channel_name = req->getPath (2);
-	ConstMemory const item_name = req->getPath (3);
-	ConstMemory const seek_str = req->getPath (4);
-	bool const item_name_is_id = equal (req->getPath (1), "set_position_id");
-
-	if (!self->setPosition (channel_name, item_name, item_name_is_id, seek_str)) {
-	    ConstMemory const reply_body = "Error";
-	    conn_sender->send (self->page_pool,
-			       true /* do_flush */,
-			       MOMENT_FFMPEG__500_HEADERS (reply_body.len()),
-			       "\r\n",
-			       reply_body);
-
-	    logA_ ("ffmpeg_admin 500 ", req->getClientAddress(), " ", req->getRequestLine());
-	} else {
-            ConstMemory const reply_body = "OK";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_FFMPEG__OK_HEADERS ("text/plain", reply_body.len()),
-                               "\r\n",
-                               reply_body);
-
-            logA_ ("ffmpeg_admin 200 ", req->getClientAddress(), " ", req->getRequestLine());
-        }
-    } else
-    if (req->getNumPathElems() >= 2
-	&& equal (req->getPath (1), "channel_info"))
-    {
-	ConstMemory const channel_name = req->getParameter ("name");
-	if (channel_name.mem() == NULL) {
-	    logE_ (_func, "set_channel: no channel name (\"name\" parameter)\n");
-	    goto _bad_request;
-	}
-
-	self->mutex.lock ();
-
-	ChannelEntry * const channel_entry = self->channel_entry_hash.lookup (channel_name);
-	if (!channel_entry) {
-	    self->mutex.unlock ();
-	    logE_ (_func, "Channel not found: ", channel_name);
-	    return Result::Failure;
-	}
-
-	PagePool::PageListHead page_list;
-	self->printChannelInfoJson (&page_list, channel_entry);
-
-	self->mutex.unlock ();
-
-      // TODO Below is the common code for finishing HTTP requests.
-      //      Put it into an utility method.
-
-	Size content_len = 0;
-	{
-	    PagePool::Page *page = page_list.first;
-	    while (page) {
-		content_len += page->data_len;
-		page = page->getNextMsgPage();
-	    }
-	}
-
-	conn_sender->send (self->page_pool,
-			   false /* do_flush */,
-			   MOMENT_FFMPEG__OK_HEADERS ("text/plain", content_len),
-			   "\r\n");
-	conn_sender->sendPages (self->page_pool, page_list.first, true /* do_flush */);
-
-	logA_ ("mod_ffmpeg 200 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else
-    if (req->getNumPathElems() >= 2
-	&& equal (req->getPath (1), "channel_list"))
-    {
-	PagePool::PageListHead page_list;
-
-	static char const prefix [] = "[\n";
-	self->page_pool->getFillPages (&page_list, prefix);
-
-	self->mutex.lock ();
-
-	{
-	    ChannelEntryHash::iter iter (self->channel_entry_hash);
-	    while (!self->channel_entry_hash.iter_done (iter)) {
-		ChannelEntry * const channel_entry = self->channel_entry_hash.iter_next (iter);
-
-		self->printChannelInfoJson (&page_list, channel_entry);
-
-		static char const comma_str [] = ",\n";
-		self->page_pool->getFillPages (&page_list, comma_str);
-	    }
-	}
-
-	self->mutex.unlock ();
-
-	static char const suffix [] = "]\n";
-	self->page_pool->getFillPages (&page_list, suffix);
-
-	Size content_len = 0;
-	{
-	    PagePool::Page *page = page_list.first;
-	    while (page) {
-		content_len += page->data_len;
-		page = page->getNextMsgPage();
-	    }
-	}
-
-	conn_sender->send (self->page_pool,
-			   false /* do_flush */,
-			   MOMENT_FFMPEG__OK_HEADERS ("text/plain", content_len),
-			   "\r\n");
-	conn_sender->sendPages (self->page_pool, page_list.first, true /* do_flush */);
-
-	logA_ ("mod_ffmpeg 200 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else
-    if (req->getNumPathElems() >= 2
-	&& equal (req->getPath (1), "channels_stat_reset"))
-    {
-	{
-	    ChannelEntryHash::iter iter (self->channel_entry_hash);
-	    while (!self->channel_entry_hash.iter_done (iter)) {
-		ChannelEntry * const channel_entry = self->channel_entry_hash.iter_next (iter);
-
-		if (!channel_entry->channel)
-		    continue;
-
-		channel_entry->channel->resetTrafficStats();
-	    }
-	}
-
-	conn_sender->send (self->page_pool,
-			   true /* do_flush */,
-			   "HTTP/1.1 302 Found\r\n"
-			   "Location: channels_stat\r\n"
-			   "Content-length: 0\r\n"
-			   "\r\n");
-	logA_ ("mod_ffmpeg 302 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else
-    if (req->getNumPathElems() >= 2
-	&& equal (req->getPath (1), "channel_reconnect"))
-    {
-	ConstMemory const channel_name = req->getParameter ("name");
-	if (channel_name.mem() == NULL) {
-	    logE_ (_func, "set_channel: no channel name (\"name\" parameter)\n");
-	    goto _channel_reconnect__done;
-	}
-
-	self->mutex.lock ();
-
-	{
-	    ChannelEntry * const channel_entry = self->channel_entry_hash.lookup (channel_name);
-	    if (!channel_entry) {
-		self->mutex.unlock ();
-		logE_ (_func, "Channel not found: ", channel_name);
-		goto _channel_reconnect__done;
-	    }
-
-	    channel_entry->channel->restartStream ();
-//	    channel_entry->channel->resetTrafficStats ();
-	}
-
-	self->mutex.unlock ();
-
-_channel_reconnect__done:
-	conn_sender->send (self->page_pool,
-			   true /* do_flush */,
-			   "HTTP/1.1 302 Found\r\n"
-			   "Location: channels_stat\r\n"
-			   "Content-length: 0\r\n"
-			   "\r\n");
-	logA_ ("mod_ffmpeg 302 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else
-    if (req->getNumPathElems() >= 2
-	&& equal (req->getPath (1), "channels_stat"))
-    {
-	return httpGetChannelsStat (req, conn_sender, _self);
-    } else {
-	logE_ (_func, "Unknown admin HTTP request: ", req->getFullPath());
-
-	ConstMemory const reply_body = "Unknown command";
-	conn_sender->send (self->page_pool,
-			   true /* do_flush */,
-			   MOMENT_FFMPEG__404_HEADERS (reply_body.len()),
-			   "\r\n",
-			   reply_body);
-
-	logA_ ("ffmpeg_admin 404 ", req->getClientAddress(), " ", req->getRequestLine());
+        logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
     }
 
+    goto _return;
+
+
+_return:
     if (!req->getKeepalive())
-        conn_sender->closeAfterFlush();
-
-    return Result::Success;
-
-_bad_request:
-    {
-	MOMENT_FFMPEG__HEADERS_DATE
-	ConstMemory const reply_body = "400 Bad Request";
-	conn_sender->send (
-		self->page_pool,
-		true /* do_flush */,
-		MOMENT_FFMPEG__400_HEADERS (reply_body.len()),
-		"\r\n",
-		reply_body);
-    }
-
-    if (!req->getKeepalive())
-        conn_sender->closeAfterFlush();
+        conn_sender->closeAfterFlush ();
 
     return Result::Success;
 }
@@ -822,335 +709,143 @@ MomentFFmpegModule::httpRequest (HttpRequest  * const mt_nonnull req,
 {
     MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
 
-    logD_ (_func_);
+    logD_ (_func, req->getRequestLine());
 
-    MOMENT_FFMPEG__HEADERS_DATE
+    MOMENT_SERVER__HEADERS_DATE
 
     if (req->getNumPathElems() >= 2
-        && equal (req->getPath (1), "playlist.json")
-        && self->serve_playlist_json)
+        && equal (req->getPath (1), "unixtime"))
     {
-        PagePool::PageListHead page_list;
+        StRef<String> const unixtime_str = st_makeString (getUnixtime());
+        conn_sender->send (self->page_pool,
+                           true /* do_flush */,
+                           // TODO No cache
+                           MOMENT_SERVER__OK_HEADERS ("text/html", unixtime_str->len()),
+                           "\r\n",
+                           unixtime_str);
 
-        static char const prefix [] = "[\n";
-        static char const suffix [] = "]\n";
+        logA_ ("mod_nvr 200 ", req->getClientAddress(), " ", req->getRequestLine());
+    }
+//    else if (req->getNumPathElems() >= 2
+//        && equal (req->getPath (1), "channel_state"))
+//    {
+//        ConstMemory const channel_name = req->getParameter ("stream");
+//        ConstMemory const seq = req->getParameter ("seq");
 
-        self->page_pool->getFillPages (&page_list, prefix);
+//        ChannelRecorder::ChannelState channel_state;
+//        ChannelRecorder::ChannelResult const res =
+//                self->channel_recorder->getChannelState (channel_name, &channel_state);
+//        if (res == ChannelRecorder::ChannelResult_ChannelNotFound) {
+//            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
+//            conn_sender->send (self->page_pool,
+//                               true /* do_flush */,
+//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+//                               "\r\n",
+//                               reply_body);
+//            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
+//            goto _return;
+//        } else
+//        if (res == ChannelRecorder::ChannelResult_Failure) {
+//            ConstMemory const reply_body = "500 Internal Server Error (mod_nvr)";
+//            conn_sender->send (self->page_pool,
+//                               true /* do_flush */,
+//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+//                               "\r\n",
+//                               reply_body);
+//            logA_ ("mod_nvr 500 ", req->getClientAddress(), " ", req->getRequestLine());
+//            goto _return;
+//        }
+//        assert (res == ChannelRecorder::ChannelResult_Success);
 
-        self->mutex.lock ();
-	{
-            bool use_rtmpt_proto = false;
-            if (equal (self->playlist_json_protocol->mem(), "rtmpt"))
-                use_rtmpt_proto = true;
+//        StRef<String> const reply_body = channelStateToJson (&channel_state, seq);
+//        conn_sender->send (self->page_pool,
+//                           true /* do_flush */,
+//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+//                           "\r\n",
+//                           reply_body->mem());
 
-	    ChannelEntryHash::iterator iter (self->channel_entry_hash);
-	    while (!iter.done()) {
-		ChannelEntry * const channel_entry = iter.next ();
+//        logA_ ("mod_nvr 200 ", req->getClientAddress(), " ", req->getRequestLine());
+//    } else
+//    if (req->getNumPathElems() >= 2
+//        && (equal (req->getPath (1), "file") ||
+//            stringHasSuffix (req->getPath (1), ".mp4", NULL /* ret_str */)))
+//    {
+//        ConstMemory const channel_name = req->getParameter ("stream");
 
-		StRef<String> const channel_line = st_makeString (
-                        "[ \"", (channel_entry->channel_title ? channel_entry->channel_title->mem() :
-                                                                channel_entry->channel_name->mem()), "\", "
-                        "\"", (use_rtmpt_proto ? ConstMemory ("rtmpt://") : ConstMemory ("rtmp://")),
-                                (use_rtmpt_proto ? this_rtmpt_server_addr->mem() : this_rtmp_server_addr->mem()),
-                                "/live/", channel_entry->channel_name->mem(), "\", "
-                        "\"", channel_entry->channel_name->mem(), "\" ],\n");
+//        Uint64 start_unixtime_sec = 0;
+//        if (!strToUint64_safe (req->getParameter ("start"), &start_unixtime_sec, 10 /* base */)) {
+//            logE_ (_func, "Bad \"start\" request parameter value");
+//            goto _bad_request;
+//        }
 
-		self->page_pool->getFillPages (&page_list, channel_line->mem());
+//        Uint64 duration_sec = 0;
+//        if (!strToUint64_safe (req->getParameter ("duration"), &duration_sec, 10 /* base */)) {
+//            logE_ (_func, "Bad \"duration\" request parameter value");
+//            goto _bad_request;
+//        }
 
-                logD_ (_func, "playlist.json line: ", channel_line->mem());
-	    }
-	}
-        self->mutex.unlock ();
+//        bool const download = req->hasParameter ("download");
+//        self->doGetFile (req, conn_sender, channel_name, start_unixtime_sec, duration_sec, download);
+//        return Result::Success;
+//    } else
+//    if (req->getNumPathElems() >= 2 && (equal (req->getPath (1), "existence"))) {
+//        ConstMemory const channel_name = req->getParameter ("stream");
+//        // ConstMemory const seq = req->getParameter ("seq"); TODO doesn't know meaning of sequence, so omit it
 
-        self->page_pool->getFillPages (&page_list, suffix);
+//        std::vector<std::pair<int,int>> * channel_existence = self->channel_checker->getChannelExistence (channel_name);
 
-	Size content_len = 0;
-	{
-	    PagePool::Page *page = page_list.first;
-	    while (page) {
-		content_len += page->data_len;
-		page = page->getNextMsgPage();
-	    }
-	}
+//        if (channel_existence == NULL) {
+//            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
+//            conn_sender->send (self->page_pool,
+//                               true /* do_flush */,
+//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+//                               "\r\n",
+//                               reply_body);
+//            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
+//            goto _return;
+//        }
 
-	conn_sender->send (self->page_pool,
-			   false /* do_flush */,
-			   MOMENT_FFMPEG__OK_HEADERS ("text/html", content_len),
-			   "\r\n");
-	conn_sender->sendPages (self->page_pool, page_list.first, true /* do_flush */);
+//        StRef<String> const reply_body = channelExistenceToJson (channel_existence);
+//        logD_ (_func, "reply: ", reply_body);
+//        conn_sender->send (self->page_pool,
+//                           true /* do_flush */,
+//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+//                           "\r\n",
+//                           reply_body->mem());
+//    }else {
+//        logE_ (_func, "Unknown request: ", req->getFullPath());
 
-	logA_ ("mod_ffmpeg 200 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else
-    if (req->getNumPathElems() >= 2
-	&& equal (req->getPath (1), "wall_hls"))
+//        ConstMemory const reply_body = "404 Not Found (mod_nvr)";
+//        conn_sender->send (self->page_pool,
+//                           true /* do_flush */,
+//                           MOMENT_SERVER__404_HEADERS (reply_body.len()),
+//                           "\r\n",
+//                           reply_body);
+
+//        logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
+//    }
+
+    goto _return;
+
+_bad_request:
     {
-	PagePool::PageListHead page_list;
+        MOMENT_SERVER__HEADERS_DATE
+        ConstMemory const reply_body = "400 Bad Request (mod_nvr)";
+        conn_sender->send (
+                self->page_pool,
+                true /* do_flush */,
+                MOMENT_SERVER__400_HEADERS (reply_body.len()),
+                "\r\n",
+                reply_body);
 
-	static char const prefix [] =
-		"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-		"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-		"<html style=\"height: 100%\" xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-		"<head>\n"
-		"  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n"
-		"  <title>Wall</title>\n"
-		"</head>\n"
-		"<body bgcolor=\"#444444\" style=\"font-family: sans-serif\">\n"
-		"<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\">\n";
-
-	static char const suffix [] =
-		"</table>\n"
-		"</body>\n"
-		"</html>\n";
-
-	self->page_pool->getFillPages (&page_list, ConstMemory (prefix, sizeof (prefix) - 1));
-
-	self->mutex.lock ();
-	{
-	    ChannelEntryHash::iter iter (self->channel_entry_hash);
-	    unsigned row_cnt = 0;
-	    unsigned const row_size = 3;
-	    while (!self->channel_entry_hash.iter_done (iter)) {
-		ChannelEntry * const channel_entry = self->channel_entry_hash.iter_next (iter);
-
-		if (row_cnt == 0) {
-		    static char const row_prefix [] = "<tr>\n";
-		    self->page_pool->getFillPages (&page_list, ConstMemory (row_prefix, sizeof (row_prefix) - 1));
-		}
-
-		Ref<String> const channel_uri = makeString (
-			this_hls_server_addr->mem(), "/hls/", channel_entry->channel_name->mem(), ".m3u8");
-
-		static char const entry_a [] =
-		        "<td style=\"vertical-align: top\">\n"
-			"<div style=\"position: relative; width: 320px; height: 240px; margin-left: auto; margin-right: auto\">\n"
-                        "  <video controls src=\"http://";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a, sizeof (entry_a) - 1));
-		self->page_pool->getFillPages (&page_list, channel_uri->mem());
-
-		static char const entry_b [] = "\">This browser does not support Apple HTTP Live Streaming</video>\n</div>\n";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_b, sizeof (entry_b) - 1));
-
-		static char const entry_a0 [] =
-		        "<div style=\"width: 300px; padding-bottom: 15px; padding-left: 20px; color: white;\">";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a0, sizeof (entry_a0) - 1));
-                static char const entry_a2 [] =
-                        "<a href=\"http://";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a2, sizeof (entry_a2) - 1));
-		self->page_pool->getFillPages (&page_list, channel_uri->mem());
-                static char const entry_a3 [] =
-                        "\">";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a3, sizeof (entry_a3) - 1));
-		self->page_pool->getFillPages (&page_list, channel_entry->channel_name->mem());
-		static char const entry_a1 [] =
-			"&nbsp;&nbsp; ";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a1, sizeof (entry_a1) - 1));
-		self->page_pool->getFillPages (&page_list, channel_entry->channel_desc->mem());
-		static char const entry_a4 [] =
-                        "</a>\n"
-			"</div>\n"
-			"</td>\n";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a4, sizeof (entry_a4) - 1));
-
-		++row_cnt;
-		if (row_cnt == row_size) {
-		    row_cnt = 0;
-
-		    static char const row_suffix [] = "</tr>\n";
-		    self->page_pool->getFillPages (&page_list, ConstMemory (row_suffix, sizeof (row_suffix) - 1));
-		}
-	    }
-
-	    if (row_cnt != 0) {
-		static char const row_suffix [] = "</tr>\n";
-		self->page_pool->getFillPages (&page_list, ConstMemory (row_suffix, sizeof (row_suffix) - 1));
-	    }
-	}
-	self->mutex.unlock ();
-
-	self->page_pool->getFillPages (&page_list, ConstMemory (suffix, sizeof (suffix) - 1));
-
-	Size content_len = 0;
-	{
-	    PagePool::Page *page = page_list.first;
-	    while (page) {
-		content_len += page->data_len;
-		page = page->getNextMsgPage();
-	    }
-	}
-
-	conn_sender->send (self->page_pool,
-			   false /* do_flush */,
-			   MOMENT_FFMPEG__OK_HEADERS ("text/html", content_len),
-			   "\r\n");
-	conn_sender->sendPages (self->page_pool, page_list.first, true /* do_flush */);
-
-	logA_ ("mod_ffmpeg 200 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else
-    if (req->getNumPathElems() >= 2
-	&& equal (req->getPath (1), "wall"))
-    {
-	PagePool::PageListHead page_list;
-
-	static char const prefix [] =
-		"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-		"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-		"<html style=\"height: 100%\" xmlns=\"http://www.w3.org/1999/xhtml\">\n"
-		"<head>\n"
-		"  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>\n"
-		"  <title>Wall</title>\n"
-		"</head>\n"
-		"<body bgcolor=\"#444444\" style=\"font-family: sans-serif\">\n"
-		"<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\">\n";
-
-	static char const suffix [] =
-		"</table>\n"
-		"</body>\n"
-		"</html>\n";
-
-	self->page_pool->getFillPages (&page_list, ConstMemory (prefix, sizeof (prefix) - 1));
-
-	self->mutex.lock ();
-
-	{
-	    ChannelEntryHash::iter iter (self->channel_entry_hash);
-	    unsigned row_cnt = 0;
-	    unsigned const row_size = 3;
-	    while (!self->channel_entry_hash.iter_done (iter)) {
-		ChannelEntry * const channel_entry = self->channel_entry_hash.iter_next (iter);
-
-		if (row_cnt == 0) {
-		    static char const row_prefix [] = "<tr>\n";
-		    self->page_pool->getFillPages (&page_list, ConstMemory (row_prefix, sizeof (row_prefix) - 1));
-		}
-
-		StRef<String> const flashvars = st_makeString (
-			"server=rtmpt://", this_rtmpt_server_addr->mem(),
-			"&stream=", channel_entry->channel_name->mem(),
-			"?paused&play_duration=20&buffer=0.0&shadow=0.4");
-
-		static char const entry_a [] =
-		        "<td style=\"vertical-align: top\">\n"
-			"<div style=\"position: relative; width: 320px; height: 240px; margin-left: auto; margin-right: auto\">\n"
-			"  <object classid=\"clsid:d27cdb6e-ae6d-11cf-96b8-444553540000\"\n"
-			"        width=\"100%\"\n"
-			"        height=\"100%\"\n"
-			"        id=\"BasicPlayer\"\n"
-			"        align=\"Default\">\n"
-			"    <param name=\"movie\" value=\"/basic/BasicPlayer.swf\"/>\n"
-			"    <param name=\"bgcolor\" value=\"#000000\"/>\n"
-			"    <param name=\"scale\" value=\"noscale\"/>\n"
-			"    <param name=\"quality\" value=\"high\"/>\n"
-			"    <param name=\"allowfullscreen\" value=\"true\"/>\n"
-			"    <param name=\"allowscriptaccess\" value=\"always\"/>\n"
-			"    <param name=\"FlashVars\" value=\"";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a, sizeof (entry_a) - 1));
-		self->page_pool->getFillPages (&page_list, flashvars->mem());
-
-		static char const entry_b [] = "\"/>\n"
-			"    <embed src=\"/basic/BasicPlayer.swf\"\n"
-			"        FlashVars=\"";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_b, sizeof (entry_b) - 1));
-		self->page_pool->getFillPages (&page_list, flashvars->mem());
-
-		static char const entry_c [] = "\"\n"
-			"        name=\"BasicPlayer\"\n"
-			"        align=\"Default\"\n"
-			"        width=\"100%\"\n"
-			"        height=\"100%\"\n"
-			"        bgcolor=\"#000000\"\n"
-			"        scale=\"noscale\"\n"
-			"        quality=\"high\"\n"
-			"        allowfullscreen=\"true\"\n"
-			"        allowscriptaccess=\"always\"\n"
-			"        type=\"application/x-shockwave-flash\"\n"
-			"        pluginspage=\"http://www.adobe.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash\"/>\n"
-			"  </object>\n"
-			"</div>\n";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_c, sizeof (entry_c) - 1));
-
-		static char const entry_a0 [] =
-		        "<div style=\"width: 300px; padding-bottom: 15px; padding-left: 20px; color: white;\">";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a0, sizeof (entry_a0) - 1));
-		self->page_pool->getFillPages (&page_list, channel_entry->channel_name->mem());
-		static char const entry_a1 [] =
-			"&nbsp;&nbsp; ";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a1, sizeof (entry_a1) - 1));
-		self->page_pool->getFillPages (&page_list, channel_entry->channel_desc->mem());
-		static char const entry_a2 [] =
-			"</div>\n"
-			"</td>\n";
-		self->page_pool->getFillPages (&page_list, ConstMemory (entry_a2, sizeof (entry_a2) - 1));
-
-		++row_cnt;
-		if (row_cnt == row_size) {
-		    row_cnt = 0;
-
-		    static char const row_suffix [] = "</tr>\n";
-		    self->page_pool->getFillPages (&page_list, ConstMemory (row_suffix, sizeof (row_suffix) - 1));
-		}
-	    }
-
-	    if (row_cnt != 0) {
-		static char const row_suffix [] = "</tr>\n";
-		self->page_pool->getFillPages (&page_list, ConstMemory (row_suffix, sizeof (row_suffix) - 1));
-	    }
-	}
-
-	self->mutex.unlock ();
-
-	self->page_pool->getFillPages (&page_list, ConstMemory (suffix, sizeof (suffix) - 1));
-
-	Size content_len = 0;
-	{
-	    PagePool::Page *page = page_list.first;
-	    while (page) {
-		content_len += page->data_len;
-		page = page->getNextMsgPage();
-	    }
-	}
-
-	conn_sender->send (self->page_pool,
-			   false /* do_flush */,
-			   MOMENT_FFMPEG__OK_HEADERS ("text/html", content_len),
-			   "\r\n");
-	conn_sender->sendPages (self->page_pool, page_list.first, true /* do_flush */);
-
-	logA_ ("mod_ffmpeg 200 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else {
-	logE_ (_func, "Unknown admin request: ", req->getFullPath());
-
-	ConstMemory const reply_body = "404 Not Found (mod_ffmpeg)";
-	conn_sender->send (self->page_pool,
-			   true /* do_flush */,
-			   MOMENT_FFMPEG__404_HEADERS (reply_body.len()),
-			   "\r\n",
-			   reply_body);
-
-	logA_ ("ffmpeg_admin 404 ", req->getClientAddress(), " ", req->getRequestLine());
+        logA_ ("mod_nvr 400 ", req->getClientAddress(), " ", req->getRequestLine());
     }
 
+_return:
     if (!req->getKeepalive())
         conn_sender->closeAfterFlush ();
 
     return Result::Success;
-
-#if 0
-_bad_request:
-    {
-	MOMENT_FFMPEG__HEADERS_DATE
-	ConstMemory const reply_body = "400 Bad Request (mod_ffmpeg)";
-	conn_sender->send (
-		self->page_pool,
-		true /* do_flush */,
-		MOMENT_FFMPEG__400_HEADERS (reply_body.len()),
-		"\r\n",
-		reply_body);
-	if (!req->getKeepalive())
-	    conn_sender->closeAfterFlush();
-    }
-
-    return Result::Success;
-#endif
 }
 
 void
@@ -1876,6 +1571,8 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
                                     ChannelOptions    * const channel_opts,
                                     PlaybackItem      * const playback_item)
 {
+    Ref<MConfig::Config> const config = this->moment->getConfig ();
+
 
     Ref<FFmpegStream> const ffmpeg_stream = grab (new (std::nothrow) FFmpegStream);
     ffmpeg_stream->init (frontend,
@@ -1886,10 +1583,10 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
                       mix_video_stream,
                       initial_seek,
                       channel_opts,
-                      playback_item);
-    return ffmpeg_stream;
+                      playback_item,
+                      config);
 
-    //return NULL;
+    return ffmpeg_stream;
 }
 
 // TODO Always succeeds currently.
@@ -1906,256 +1603,34 @@ MomentFFmpegModule::init (MomentServer * const moment)
 
     moment->setMediaSourceProvider (this);
 
-    {
-	ConstMemory const opt_name = "mod_ffmpeg/prechunking";
-	MConfig::BooleanValue const val = config->getBoolean (opt_name);
-	if (val == MConfig::Boolean_Invalid) {
-	    logE_ (_func, "Invalid value for ", opt_name, ": ", config->getString (opt_name));
-	    return Result::Failure;
-	}
 
-	if (val == MConfig::Boolean_False) {
-	    default_channel_opts->default_item->enable_prechunking = false;
-	} else {
-	    default_channel_opts->default_item->enable_prechunking = true;
-	}
-
-        logD_ (_func, opt_name, ": ", default_channel_opts->default_item->enable_prechunking);
-    }
-
-    {
-	ConstMemory const opt_name = "mod_ffmpeg/keep_video_streams";
-	MConfig::BooleanValue const val = config->getBoolean (opt_name);
-	if (val == MConfig::Boolean_Invalid) {
-	    logE_ (_func, "Invalid value for ", opt_name, ": ", config->getString (opt_name));
-	    return Result::Failure;
-	}
-
-	if (val == MConfig::Boolean_True) {
-	    default_channel_opts->keep_video_stream = true;
-	} else {
-	    default_channel_opts->keep_video_stream = false;
-	}
-    }
-
-    {
-        ConstMemory const opt_name = "mod_ffmpeg/continuous_playback";
-        MConfig::BooleanValue const val = config->getBoolean (opt_name);
-        if (val == MConfig::Boolean_Invalid) {
-            logE_ (_func, "Invalid value for ", opt_name, ": ", config->getString (opt_name));
-            return Result::Failure;
-        }
-
-        if (val == MConfig::Boolean_False) {
-            default_channel_opts->continuous_playback = false;
-        } else {
-            default_channel_opts->continuous_playback = true;
-        }
-    }
-
-    {
-	ConstMemory const opt_name = "mod_ffmpeg/width";
-	MConfig::GetResult const res = config->getUint64_default (
-		opt_name,
-                &default_channel_opts->default_item->default_width,
-                default_channel_opts->default_item->default_width);
-	if (!res) {
-	    logE_ (_func, "bad value for ", opt_name);
-	    return Result::Failure;
-	}
-    }
-
-    {
-	ConstMemory const opt_name = "mod_ffmpeg/height";
-	MConfig::GetResult const res = config->getUint64_default (
-		opt_name,
-                &default_channel_opts->default_item->default_height,
-                default_channel_opts->default_item->default_height);
-	if (!res) {
-	    logE_ (_func, "bad value for ", opt_name);
-	    return Result::Failure;
-	}
-    }
-
-    {
-	ConstMemory const opt_name = "mod_ffmpeg/bitrate";
-	MConfig::GetResult const res = config->getUint64_default (
-		opt_name,
-                &default_channel_opts->default_item->default_bitrate,
-                default_channel_opts->default_item->default_bitrate);
-	if (!res) {
-	    logE_ (_func, "bad value for ", opt_name);
-	    return Result::Failure;
-	}
-    }
-
-    {
-	ConstMemory const opt_name = "mod_ffmpeg/no_video_timeout";
-	Uint64 tmp_uint64;
-	MConfig::GetResult const res = config->getUint64_default (
-		opt_name, &tmp_uint64, default_channel_opts->no_video_timeout);
-	if (!res) {
-	    logE_ (_func, "bad value for ", opt_name);
-	    return Result::Failure;
-	}
-	default_channel_opts->no_video_timeout = (Time) tmp_uint64;
-    }
-
-    {
-        ConstMemory const opt_name = "mod_ffmpeg/min_playlist_duration";
-        MConfig::GetResult const res = config->getUint64_default (
-                opt_name, &default_channel_opts->min_playlist_duration_sec, default_channel_opts->min_playlist_duration_sec);
-        if (!res) {
-            logE_ (_func, "bad value for ", opt_name);
-            return Result::Failure;
-        }
-    }
-
-    {
-        ConstMemory const opt_name = "mod_ffmpeg/connect_on_demand";
-        MConfig::BooleanValue const val = config->getBoolean (opt_name);
-        if (val == MConfig::Boolean_Invalid) {
-            logE_ (_func, "Invalid value for ", opt_name, ": ", config->getString (opt_name));
-            return Result::Failure;
-        }
-
-        if (val == MConfig::Boolean_True) {
-            default_channel_opts->connect_on_demand = true;
-        } else {
-            default_channel_opts->connect_on_demand = false;
-        }
-    }
-
-    {
-        ConstMemory const opt_name = "mod_ffmpeg/connect_on_demand_timeout";
-        Uint64 tmp_uint64;
-        MConfig::GetResult const res = config->getUint64_default (
-                opt_name, &tmp_uint64, default_channel_opts->connect_on_demand_timeout);
-        if (!res) {
-            logE_ (_func, "Invalid value for ", opt_name, ": ", config->getString (opt_name));
-            return Result::Failure;
-        }
-        default_channel_opts->connect_on_demand_timeout = (Time) tmp_uint64;
-    }
-
-    {
-        ConstMemory const opt_name = "mod_ffmpeg/playlist_json";
-        MConfig::BooleanValue const val = config->getBoolean (opt_name);
-        logI_ (_func, opt_name, ": ", config->getString (opt_name));
-        if (val == MConfig::Boolean_Invalid) {
-            logE_ (_func, "Invalid value for ", opt_name, ": ", config->getString (opt_name));
-            return Result::Failure;
-        }
-
-        if (val == MConfig::Boolean_False)
-            serve_playlist_json = false;
-        else
-            serve_playlist_json = true;
-    }
-
-    {
-        ConstMemory const opt_name = "mod_ffmpeg/playlist_json_protocol";
-        ConstMemory opt_val = config->getString (opt_name);
-        if (opt_val.len() == 0)
-            opt_val = "rtmp";
-
-        StRef<String> val_lowercase = st_grab (new (std::nothrow) String (opt_val));
-        Byte * const buf = val_lowercase->mem().mem();
-        for (Size i = 0, i_end = val_lowercase->len(); i < i_end; ++i)
-            buf [i] = (Byte) tolower (buf [i]);
-
-        if (!equal (val_lowercase->mem(), "rtmpt"))
-            val_lowercase = st_grab (new (std::nothrow) String ("rtmp"));
-
-        logI_ (_func, opt_name, ": ", val_lowercase->mem());
-
-        playlist_json_protocol = val_lowercase;
-    }
-
-    {
-	ConstMemory const opt_name = "moment/this_rtmp_server_addr";
-	ConstMemory const opt_val = config->getString (opt_name);
-	logI_ (_func, opt_name, ": ", opt_val);
-	if (!opt_val.isNull()) {
-	    this_rtmp_server_addr = st_grab (new (std::nothrow) String (opt_val));
-	} else {
-	    this_rtmp_server_addr = st_grab (new (std::nothrow) String ("127.0.0.1:1935"));
-	    logI_ (_func, opt_name, " config parameter is not set. "
-		   "Defaulting to ", this_rtmpt_server_addr);
-	}
-    }
-
-    {
-	ConstMemory const opt_name = "moment/this_rtmpt_server_addr";
-	ConstMemory const opt_val = config->getString (opt_name);
-	logI_ (_func, opt_name, ": ", opt_val);
-	if (!opt_val.isNull()) {
-	    this_rtmpt_server_addr = st_grab (new (std::nothrow) String (opt_val));
-	} else {
-	    this_rtmpt_server_addr = st_grab (new (std::nothrow) String ("127.0.0.1:8080"));
-	    logI_ (_func, opt_name, " config parameter is not set. "
-		   "Defaulting to ", this_rtmpt_server_addr);
-	}
-    }
-
-    {
-	ConstMemory const opt_name = "moment/this_hls_server_addr";
-	ConstMemory const opt_val = config->getString (opt_name);
-	logI_ (_func, opt_name, ": ", opt_val);
-	if (!opt_val.isNull()) {
-	    this_hls_server_addr = st_grab (new (std::nothrow) String (opt_val));
-	} else {
-	    this_hls_server_addr = st_grab (new (std::nothrow) String ("127.0.0.1:8080"));
-	    logI_ (_func, opt_name, " config parameter is not set. "
-		   "Defaulting to ", this_hls_server_addr);
-	}
-    }
-
-    // Deprecated in favor of "mod_ffmpeg_admin" prefix.
-    moment->getAdminHttpService()->addHttpHandler (
-	    CbDesc<HttpService::HttpHandler> (
-		    &admin_http_handler, this /* cb_data */, NULL /* coderef_container */),
-	    "moment_admin",
-	    true    /* preassembly */,
-	    1 << 20 /* 1 Mb */ /* preassembly_limit */,
-	    true    /* parse_body_params */);
-
-    moment->getAdminHttpService()->addHttpHandler (
-	    CbDesc<HttpService::HttpHandler> (
-		    &admin_http_handler, this /* cb_data */, NULL /* coderef_container */),
-	    "mod_ffmpeg_admin",
-	    true    /* preassembly */,
-	    1 << 20 /* 1 Mb */ /* preassembly_limit */,
-	    true    /* parse_body_params */);
-
-    // Deprecated in favor of "mod_ffmpeg" prefix.
-    moment->getHttpService()->addHttpHandler (
-	    CbDesc<HttpService::HttpHandler> (
-		    &http_handler, this /* cb_data */, NULL /* coderef_container */),
-	    "moment_ffmpeg",
-	    true /* preassembly */,
-	    1 << 20 /* 1 Mb */ /* preassembly_limit */,
-	    true /* parse_body_params */);
+//    moment->getAdminHttpService()->addHttpHandler (
+//        CbDesc<HttpService::HttpHandler> (
+//            &admin_http_handler, this /* cb_data */, NULL /* coderef_container */),
+//        "mod_nvr_admin",
+//        true    /* preassembly */,
+//        1 << 20 /* 1 Mb */ /* preassembly_limit */,
+//        true    /* parse_body_params */);
 
     // Alias to "moment_ffmpeg"
     moment->getHttpService()->addHttpHandler (
-	    CbDesc<HttpService::HttpHandler> (
-		    &http_handler, this /* cb_data */, NULL /* coderef_container */),
-	    "mod_ffmpeg",
-	    true /* preassembly */,
-	    1 << 20 /* 1 Mb */ /* preassembly_limit */,
-	    true /* parse_body_params */);
+        CbDesc<HttpService::HttpHandler> (
+            &http_handler, this /* cb_data */, NULL /* coderef_container */),
+        "mod_ffmpeg",
+        true /* preassembly */,
+        1 << 20 /* 1 Mb */ /* preassembly_limit */,
+        true /* parse_body_params */);
 
-    parseSourcesConfigSection ();
-    parseChainsConfigSection ();
+//    parseSourcesConfigSection ();
+//    parseChainsConfigSection ();
 
-    if (!parseStreamsConfigSection ())
-        return Result::Failure;
+//    if (!parseStreamsConfigSection ())
+//        return Result::Failure;
 
-    if (!parseStreams ())
-        return Result::Failure;
+//    if (!parseStreams ())
+//        return Result::Failure;
 
-    parseRecordingsConfigSection ();
+//    parseRecordingsConfigSection ();
 
     return Result::Success;
 }

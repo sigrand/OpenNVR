@@ -22,8 +22,10 @@
 
 
 #include <libmary/types.h>
+//#include <libmary/util_time.h>
 
 #include <moment/libmoment.h>
+#include <moment-ffmpeg/nvr_cleaner.h>
 
 extern "C" {
 #ifndef INT64_C
@@ -93,23 +95,58 @@ private:
         ffmpegStreamData(void);
         ~ffmpegStreamData();
 
-        Result Init(const char * uri);
+        Result Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config, Timers * timers);
         void Deinit();
 
         // if PushVideoPacket returns 'false' consequently is the end of stream (EOS).
         bool PushVideoPacket(FFmpegStream * pParent);
 
-    private /*functions*/:
+        static void CloseCodecs(AVFormatContext * pAVFrmtCntxt);
 
-        void CloseCodecs(AVFormatContext * pAVFrmtCntxt);
+    private /*functions*/:
 
     private /*variables*/:
 
-        StRef<String>       uri_name;
         AVFormatContext *   format_ctx;
         int                 video_stream_idx;
-        AVCodec *           video_codec;
+        Ref<NvrCleaner>     m_nvr_cleaner;
+
+        class nvrData
+        {
+
+        public:
+
+            nvrData(void);
+            ~nvrData();
+
+            Result Init(AVFormatContext * format_ctx, const char * channel_name, const char * record_dir,
+                        Uint64 file_duration_sec = 3600, Uint64 max_age_minutes = 120);
+            void Deinit();
+            bool IsInit() const;
+
+            Result WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & packet);
+
+        private /*functions*/:
+
+        private /*variables*/:
+
+            mt_const StRef<String> m_record_dir;
+            mt_const StRef<String> m_channel_name;
+            Uint64 m_file_duration_sec;
+            Uint64 m_max_age_minutes;
+            AVFormatContext * m_out_format_ctx;
+
+            bool m_bIsInit;
+
+        };
+
+        nvrData m_nvrData;
     };
+
+    ffmpegStreamData m_ffmpegStreamData;
+    Ref<MConfig::Config> config;
+
+
 
     mt_const Ref<ChannelOptions> channel_opts;
     mt_const Ref<PlaybackItem>   playback_item;
@@ -219,8 +256,6 @@ private:
 
       bool m_bIsPlaying;
 
-      ffmpegStreamData m_ffmpegStreamData;
-
     mt_end
 
     mt_const Cb<MediaSource::Frontend> frontend;
@@ -300,7 +335,8 @@ public:
 			VideoStream       *mix_video_stream,
 			Time               initial_seek,
                         ChannelOptions    *channel_opts,
-                        PlaybackItem      *playback_item);
+                        PlaybackItem      *playback_item,
+                        const Ref<MConfig::Config> & config);
 
      FFmpegStream ();
     ~FFmpegStream ();

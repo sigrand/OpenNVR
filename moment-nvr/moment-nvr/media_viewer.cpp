@@ -374,7 +374,8 @@ MediaViewer::rtmpStartWatching (ConstMemory        const stream_name,
                                 self->vfs,
                                 stream_name,
                                 stream_params.start_unixtime_sec,
-                                0 /* 1 << 23 */ /* 8 Mb */ /* burst_size_limit */ /* TODO Config parameter */);
+                                0 /* 1 << 23 */ /* 8 Mb */ /* burst_size_limit */ /* TODO Config parameter */,
+                                self->record_dir);
 
     session->session_mutex.unlock ();
 
@@ -398,9 +399,11 @@ MediaViewer::rtmpStartStreaming (ConstMemory     const stream_name,
 
 void
 MediaViewer::init (MomentServer * const mt_nonnull moment,
-                   Vfs          * const mt_nonnull vfs)
+                   Vfs          * const mt_nonnull vfs,
+                   StRef<String> record_dir)
 {
     this->vfs = vfs;
+    this->record_dir = record_dir;
 
     page_pool = moment->getPagePool();
 

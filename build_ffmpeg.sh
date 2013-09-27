@@ -70,6 +70,9 @@ make install
 make clean
 cd ..
 
+cp ./ffmpeg/config.h ./ffmpeg_build/include/ffmpeg_config.h
+cp ./ffmpeg/libavformat/internal.h ./ffmpeg_build/include/libavformat
+
 ###### ffmpeg build end
 cd ..
 echo "FFmpeg is built"

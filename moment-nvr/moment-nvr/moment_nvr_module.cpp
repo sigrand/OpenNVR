@@ -176,8 +176,11 @@ MomentNvrModule::httpRequest (HttpRequest  * const mt_nonnull req,
         ConstMemory const seq = req->getParameter ("seq");
 
         ChannelRecorder::ChannelState channel_state;
-        ChannelRecorder::ChannelResult const res =
-                self->channel_recorder->getChannelState (channel_name, &channel_state);
+//        ChannelRecorder::ChannelResult const res =
+//                self->channel_recorder->getChannelState (channel_name, &channel_state);
+        ChannelRecorder::ChannelResult const res = ChannelRecorder::ChannelResult_Success;
+        channel_state.recording = true;
+
         if (res == ChannelRecorder::ChannelResult_ChannelNotFound) {
             ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
             conn_sender->send (self->page_pool,
@@ -352,7 +355,7 @@ MomentNvrModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
         }
 
 
-        ChannelRecorder::ChannelResult res = self->channel_recorder->setRecording (channel_name, set_on);
+        ChannelRecorder::ChannelResult res = ChannelRecorder::ChannelResult_Success;//self->channel_recorder->setRecording (channel_name, set_on);
         if (res == ChannelRecorder::ChannelResult_Success)
             res = self->channel_recorder->getChannelState (channel_name, &channel_state);
 
@@ -526,14 +529,14 @@ MomentNvrModule::init (MomentServer * const mt_nonnull moment)
 
     MOMENT_NVR__INIT
 
-    channel_recorder = grab (new (std::nothrow) ChannelRecorder);
-    channel_recorder->init (moment, vfs, naming_scheme, max_age_sec, clean_interval_sec, recording_state_dir);
+//    channel_recorder = grab (new (std::nothrow) ChannelRecorder);
+//    channel_recorder->init (moment, vfs, naming_scheme, max_age_sec, clean_interval_sec, recording_state_dir);
 
     media_viewer = grab (new (std::nothrow) MediaViewer);
-    media_viewer->init (moment, vfs);
+    media_viewer->init (moment, vfs, record_dir);
 
     channel_checker = grab (new (std::nothrow) ChannelChecker);
-    channel_checker->init (vfs);
+    channel_checker->init (vfs, record_dir);
 
     moment->getHttpService()->addHttpHandler (
             CbDesc<HttpService::HttpHandler> (&http_handler, this, this),

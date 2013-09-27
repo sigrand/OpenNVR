@@ -43,7 +43,6 @@ ChannelRecorder::channelStartItem (VideoStream * const stream,
                                    void        * const _channel_entry)
 {
     ChannelEntry * const channel_entry = static_cast <ChannelEntry*> (_channel_entry);
-//    logD_ (_func_);
     if (stream_changed) {
         channel_entry->media_recorder->setVideoStream (stream);
 
@@ -67,7 +66,6 @@ ChannelRecorder::channelStopItem (VideoStream * const stream,
                                   void        * const _channel_entry)
 {
     ChannelEntry * const channel_entry = static_cast <ChannelEntry*> (_channel_entry);
-//    logD_ (_func_);
 
     if (stream_changed) {
         channel_entry->media_recorder->setVideoStream (stream);
@@ -91,7 +89,6 @@ ChannelRecorder::channelNewVideoStream (VideoStream * const stream,
                                         void        * const _channel_entry)
 {
     ChannelEntry * const channel_entry = static_cast <ChannelEntry*> (_channel_entry);
-//    logD_ (_func_);
     channel_entry->media_recorder->setVideoStream (stream);
 
     bool bSourceNotExist = true;
