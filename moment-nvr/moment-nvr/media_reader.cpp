@@ -40,6 +40,8 @@ static LogGroup libMary_logGroup_reader ("mod_nvr.media_reader", LogLevel::D);
         ( ((const Byte*)(x))[1] <<  8) |			\
         (  (const Byte*)(x))[2])
 
+StateMutex FileReader::m_mutexFFmpeg;
+
 static void RegisterFFMpeg(void)
 {
     static Uint32 uiInitialized = 0;
@@ -328,6 +330,7 @@ bool FileReader::Init(StRef<String> & fileName)
     if(avformat_open_input(&format_ctx, file_name_path, NULL, NULL) == 0)
     {
         // Retrieve stream information
+        m_mutexFFmpeg.lock();
         if(avformat_find_stream_info(format_ctx, NULL) >= 0)
         {
             // Dump information about file onto standard error
@@ -338,6 +341,7 @@ bool FileReader::Init(StRef<String> & fileName)
             logE_(_func_,"Fail to retrieve stream info");
             res = Result::Failure;
         }
+        m_mutexFFmpeg.unlock();
     }
     else
     {

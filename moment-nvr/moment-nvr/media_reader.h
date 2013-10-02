@@ -76,6 +76,7 @@ private:
     int                 video_stream_idx;
     MemorySafe          avc_codec_data;
     bool                first_key_frame_received;
+    static StateMutex   m_mutexFFmpeg;
 
     StRef<String> m_fileName;
     Time m_initTimeOfRecord;

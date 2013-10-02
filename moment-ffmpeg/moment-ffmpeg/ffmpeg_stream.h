@@ -110,6 +110,7 @@ private:
         AVFormatContext *   format_ctx;
         int                 video_stream_idx;
         Ref<NvrCleaner>     m_nvr_cleaner;
+        static StateMutex   m_mutexFFmpeg;
 
         class nvrData
         {

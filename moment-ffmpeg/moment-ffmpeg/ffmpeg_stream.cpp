@@ -145,7 +145,7 @@ extern "C"
     }
 }   // extern "C" ]
 
-
+StateMutex FFmpegStream::ffmpegStreamData::m_mutexFFmpeg;
 
 static void RegisterFFMpeg(void)
 {
@@ -225,29 +225,32 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri, const char * chann
     Deinit();
 
     // Open video file
-    logD_(_func_, "ffmpegStreamData::Init, uri ", uri);
+    logD_(_func_, "uri: ", uri);
     Result res = Result::Success;
 
     if(avformat_open_input(&format_ctx, uri, NULL, NULL) == 0)
     {
-        logD_(_func_, "ffmpegStreamData::Init, avformat_open_input, success");
+        logD_(_func_, "avformat_open_input, success");
         // Retrieve stream information
+
+        m_mutexFFmpeg.lock();
         if(avformat_find_stream_info(format_ctx, NULL) >= 0)
         {
-            logD_(_func_,"ffmpegStreamData::Init, avformat_find_stream_info, success");
+            logD_(_func_,"avformat_find_stream_info, success");
 
             // Dump information about file onto standard error
             av_dump_format(format_ctx, 0, uri, 0);
         }
         else
         {
-            logE_(_func_, "ffmpegStreamData::Init, Couldn't find stream information");
+            logE_(_func_, "Couldn't find stream information");
             res = Result::Failure;
         }
+        m_mutexFFmpeg.unlock();
     }
     else
     {
-        logE_(_func_, "ffmpegStreamData::Init, Couldn't open uri");
+        logE_(_func_, "Couldn't open uri");
         res = Result::Failure;
     }
 
@@ -265,7 +268,7 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri, const char * chann
 
         if(video_stream_idx == -1)
         {
-            logE_(_func_,"ffmpegStreamData::Init, Didn't find a video stream");
+            logE_(_func_,"didn't find a video stream");
             res = Result::Failure;
         }
     }
@@ -316,7 +319,7 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri, const char * chann
     {
         StRef<String> recdir = st_makeString(record_dir);
         Result nvrResult = m_nvrData.Init(format_ctx, channel_name, recdir->cstr(), file_duration_sec, max_age_minutes);
-        logD_(_func_, "ffmpegStreamData::Init, m_nvrData.Init = ", (nvrResult == Result::Success) ? "Success" : "Failed");
+        logD_(_func_, " m_nvrData.Init = ", (nvrResult == Result::Success) ? "Success" : "Failed");
 
         Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir);
         m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
@@ -896,14 +899,16 @@ FFmpegStream::beginPushPacket()
     m_bIsPlaying = true;
 
     mutex.lock ();
-
-    if (channel_opts->no_video_timeout > 0) {
-    no_video_timer = timers->addTimer (CbDesc<Timers::TimerCallback> (noVideoTimerTick,
-                                                                          this /* cb_data */,
-                                                                          this /* coderef_container */),
-                       channel_opts->no_video_timeout,
-                       true  /* periodical */,
-                                           false /* auto_delete */);
+    if (channel_opts->no_video_timeout > 0)
+    {
+        updateTime ();
+        last_frame_time = getTime ();
+        no_video_timer = timers->addTimer (CbDesc<Timers::TimerCallback> (noVideoTimerTick,
+                                                                            this /* cb_data */,
+                                                                            this /* coderef_container */),
+                                                                            channel_opts->no_video_timeout,
+                                                                            true  /* periodical */,
+                                                                            false /* auto_delete */);
     }
 
     mutex.unlock ();
@@ -912,7 +917,7 @@ FFmpegStream::beginPushPacket()
     {
         if(!m_ffmpegStreamData.PushVideoPacket(this))
         {
-            logD_("_func_, EOS");
+            logD_(_func_, "EOS");
 
             m_bIsPlaying = false;
 
@@ -1094,7 +1099,6 @@ FFmpegStream::doVideoData (AVPacket & packet, AVCodecContext * pctx, int time_ba
 //    mutex.lock ();
 
     last_frame_time = getTime ();
-    logD (frames, _func, "last_frame_time: 0x", fmt_hex, last_frame_time);
 
     if (first_video_frame)
     {
@@ -1318,7 +1322,8 @@ FFmpegStream::noVideoTimerTick (void * const _self)
     Time const time = getTime();
 
     self->mutex.lock ();
-    logD (novideo, _self_func, "time: 0x", fmt_hex, time, ", last_frame_time: 0x", self->last_frame_time);
+
+    logD_(_func_, "time: 0x", fmt_hex, time, ", last_frame_time: 0x", self->last_frame_time);
 
     if (self->stream_closed) {
         self->mutex.unlock ();

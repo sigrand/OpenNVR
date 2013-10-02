@@ -61,27 +61,19 @@ NvrCleaner::cleanupTimerTick (void * const _self)
 
         Time file_unixtime_sec;
         std::string stdStr(filename->cstr());
-        std::string delimiter1 = "_";
-        std::string delimiter2 = ".";
+        std::string delimiter = "_";
         size_t pos = 0;
         std::string token;
         // find '_'
-        pos = stdStr.find(delimiter1);
+        pos = stdStr.find(delimiter);
 
         if(pos == std::string::npos)
             continue;
 
         token = stdStr.substr(0, pos);
-        stdStr.erase(0, pos + delimiter1.length());
+        stdStr.erase(0, pos + delimiter.length());
 
-        // find '.'
-        pos = stdStr.find(delimiter2);
-
-        if(pos == std::string::npos)
-            continue;
-
-        token = stdStr.substr(0, pos);
-        strToUint64_safe(token.c_str(), &file_unixtime_sec, 10);
+        strToUint64_safe(stdStr.c_str(), &file_unixtime_sec, 10);
 
         file_unixtime_sec = file_unixtime_sec / 1000000000;
 
