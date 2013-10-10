@@ -1,4 +1,3 @@
-
 #!/bin/bash
 # execute this from the current project dir;
 # first arg is  absolute path to the output folder
@@ -50,22 +49,26 @@ function ffmpegrebuild()
 	fi
 }
 
-# check required tools 
-test -e /usr/bin/java
-test -e /opt/flex/bin/mxmlc
 # check prerequisites
-CHECK_GLIB="`pkg-config --exists glib-2.0 --print-errors`"
-CHECK_XML="`pkg-config --exists libxml-2.0 --print-errors`"
-CHECK_JSON="`pkg-config --exists jsoncpp --print-errors`"
+CHECK_GLIB="`pkg-config --cflags glib-2.0`"
+if [ -z "${CHECK_GLIB}" ]; then
+    echo "glib-2.0 isn't installed. Please install glib-2.0"
+    exit 1
+fi
 
+CHECK_XML="`pkg-config --cflags libxml-2.0`"
+if [ -z "${CHECK_XML}" ]; then
+    echo "libxml-2.0 isn't installed. Please install libxml-2.0"
+    exit 1
+fi
 
-if [ -n "${CHECK_GLIB}" || "${CHECK_XML}" || "${CHECK_JSON}" ]; then
-    echo "Not all prerequisites were installed; ${CHECK_GLIB} ${CHECK_XML} ${CHECK_JSON} "
-	exit 1
+CHECK_JSON="`pkg-config --cflags jsoncpp`"
+if [ -z "${CHECK_JSON}" ]; then
+    echo "jsoncpp isn't installed. Please install jsoncpp"
+    exit 1
 fi
 
 # build ffmpeg
-
 ffmpegrebuild "$FFBUILD"
 
 # Generate projects
@@ -206,38 +209,6 @@ export THIS_LIBS+=" -Wl,--whole-archive \
 	-Wl,--no-whole-archive -Wl,-Bsymbolic -lz -lm"
 
 makeclean "$CLEAN"
-
-./configure --prefix="${OUTDIR}"
-make
-make install
-
-cd ../moment-nvr
-makeclean "$CLEAN"
-
-export THIS_CFLAGS="${I_GLIB} ${I_XML} \
-	-I${OUTDIR}/include/moment-1.0 \
-	-I${OUTDIR}/include/libmary-1.0 \
-	-I${OUTDIR}/include/mconfig-1.0 \
-	-I${OUTDIR}/include/pargen-1.0"
-export THIS_LIBS="${L_GLIB} ${L_XML} \
-	-L${OUTDIR}/lib -lmoment-1.0 \
-	-L${OUTDIR}/lib -lmary-1.0 \
-	-L${OUTDIR}/lib -lmconfig-1.0 \
-	-L${OUTDIR}/lib -lpargen-1.0"
-
-export THIS_CFLAGS+=" -I../../ffmpeg/ffmpeg_build/include -I../../ffmpeg/ffmpeg_build/include/libavformat"
-export THIS_LIBS+=" -Wl,--whole-archive \
-	../../ffmpeg/ffmpeg_build/lib/libavformat.a \
-	../../ffmpeg/ffmpeg_build/lib/libavdevice.a \
-	../../ffmpeg/ffmpeg_build/lib/libavcodec.a \
-	../../ffmpeg/ffmpeg_build/lib/libavfilter.a \
-	../../ffmpeg/ffmpeg_build/lib/libswscale.a \
-	../../ffmpeg/ffmpeg_build/lib/libavutil.a \
-	../../ffmpeg/ffmpeg_build/lib/libpostproc.a \
-	../../ffmpeg/ffmpeg_build/lib/librtmp.a \
-	../../ffmpeg/ffmpeg_build/lib/libswresample.a \
-	../../ffmpeg/ffmpeg_build/lib/libx264.a \
-	-Wl,--no-whole-archive -Wl,-Bsymbolic -lz -lm"
 
 ./configure --prefix="${OUTDIR}"
 make

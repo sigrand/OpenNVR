@@ -1,8 +1,8 @@
 EXTRA_DIST = \
 	myplayer.html
 
-MyPlayer.swf: MyPlayer.as
-	/opt/flex/bin/mxmlc -headless-server=true -static-link-runtime-shared-libraries=true -include-libraries+="./myslider.swc" $^
+#MyPlayer.swf: MyPlayer.as
+#	/opt/flex/bin/mxmlc -headless-server=true -static-link-runtime-shared-libraries=true -include-libraries+="./myslider.swc" $^
 #	/opt/flex/bin/mxmlc -headless-server=true -static-link-runtime-shared-libraries=true $^
 
 myplayerdir = $(datadir)/moment/myplayer

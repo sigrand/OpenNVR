@@ -107,7 +107,7 @@ NvrCleaner::init (Timers      * const mt_nonnull timers,
                           false /* auto_delete */);
     }
 
-    MOMENT_FFMPEG__FFMPEG_CLEANER
+    MOMENT_FFMPEG__NVR_CLEANER
 }
 
 }

@@ -26,7 +26,7 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
-static LogGroup libMary_logGroup_file_iter ("mod_nvr.file_iter", LogLevel::I);
+static LogGroup libMary_logGroup_file_iter ("mod_nvr.file_iter", LogLevel::D);
 
 StRef<String>
 NvrFileIterator::makePathForDepth (ConstMemory   const stream_name,
@@ -222,8 +222,8 @@ StRef<String>
 NvrFileIterator::getNext ()
 {
     logD (file_iter, _func_);
-
-    Ref<Vfs::VfsDirectory> const dir = vfs->openDirectory (stream_name->mem());
+    ConstMemory streamNameMem = stream_name->mem();
+    Ref<Vfs::VfsDirectory> const dir = vfs->openDirectory (streamNameMem);
     if (!dir) {
         logD (file_iter, _func, "vfs->openDirectory() failed: ", stream_name->mem(), ": ", exc->toString());
         return NULL;

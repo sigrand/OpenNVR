@@ -20,6 +20,9 @@
 #include <moment-ffmpeg/ffmpeg_stream.h>
 #include "naming_scheme.h"
 #include <libmary/vfs.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 
 using namespace M;
@@ -173,6 +176,8 @@ FFmpegStream::ffmpegStreamData::ffmpegStreamData(void)
 
     format_ctx = NULL;
 
+    m_bRecordingState = false;
+
     video_stream_idx = -1;
 }
 
@@ -213,6 +218,7 @@ void FFmpegStream::ffmpegStreamData::Deinit()
         format_ctx = NULL;
     }
 
+    m_bRecordingState = false;
 
     video_stream_idx = -1;
 }
@@ -276,6 +282,7 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri, const char * chann
     // reading configs
 
     ConstMemory record_dir;
+    ConstMemory confd_dir;
     Uint64 max_age_minutes = 120;
     Uint64 file_duration_sec = 3600;
 
@@ -315,6 +322,20 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri, const char * chann
             logI_ (_func, opt_name, ": ", file_duration_sec);
     }
 
+    // get path for recording
+    {
+        ConstMemory const opt_name = "moment/confd_dir"; // TODO: change mod_nvr to mod_ffmpeg?
+        bool confd_dir_is_set = false;
+        confd_dir = config->getString (opt_name, &confd_dir_is_set);
+        if (!confd_dir_is_set)
+        {
+            logE_ (_func, opt_name, " config option is not set, disabling writing");
+            // we can not write without output path
+            return Result::Failure;
+        }
+        logI_ (_func, opt_name, ": [", confd_dir, "]");
+    }
+
     if(res == Result::Success)
     {
         StRef<String> recdir = st_makeString(record_dir);
@@ -324,6 +345,29 @@ Result FFmpegStream::ffmpegStreamData::Init(const char * uri, const char * chann
         Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir);
         m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
         m_nvr_cleaner->init (timers, vfs, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
+
+        bool bDisableRecord = false;
+        StRef<String> st_confd_dir = st_makeString(confd_dir);
+        StRef<String> channelFullPath = st_makeString(st_confd_dir, "/", channel_name);
+        std::string line;
+        std::ifstream channelPath (channelFullPath->cstr());
+        logD_(_func_, "channelFullPath = ", channelFullPath);
+        if (channelPath.is_open())
+        {
+            logD_(_func_, "channelFullPath opened");
+            while ( std::getline (channelPath, line) )
+            {
+                logD_(_func_, "got line: [", line.c_str(), "]");
+                if(line.compare("disable_record") == 0)
+                {
+                    logD_(_func_, "FOUND disable_record");
+                    bDisableRecord = true;
+                }
+            }
+            channelPath.close();
+        }
+
+        m_bRecordingState = ! bDisableRecord;
     }
     else
     {
@@ -360,7 +404,10 @@ bool FFmpegStream::ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
 //                            ",size=", packet.size,
 //                            ",flags=", packet.flags);
         // write to file
-        m_nvrData.WritePacket(format_ctx, packet);
+        if(m_bRecordingState)
+        {
+            m_nvrData.WritePacket(format_ctx, packet);
+        }
 
         // Free the packet that was allocated by av_read_frame
         av_free_packet(&packet);
@@ -375,6 +422,18 @@ bool FFmpegStream::ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
     }
 
     return video_found;
+}
+
+int FFmpegStream::ffmpegStreamData::SetChannelState(bool const bState)
+{
+    m_bRecordingState = bState;
+    return 0;
+}
+
+int FFmpegStream::ffmpegStreamData::GetChannelState(bool & bState)
+{
+    bState = m_bRecordingState;
+    return 0;
 }
 
 FFmpegStream::ffmpegStreamData::nvrData::nvrData(void)
@@ -569,6 +628,16 @@ Result FFmpegStream::ffmpegStreamData::nvrData::WritePacket(const AVFormatContex
 //    opkt.stream_index = packet.stream_index;
 
     return (av_interleaved_write_frame(m_out_format_ctx, &/*opkt*/packet) == 0) ? Result::Success : Result::Failure;
+}
+
+int FFmpegStream::SetChannelState(bool const bState)
+{
+    return m_ffmpegStreamData.SetChannelState(bState);
+}
+
+int FFmpegStream::GetChannelState(bool & bState)
+{
+    return m_ffmpegStreamData.GetChannelState(bState);
 }
 
 int FFmpegStream::WriteB8ToBuffer(Int32 b, MemoryEx & memory)

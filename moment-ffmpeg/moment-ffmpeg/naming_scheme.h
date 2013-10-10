@@ -52,6 +52,17 @@ public:
     {}
 };
 
+// use as FileNameToUnixTimeStamp().Get(..)
+class FileNameToUnixTimeStamp
+{
+public:
+
+    FileNameToUnixTimeStamp(void)
+    {}
+
+    Result Convert(const StRef<String> & fileName, /*output*/ Time & timeOfRecord);
+};
+
 }
 
 

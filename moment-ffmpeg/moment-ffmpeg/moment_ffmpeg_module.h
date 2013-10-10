@@ -20,9 +20,17 @@
 #ifndef MOMENT_FFMPEG__MOMENT_FFMPEG_MODULE__H__
 #define MOMENT_FFMPEG__MOMENT_FFMPEG_MODULE__H__
 
-
+#include <map>
+#include <vector>
+#include <string>
+#include <utility>
+#include <sstream>
+#include <fstream>
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/ffmpeg_stream.h>
+#include <moment-ffmpeg/channel_checker.h>
+#include <moment-ffmpeg/media_viewer.h>
+#include <moment-ffmpeg/get_file_session.h>
 
 
 namespace MomentFFmpeg {
@@ -87,6 +95,9 @@ private:
     mt_const MomentServer *moment;
     mt_const Timers *timers;
     mt_const PagePool *page_pool;
+    mt_const StRef<String> record_dir;
+    mt_const StRef<String> confd_dir;
+    Ref<Vfs> vfs;
 
     mt_const bool serve_playlist_json;
     mt_const StRef<String> playlist_json_protocol;
@@ -97,6 +108,13 @@ private:
     mt_mutex (mutex) RecorderEntryHash recorder_entry_hash;
 
     ChannelSet channel_set;
+
+    std::map<std::string, Ref<FFmpegStream> > m_streams;
+
+    mt_mutex (mutex) List< Ref<GetFileSession> > get_file_sessions;
+
+    mt_const Ref<ChannelChecker> channel_checker;
+    mt_const Ref<MediaViewer>     media_viewer;
 
     Result updatePlaylist (ConstMemory  channel_name,
 			   bool         keep_cur_item,
@@ -109,6 +127,26 @@ private:
 
     void printChannelInfoJson (PagePool::PageListHead *page_list,
 			       ChannelEntry           *channel_entry);
+
+    static StRef<String>  channelExistenceToJson (
+            std::vector<std::pair<int,int>> * const mt_nonnull existence);
+
+    static StRef<String>  channelFilesExistenceToJson (
+            std::vector<ChannelChecker::ChannelFileSummary> * const mt_nonnull files_existence);
+
+    mt_iface (GetFileSession::Frontend)
+      static GetFileSession::Frontend const get_file_session_frontend;
+
+      static void getFileSession_done (Result  res,
+                                       void   *_self);
+    mt_iface_end
+
+    void doGetFile (HttpRequest * mt_nonnull req,
+                    Sender      * mt_nonnull sender,
+                    ConstMemory  stream_name,
+                    Time         start_unixtime_sec,
+                    Time         duration_sec,
+                    bool         download);
 
     static Result httpGetChannelsStat (HttpRequest  * mt_nonnull req,
 				       Sender       * mt_nonnull conn_sender,

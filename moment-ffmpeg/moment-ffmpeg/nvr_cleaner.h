@@ -17,8 +17,8 @@
 */
 
 
-#ifndef MOMENT_FFMPEG__FFMPEG_CLEANER__H__
-#define MOMENT_FFMPEG__FFMPEG_CLEANER__H__
+#ifndef MOMENT_FFMPEG__NVR_CLEANER__H__
+#define MOMENT_FFMPEG__NVR_CLEANER__H__
 
 
 #include <moment/libmoment.h>
@@ -51,5 +51,5 @@ public:
 }
 
 
-#endif /* MOMENT_NVR__NVR_CLEANER__H__ */
+#endif /* MOMENT_FFMPEG__NVR_CLEANER__H__ */
 

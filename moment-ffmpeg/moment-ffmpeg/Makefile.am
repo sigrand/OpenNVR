@@ -39,6 +39,16 @@ libmoment_ffmpeg_1_0_la_SOURCES =	\
         nvr_cleaner.cpp                 \
         nvr_file_iterator.h             \
         nvr_file_iterator.cpp           \
+        channel_checker.h               \
+        channel_checker.cpp             \
+        media_reader.h                  \
+        media_reader.cpp                \
+        media_viewer.h                  \
+        media_viewer.cpp                \
+        get_file_session.cpp            \
+        get_file_session.h              \
+        types.h                         \
+        types.cpp                       \
         inc.h
 
 moment_ffmpeg_extra_dist =

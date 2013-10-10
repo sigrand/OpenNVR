@@ -745,6 +745,7 @@
               var the_name = "";
               $.get("/server/playlist.json", {}, function (data) {
                 var playlist = data["sources"];
+                var the_name = playlist[cur_playing]["name"];
         var the_uri = encodeURIComponent($("#uriMod").val());
         var the_title = encodeURIComponent($("#titleMod").val());
         var update = (isModify === true)? "&update=true": "";

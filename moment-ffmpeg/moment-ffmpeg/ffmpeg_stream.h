@@ -103,6 +103,9 @@ private:
 
         static void CloseCodecs(AVFormatContext * pAVFrmtCntxt);
 
+        int GetChannelState(bool & bState);
+        int SetChannelState(bool const bState);
+
     private /*functions*/:
 
     private /*variables*/:
@@ -111,6 +114,8 @@ private:
         int                 video_stream_idx;
         Ref<NvrCleaner>     m_nvr_cleaner;
         static StateMutex   m_mutexFFmpeg;
+
+        bool m_bRecordingState;     // true - do record, false - do not
 
         class nvrData
         {
@@ -326,6 +331,9 @@ public:
     void resetTrafficStats ();
 
     void beginPushPacket();
+
+    int GetChannelState(bool & bState);
+    int SetChannelState(bool const bState);
   mt_iface_end
 
     mt_const void init (CbDesc<MediaSource::Frontend> const &frontend,

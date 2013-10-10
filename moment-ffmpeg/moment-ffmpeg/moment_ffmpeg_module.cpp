@@ -555,6 +555,32 @@ MomentFFmpegModule::httpGetChannelsStat (HttpRequest  * const mt_nonnull req,
     return Result::Success;
 }
 
+StRef<String>
+MomentFFmpegModule::channelFilesExistenceToJson (
+        std::vector<ChannelChecker::ChannelFileSummary> * const mt_nonnull files_existence)
+{
+     std::ostringstream s;
+     for(int i = 0; i < files_existence->size(); i++)
+     {
+         s << "{\n\"path\":\"";
+         s << (*files_existence)[i].path;
+         s <<"\",\n\"start\":";
+         s << (*files_existence)[i].start;
+         s << ",\n\"end\":";
+         s << (*files_existence)[i].end;
+         s << "\n}";
+         if(i < files_existence->size() - 1)
+             s << ",\n";
+         else
+             s << "\n";
+     }
+     return st_makeString("{\n"
+                          "\"filesSummary\" : [\n",
+                          s.str().c_str(),
+                          "]\n"
+                          "}\n");
+}
+
 Result
 MomentFFmpegModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
 				   Sender       * const mt_nonnull conn_sender,
@@ -566,116 +592,124 @@ MomentFFmpegModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
 
     logD_ (_func_);
 
-    MOMENT_FFMPEG__HEADERS_DATE
+    MOMENT_SERVER__HEADERS_DATE
 
-//    if (req->getNumPathElems() >= 2
-//        && (equal (req->getPath (1), "rec_on") ||
-//            equal (req->getPath (1), "rec_off")))
-//    {
-//        ConstMemory const channel_name = req->getParameter ("stream");
-//        ConstMemory const seq = req->getParameter ("seq");
+    if (req->getNumPathElems() >= 2
+        && (equal (req->getPath (1), "rec_on") ||
+            equal (req->getPath (1), "rec_off")))
+    {
+        ConstMemory const channel_name = req->getParameter ("stream");
+        ConstMemory const seq = req->getParameter ("seq");
 
-//        ChannelRecorder::ChannelState channel_state;
+        StRef<String> st_channel_name = st_makeString(channel_name);
 
-//        bool const set_on = equal (req->getPath (1), "rec_on");
+        bool channel_state = false; // false - isn't writing
+        bool channelIsFound = false;
+        bool const set_on = equal (req->getPath (1), "rec_on");
 
-//        if(!recording_state_dir->isNullString())
-//        {
-//            StRef<String> const path = st_makeString (recording_state_dir->mem(), "/", channel_name);
+        std::map<std::string, Ref<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
+        if(it != self->m_streams.end())
+            channelIsFound = true;
 
-//            bool file_exist = false;
-//            if (FILE *file = fopen(path->cstr(), "r")) {
-//                fclose(file);
-//                file_exist = true;
-//            }
+        if (!channelIsFound)
+        {
+            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr_admin)";
+            conn_sender->send (self->page_pool,
+                               true /* do_flush */,
+                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+                               "\r\n",
+                               reply_body);
+            logA_ ("mod_nvr_admin 404 ", req->getClientAddress(), " ", req->getRequestLine());
+            goto _return;
+        }
 
-//            if(file_exist && set_on)
-//            {
-//                if( remove( path->cstr() ) != 0 )
-//                    logE_ (_func, "could not delete file", path->cstr());
-//                else
-//                    logD_ (_func, "removed file", path->cstr());
-//            }
-//            else if (!file_exist && !set_on)
-//            {
-//                FILE * fp = fopen( path->cstr(), "w");
-//                if(fp == NULL)
-//                    logE_ (_func, "could not create file [", path->cstr(),"]\n");
-//                else
-//                {
-//                    logD_ (_func, "created file [", path->cstr(),"]\n");
-//                    fclose(fp);
-//                }
-//            }
-//        }
+        it->second->SetChannelState(set_on);
+        it->second->GetChannelState(channel_state);
 
+        bool bDisableRecordFound = false;
+        StRef<String> channelFullPath = st_makeString(self->confd_dir, "/", st_channel_name);
+        std::string line;
+        std::string allLines = "";
+        std::ifstream channelPath (channelFullPath->cstr());
+        logD_(_func_, "channelFullPath = ", channelFullPath);
+        if (channelPath.is_open())
+        {
+            logD_(_func_, "opened");
+            while ( std::getline (channelPath, line) )
+            {
+                logD_(_func_, "got line: [", line.c_str(), "]");
+                if(line.compare("disable_record") == 0)
+                    bDisableRecordFound = true;
+                else
+                    allLines += line + "\n";
+            }
+            channelPath.close();
+        }
 
-//        ChannelRecorder::ChannelResult res = self->channel_recorder->setRecording (channel_name, set_on);
-//        if (res == ChannelRecorder::ChannelResult_Success)
-//            res = self->channel_recorder->getChannelState (channel_name, &channel_state);
+        if(bDisableRecordFound && set_on)
+        {
+            logD_(_func_, "bDisableRecordFound && set_on");
+            std::ofstream fout;
+            fout.open(channelFullPath->cstr());
+            if (fout.is_open())
+            {
+                logD_(_func_, "CHANGED");
+                fout << allLines;
+                fout.close();
+            }
+        }
+        else if (!bDisableRecordFound && !set_on)
+        {
+            std::ofstream fout;
+            fout.open(channelFullPath->cstr(),std::ios::app);
+            if (fout.is_open())
+            {
+                logD_(_func_, "!bDisableRecordFound && !set_on");
+                fout << "disable_record" << std::endl;
+                fout.close();
+            }
+        }
 
-//        if (res == ChannelRecorder::ChannelResult_ChannelNotFound) {
-//            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr_admin)";
-//            conn_sender->send (self->page_pool,
-//                               true /* do_flush */,
-//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
-//                               "\r\n",
-//                               reply_body);
-//            logA_ ("mod_nvr_admin 404 ", req->getClientAddress(), " ", req->getRequestLine());
-//            goto _return;
-//        } else
-//        if (res == ChannelRecorder::ChannelResult_Failure) {
-//            ConstMemory const reply_body = "500 Internal Server Error (mod_nvr_admin)";
-//            conn_sender->send (self->page_pool,
-//                               true /* do_flush */,
-//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
-//                               "\r\n",
-//                               reply_body);
-//            logA_ ("mod_nvr_admin 500 ", req->getClientAddress(), " ", req->getRequestLine());
-//            goto _return;
-//        }
-//        assert (res == ChannelRecorder::ChannelResult_Success);
+        StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq, "\", \"recording\": ", channel_state, " }");
+        logD_ (_func, "reply: ", reply_body);
+        conn_sender->send (self->page_pool,
+                           true /* do_flush */,
+                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+                           "\r\n",
+                           reply_body->mem());
 
-//        StRef<String> const reply_body = channelStateToJson (&channel_state, seq);
-//        logD_ (_func, "reply: ", reply_body);
-//        conn_sender->send (self->page_pool,
-//                           true /* do_flush */,
-//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
-//                           "\r\n",
-//                           reply_body->mem());
+        logA_ ("mod_nvr_admin 200 ", req->getClientAddress(), " ", req->getRequestLine());
+    }
+    else if(req->getNumPathElems() >= 2 &&
+            (equal (req->getPath (1), "files_existence"))) {
+        ConstMemory const channel_name = req->getParameter ("stream");
+        std::vector<ChannelChecker::ChannelFileSummary> * files_existence =
+            self->channel_checker->getChannelFilesExistence (channel_name);
 
-//        logA_ ("mod_nvr_admin 200 ", req->getClientAddress(), " ", req->getRequestLine());
-//    } else
-//    if(req->getNumPathElems() >= 2 &&
-//            (equal (req->getPath (1), "files_existence"))) {
-//        ConstMemory const channel_name = req->getParameter ("stream");
-//        std::vector<ChannelChecker::ChannelFileSummary> * files_existence =
-//            self->channel_checker->getChannelFilesExistence (channel_name);
+        if (files_existence == NULL) {
+            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
+            conn_sender->send (self->page_pool,
+                               true /* do_flush */,
+                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+                               "\r\n",
+                               reply_body);
+            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
+            goto _return;
+        }
 
-//        if (files_existence == NULL) {
-//            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
-//            conn_sender->send (self->page_pool,
-//                               true /* do_flush */,
-//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
-//                               "\r\n",
-//                               reply_body);
-//            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
-//            goto _return;
-//        }
-
-//        StRef<String> const reply_body = channelFilesExistenceToJson (files_existence);
-//        logD_ (_func, "reply: ", reply_body);
-//        conn_sender->send (self->page_pool,
-//                           true /* do_flush */,
-//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
-//                           "\r\n",
-//                           reply_body->mem());
-//    }
-//    else
+        StRef<String> const reply_body = channelFilesExistenceToJson (files_existence);
+        logD_ (_func, "reply: ", reply_body);
+        conn_sender->send (self->page_pool,
+                           true /* do_flush */,
+                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+                           "\r\n",
+                           reply_body->mem());
+    }
+    else
     {
         logE_ (_func, "Unknown request: ", req->getFullPath());
 
-        ConstMemory const reply_body = "404 Not Found (mod_nvr_admin) [ffmpeg]";
+        ConstMemory const reply_body = "404 Not Found (mod_nvr_admin)";
         conn_sender->send (self->page_pool,
                            true /* do_flush */,
                            MOMENT_SERVER__404_HEADERS (reply_body.len()),
@@ -685,14 +719,34 @@ MomentFFmpegModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
         logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
     }
 
-    goto _return;
-
-
 _return:
     if (!req->getKeepalive())
         conn_sender->closeAfterFlush ();
 
     return Result::Success;
+}
+
+StRef<String>
+MomentFFmpegModule::channelExistenceToJson(std::vector<std::pair<int,int>> * const mt_nonnull existence)
+{
+    std::ostringstream s;
+    for(int i = 0; i < existence->size(); i++)
+    {
+        s << "{\n\"start\":";
+        s << (*existence)[i].first;
+        s << ",\n\"end\":";
+        s << (*existence)[i].second;
+        s << "\n}";
+        if(i < existence->size() - 1)
+            s << ",\n";
+        else
+            s << "\n";
+    }
+    return st_makeString("{\n"
+                         "\"timings\" : [\n",
+                         s.str().c_str(),
+                         "]\n"
+                         "}\n");
 }
 
 HttpService::HttpHandler MomentFFmpegModule::http_handler = {
@@ -726,104 +780,101 @@ MomentFFmpegModule::httpRequest (HttpRequest  * const mt_nonnull req,
 
         logA_ ("mod_nvr 200 ", req->getClientAddress(), " ", req->getRequestLine());
     }
-//    else if (req->getNumPathElems() >= 2
-//        && equal (req->getPath (1), "channel_state"))
-//    {
-//        ConstMemory const channel_name = req->getParameter ("stream");
-//        ConstMemory const seq = req->getParameter ("seq");
+    else if (req->getNumPathElems() >= 2
+        && equal (req->getPath (1), "channel_state"))
+    {
+        ConstMemory const channel_name = req->getParameter ("stream");
+        StRef<String> st_channel_name = st_makeString(channel_name);
+        ConstMemory const seq = req->getParameter ("seq");
 
-//        ChannelRecorder::ChannelState channel_state;
-//        ChannelRecorder::ChannelResult const res =
-//                self->channel_recorder->getChannelState (channel_name, &channel_state);
-//        if (res == ChannelRecorder::ChannelResult_ChannelNotFound) {
-//            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
-//            conn_sender->send (self->page_pool,
-//                               true /* do_flush */,
-//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
-//                               "\r\n",
-//                               reply_body);
-//            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
-//            goto _return;
-//        } else
-//        if (res == ChannelRecorder::ChannelResult_Failure) {
-//            ConstMemory const reply_body = "500 Internal Server Error (mod_nvr)";
-//            conn_sender->send (self->page_pool,
-//                               true /* do_flush */,
-//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
-//                               "\r\n",
-//                               reply_body);
-//            logA_ ("mod_nvr 500 ", req->getClientAddress(), " ", req->getRequestLine());
-//            goto _return;
-//        }
-//        assert (res == ChannelRecorder::ChannelResult_Success);
+        bool channel_state = false; // false - isn't writing
+        bool channelIsFound = false;
 
-//        StRef<String> const reply_body = channelStateToJson (&channel_state, seq);
-//        conn_sender->send (self->page_pool,
-//                           true /* do_flush */,
-//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
-//                           "\r\n",
-//                           reply_body->mem());
+        std::map<std::string, Ref<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
+        if(it != self->m_streams.end())
+            channelIsFound = true;
 
-//        logA_ ("mod_nvr 200 ", req->getClientAddress(), " ", req->getRequestLine());
-//    } else
-//    if (req->getNumPathElems() >= 2
-//        && (equal (req->getPath (1), "file") ||
-//            stringHasSuffix (req->getPath (1), ".mp4", NULL /* ret_str */)))
-//    {
-//        ConstMemory const channel_name = req->getParameter ("stream");
+        if (!channelIsFound)
+        {
+            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
+            conn_sender->send (self->page_pool,
+                               true /* do_flush */,
+                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+                               "\r\n",
+                               reply_body);
+            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
+            goto _return;
+        }
 
-//        Uint64 start_unixtime_sec = 0;
-//        if (!strToUint64_safe (req->getParameter ("start"), &start_unixtime_sec, 10 /* base */)) {
-//            logE_ (_func, "Bad \"start\" request parameter value");
-//            goto _bad_request;
-//        }
+        it->second->GetChannelState(channel_state);
 
-//        Uint64 duration_sec = 0;
-//        if (!strToUint64_safe (req->getParameter ("duration"), &duration_sec, 10 /* base */)) {
-//            logE_ (_func, "Bad \"duration\" request parameter value");
-//            goto _bad_request;
-//        }
+        StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq, "\", \"recording\": ", channel_state, " }");
+        conn_sender->send (self->page_pool,
+                           true /* do_flush */,
+                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+                           "\r\n",
+                           reply_body->mem());
 
-//        bool const download = req->hasParameter ("download");
-//        self->doGetFile (req, conn_sender, channel_name, start_unixtime_sec, duration_sec, download);
-//        return Result::Success;
-//    } else
-//    if (req->getNumPathElems() >= 2 && (equal (req->getPath (1), "existence"))) {
-//        ConstMemory const channel_name = req->getParameter ("stream");
-//        // ConstMemory const seq = req->getParameter ("seq"); TODO doesn't know meaning of sequence, so omit it
+        logA_ ("mod_nvr 200 ", req->getClientAddress(), " ", req->getRequestLine());
+    }
+    else if (req->getNumPathElems() >= 2
+        && (equal (req->getPath (1), "file") ||
+            stringHasSuffix (req->getPath (1), ".mp4", NULL /* ret_str */)))
+    {
+        ConstMemory const channel_name = req->getParameter ("stream");
 
-//        std::vector<std::pair<int,int>> * channel_existence = self->channel_checker->getChannelExistence (channel_name);
+        Uint64 start_unixtime_sec = 0;
+        if (!strToUint64_safe (req->getParameter ("start"), &start_unixtime_sec, 10 /* base */)) {
+            logE_ (_func, "Bad \"start\" request parameter value");
+            goto _bad_request;
+        }
 
-//        if (channel_existence == NULL) {
-//            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
-//            conn_sender->send (self->page_pool,
-//                               true /* do_flush */,
-//                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
-//                               "\r\n",
-//                               reply_body);
-//            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
-//            goto _return;
-//        }
+        Uint64 duration_sec = 0;
+        if (!strToUint64_safe (req->getParameter ("duration"), &duration_sec, 10 /* base */)) {
+            logE_ (_func, "Bad \"duration\" request parameter value");
+            goto _bad_request;
+        }
 
-//        StRef<String> const reply_body = channelExistenceToJson (channel_existence);
-//        logD_ (_func, "reply: ", reply_body);
-//        conn_sender->send (self->page_pool,
-//                           true /* do_flush */,
-//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
-//                           "\r\n",
-//                           reply_body->mem());
-//    }else {
-//        logE_ (_func, "Unknown request: ", req->getFullPath());
+        bool const download = req->hasParameter ("download");
+        self->doGetFile (req, conn_sender, channel_name, start_unixtime_sec, duration_sec, download);
+        return Result::Success;
+    }
+    else if (req->getNumPathElems() >= 2 && (equal (req->getPath (1), "existence")))
+    {
+        ConstMemory const channel_name = req->getParameter ("stream");
+        logD_(_func_, "channel_name: [", channel_name, "]");
+        std::vector<std::pair<int,int>> * channel_existence = self->channel_checker->getChannelExistence (channel_name);
+        if (channel_existence == NULL) {
+            ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
+            conn_sender->send (self->page_pool,
+                               true /* do_flush */,
+                               MOMENT_SERVER__404_HEADERS (reply_body.len()),
+                               "\r\n",
+                               reply_body);
+            logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
+            goto _return;
+        }
+        StRef<String> const reply_body = channelExistenceToJson (channel_existence);
+        logD_ (_func, "reply: ", reply_body);
+        conn_sender->send (self->page_pool,
+                           true /* do_flush */,
+                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+                           "\r\n",
+                           reply_body->mem());
+    }
+    else
+    {
+        logE_ (_func, "Unknown request: ", req->getFullPath());
 
-//        ConstMemory const reply_body = "404 Not Found (mod_nvr)";
-//        conn_sender->send (self->page_pool,
-//                           true /* do_flush */,
-//                           MOMENT_SERVER__404_HEADERS (reply_body.len()),
-//                           "\r\n",
-//                           reply_body);
+        ConstMemory const reply_body = "404 Not Found (mod_nvr)";
+        conn_sender->send (self->page_pool,
+                           true /* do_flush */,
+                           MOMENT_SERVER__404_HEADERS (reply_body.len()),
+                           "\r\n",
+                           reply_body);
 
-//        logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
-//    }
+        logA_ ("mod_nvr 404 ", req->getClientAddress(), " ", req->getRequestLine());
+    }
 
     goto _return;
 
@@ -846,6 +897,57 @@ _return:
         conn_sender->closeAfterFlush ();
 
     return Result::Success;
+}
+
+GetFileSession::Frontend const MomentFFmpegModule::get_file_session_frontend = {
+    getFileSession_done
+};
+
+void
+MomentFFmpegModule::getFileSession_done (Result   const res,
+                                      void   * const _self)
+{
+    MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
+
+    logD_ (_func_);
+
+    // TODO Destroy GetFileSession.
+}
+
+void
+MomentFFmpegModule::doGetFile (HttpRequest * const mt_nonnull req,
+                            Sender      * const mt_nonnull sender,
+                            ConstMemory   const channel_name,
+                            Time          const start_unixtime_sec,
+                            Time          const duration_sec,
+                            bool          const download)
+{
+    logD_ (_func, "channel: ", channel_name, ", "
+           "start: ", start_unixtime_sec, ", "
+           "duration: ", duration_sec);
+
+    Ref<GetFileSession> const get_file_session = grab (new (std::nothrow) GetFileSession);
+    {
+        Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir->mem());
+        get_file_session->init (moment,
+                                req,
+                                sender,
+                                page_pool,
+                                vfs,
+                                channel_name,
+                                start_unixtime_sec,
+                                duration_sec,
+                                download /* octet_stream_mime */,
+                                CbDesc<GetFileSession::Frontend> (&get_file_session_frontend, this, this),
+                                record_dir);
+    }
+
+    mutex.lock ();
+#warning TODO GetFileSession lifetime
+    get_file_sessions.append (get_file_session);
+    mutex.unlock ();
+
+    get_file_session->start ();
 }
 
 void
@@ -1586,6 +1688,8 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
                       playback_item,
                       config);
 
+    m_streams[channel_opts->channel_name->cstr()] = ffmpeg_stream;
+
     return ffmpeg_stream;
 }
 
@@ -1601,36 +1705,60 @@ MomentFFmpegModule::init (MomentServer * const moment)
 
     MConfig::Config * const config = moment->getConfig();
 
+    ConstMemory confd_dir_mem;
+    // get path for recording
+    {
+        ConstMemory const opt_name = "moment/confd_dir"; // TODO: change mod_nvr to mod_ffmpeg?
+        bool confd_dir_is_set = false;
+        confd_dir_mem = config->getString (opt_name, &confd_dir_is_set);
+        if (!confd_dir_is_set)
+        {
+            logE_ (_func, opt_name, " config option is not set, disabling writing");
+            // we can not write without output path
+            return Result::Failure;
+        }
+        logI_ (_func, opt_name, ": [", confd_dir, "]");
+    }
+    confd_dir = st_grab (new (std::nothrow) String (confd_dir_mem));
+
+    ConstMemory record_dir_mem;
+    {
+        ConstMemory const opt_name = "mod_nvr/record_dir";
+        bool record_dir_is_set = false;
+        record_dir_mem = config->getString (opt_name, &record_dir_is_set);
+        if (!record_dir_is_set) {
+            logE_ (_func, opt_name, " config option is not set, disabling mod_nvr [actually mod_ffmpeg]");
+            return Result::Failure;
+        }
+        logI_ (_func, opt_name, ": ", record_dir_mem);
+    }
+    record_dir = st_grab (new (std::nothrow) String (record_dir_mem));
+    vfs = Vfs::createDefaultLocalVfs (record_dir_mem);
+
+    channel_checker = grab (new (std::nothrow) ChannelChecker);
+    channel_checker->init (vfs, record_dir);
+
+    media_viewer = grab (new (std::nothrow) MediaViewer);
+    media_viewer->init (moment, vfs, record_dir);
+
     moment->setMediaSourceProvider (this);
 
-
-//    moment->getAdminHttpService()->addHttpHandler (
-//        CbDesc<HttpService::HttpHandler> (
-//            &admin_http_handler, this /* cb_data */, NULL /* coderef_container */),
-//        "mod_nvr_admin",
-//        true    /* preassembly */,
-//        1 << 20 /* 1 Mb */ /* preassembly_limit */,
-//        true    /* parse_body_params */);
+    moment->getAdminHttpService()->addHttpHandler (
+        CbDesc<HttpService::HttpHandler> (
+            &admin_http_handler, this /* cb_data */, NULL /* coderef_container */),
+        "mod_nvr_admin",
+        true    /* preassembly */,
+        1 << 20 /* 1 Mb */ /* preassembly_limit */,
+        true    /* parse_body_params */);
 
     // Alias to "moment_ffmpeg"
     moment->getHttpService()->addHttpHandler (
         CbDesc<HttpService::HttpHandler> (
             &http_handler, this /* cb_data */, NULL /* coderef_container */),
-        "mod_ffmpeg",
+        "mod_nvr",
         true /* preassembly */,
         1 << 20 /* 1 Mb */ /* preassembly_limit */,
         true /* parse_body_params */);
-
-//    parseSourcesConfigSection ();
-//    parseChainsConfigSection ();
-
-//    if (!parseStreamsConfigSection ())
-//        return Result::Failure;
-
-//    if (!parseStreams ())
-//        return Result::Failure;
-
-//    parseRecordingsConfigSection ();
 
     return Result::Success;
 }
