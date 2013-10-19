@@ -14,39 +14,46 @@ namespace MomentFFmpeg {
 static LogGroup libMary_logGroup_channelcheck ("mod_ffmpeg.channelcheck", LogLevel::D);
 
 std::vector<std::pair<int,int>> *
-ChannelChecker::getChannelExistence(ConstMemory const channel_name)
+ChannelChecker::getChannelExistence()
 {
     logD_(_func_);
-    CheckResult iRez = CheckResult_Success;
-    this->existence.clear();
-    iRez = check(channel_name, CheckMode_Timings);
-    return (iRez == CheckResult_Success) ? &this->existence : NULL;
+    check();
+    return &this->existence;
 }
 
 std::vector<ChannelChecker::ChannelFileSummary> *
-ChannelChecker::getChannelFilesExistence(ConstMemory const channel_name)
+ChannelChecker::getChannelFilesExistence()
 {
-    CheckResult iRez = CheckResult_Success;
-    this->files_existence.clear();
-    iRez = check(channel_name, CheckMode_FileSummary);
-
-    return (iRez == CheckResult_Success) ? &this->files_existence : NULL;
+    logD_(_func_);
+    check();
+    return &this->files_existence;
 }
 
 ChannelChecker::CheckResult
-ChannelChecker::check(ConstMemory const channel_name, CheckMode mode)
+ChannelChecker::check()
 {
-    logD_(_func_, "channel_name: [", channel_name, "]");
+    logD_(_func_, "channel_name: [", m_channel_name, "]");
     CheckResult rez;
     NvrFileIterator file_iter;
-    file_iter.init (this->vfs, channel_name, 0);
+    file_iter.init (this->vfs, m_channel_name->mem(), 0);
+
     while(1)
     {
         StRef<String> path = file_iter.getNext();
+
         if (path != NULL)
-            rez = checkIdxFile(path, mode);
+        {
+            std::vector<std::string>::iterator it = std::find (m_files.begin(), m_files.end(), path->cstr());
+            if(it == m_files.end())
+            {
+                rez = checkIdxFile(path);
+                m_files.push_back(path->cstr());
+            }
+        }
         else
+        {
             break;
+        }
     }
 
     concatenateSuccessiveIntervals();
@@ -54,49 +61,11 @@ ChannelChecker::check(ConstMemory const channel_name, CheckMode mode)
 }
 
 ChannelChecker::CheckResult
-ChannelChecker::checkIdxFile(StRef<String> path, CheckMode mode)
+ChannelChecker::checkIdxFile(StRef<String> path)
 {
     logD (channelcheck, _func, "under processing flv file:", path->cstr());
 
     StRef<String> const flv_filename = st_makeString (path, ".flv");
-//    Ref<Vfs::VfsFile> const flv_file = this->vfs->openFile (flv_filename->mem(),
-//                                                      0 /* open_flags */,
-//                                                      FileAccessMode::ReadOnly);
-//    if (!flv_file)
-//    {
-//        logE_ (_func, "this->vfs->openFile() failed for filename ",
-//               flv_filename, ": ", exc->toString());
-//        return CheckResult_Failure;
-//    }
-
-//    Size bytes_read = 0;
-//    Byte bufferStart [8];
-//    Byte bufferEnd [8];
-//    FileOffset offsetForEnd = -16;
-//    IoResult res;
-//    File * const file = flv_file->getFile();
-
-
-//    res = file->read (Memory::forObject (bufferStart), &bytes_read);
-//    if (res == IoResult::Error) {
-//        logE_ (_func, "idx file read error: ", exc->toString());
-//        return CheckResult_Failure;
-//    }
-
-//    if (!file->seek (offsetForEnd, SeekOrigin::End))
-//    {
-//        logE_ (_func, "seek failed", exc->toString());
-//        return CheckResult_Failure;
-//    }
-
-//    res = file->read (Memory::forObject (bufferEnd), &bytes_read);
-//    if (res == IoResult::Error) {
-//        logE_ (_func, "idx file read error: ", exc->toString());
-//        return CheckResult_Failure;
-//    }
-
-//    int const unixtime_timestamp_start = readTime (bufferStart);
-//    int const unixtime_timestamp_end = readTime (bufferEnd);
 
     StRef<String> flv_filenameFull = st_makeString(m_record_dir, "/", flv_filename);
 
@@ -114,20 +83,10 @@ ChannelChecker::checkIdxFile(StRef<String> path, CheckMode mode)
 //    logD_ (_func, "unixtime_timestamp_end", unixtime_timestamp_end);
     logD_ (_func, "idx ts for start and end [", unixtime_timestamp_start, ":", unixtime_timestamp_end, "]");
 
-    switch(mode)
-    {
-        case CheckMode_Timings:
-            this->existence.push_back(std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end));
-        break;
-        case CheckMode_FileSummary:
-                    this->files_existence.push_back(ChannelFileSummary(unixtime_timestamp_start,
-                                                                       unixtime_timestamp_end,
-                                                                       std::string(path->cstr())));
-        break;
-        default:
-            logE_ (_func, "WrongMode");
-            return CheckResult_Failure;
-    }
+    this->existence.push_back(std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end));
+    this->files_existence.push_back(ChannelFileSummary(unixtime_timestamp_start,
+                                                               unixtime_timestamp_end,
+                                                               std::string(path->cstr())));
 
     return CheckResult_Success;
 }
@@ -158,26 +117,27 @@ ChannelChecker::concatenateSuccessiveIntervals()
     }
 }
 
-int
-ChannelChecker::readTime (Byte * buf)
+void
+ChannelChecker::refreshTimerTick (void * const _self)
 {
-    Uint64 lRez =   ((Uint64) buf [0] << 56) |
-                    ((Uint64) buf [1] << 48) |
-                    ((Uint64) buf [2] << 40) |
-                    ((Uint64) buf [3] << 32) |
-                    ((Uint64) buf [4] << 24) |
-                    ((Uint64) buf [5] << 16) |
-                    ((Uint64) buf [6] <<  8) |
-                    ((Uint64) buf [7] <<  0);
-    int iRes = (double) lRez / 1000000000.0f;
-    return iRes;
+    ChannelChecker * const self = static_cast <ChannelChecker*> (_self);
+
+    self->check();
 }
 
 mt_const void
-ChannelChecker::init (Vfs * const vfs, StRef<String> & record_dir)
+ChannelChecker::init (Timers * const mt_nonnull timers, Vfs * const vfs, StRef<String> & record_dir, StRef<String> & channel_name)
 {
     this->vfs = vfs;
     this->m_record_dir = record_dir;
+    this->m_channel_name = channel_name;
+
+    check(); // initial fulfilling
+
+    timers->addTimer (CbDesc<Timers::TimerCallback> (refreshTimerTick, this, this),
+                      5    /* time_seconds */,
+                      true /* periodical */,
+                      false /* auto_delete */);
 }
 
 ChannelChecker::ChannelChecker(){}

@@ -65,7 +65,7 @@ NvrCleaner::cleanupTimerTick (void * const _self)
         size_t pos = 0;
         std::string token;
         // find '_'
-        pos = stdStr.find(delimiter);
+        pos = stdStr.rfind(delimiter);
 
         if(pos == std::string::npos)
             continue;

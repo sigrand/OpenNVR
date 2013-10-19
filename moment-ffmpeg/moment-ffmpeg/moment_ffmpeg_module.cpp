@@ -683,8 +683,15 @@ MomentFFmpegModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
     else if(req->getNumPathElems() >= 2 &&
             (equal (req->getPath (1), "files_existence"))) {
         ConstMemory const channel_name = req->getParameter ("stream");
-        std::vector<ChannelChecker::ChannelFileSummary> * files_existence =
-            self->channel_checker->getChannelFilesExistence (channel_name);
+        //std::vector<ChannelChecker::ChannelFileSummary> * files_existence = self->channel_checker->getChannelFilesExistence (channel_name);
+
+        std::vector<ChannelChecker::ChannelFileSummary> * files_existence;
+        StRef<String> st_channel_name = st_makeString(channel_name);
+        std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(st_channel_name->cstr());
+        if(it == self->m_channel_checkers.end())
+            files_existence = NULL;
+        else
+            files_existence = it->second->getChannelFilesExistence ();
 
         if (files_existence == NULL) {
             ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
@@ -843,7 +850,16 @@ MomentFFmpegModule::httpRequest (HttpRequest  * const mt_nonnull req,
     {
         ConstMemory const channel_name = req->getParameter ("stream");
         logD_(_func_, "channel_name: [", channel_name, "]");
-        std::vector<std::pair<int,int>> * channel_existence = self->channel_checker->getChannelExistence (channel_name);
+        //std::vector<std::pair<int,int>> * channel_existence = self->channel_checker->getChannelExistence (channel_name);
+
+        std::vector<std::pair<int,int>> * channel_existence;
+        StRef<String> st_channel_name = st_makeString(channel_name);
+        std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(st_channel_name->cstr());
+        if(it == self->m_channel_checkers.end())
+            channel_existence = NULL;
+        else
+            channel_existence = it->second->getChannelExistence ();
+
         if (channel_existence == NULL) {
             ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
             conn_sender->send (self->page_pool,
@@ -1690,6 +1706,11 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
 
     m_streams[channel_opts->channel_name->cstr()] = ffmpeg_stream;
 
+    Ref<ChannelChecker> channel_checker = grab (new (std::nothrow) ChannelChecker);
+    channel_checker->init (timers, vfs, record_dir, channel_opts->channel_name);
+
+    m_channel_checkers[channel_opts->channel_name->cstr()] = channel_checker;
+
     return ffmpeg_stream;
 }
 
@@ -1734,9 +1755,6 @@ MomentFFmpegModule::init (MomentServer * const moment)
     }
     record_dir = st_grab (new (std::nothrow) String (record_dir_mem));
     vfs = Vfs::createDefaultLocalVfs (record_dir_mem);
-
-    channel_checker = grab (new (std::nothrow) ChannelChecker);
-    channel_checker->init (vfs, record_dir);
 
     media_viewer = grab (new (std::nothrow) MediaViewer);
     media_viewer->init (moment, vfs, record_dir);

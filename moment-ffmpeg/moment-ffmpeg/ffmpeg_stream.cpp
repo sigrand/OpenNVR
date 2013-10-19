@@ -177,8 +177,12 @@ FFmpegStream::ffmpegStreamData::ffmpegStreamData(void)
     format_ctx = NULL;
 
     m_bRecordingState = false;
+    m_bGotFirstFrame = false;
 
     video_stream_idx = -1;
+
+    m_nPts = Int64_Min;
+    m_nDts = Int64_Min;
 }
 
 FFmpegStream::ffmpegStreamData::~ffmpegStreamData()
@@ -219,8 +223,12 @@ void FFmpegStream::ffmpegStreamData::Deinit()
     }
 
     m_bRecordingState = false;
+    m_bGotFirstFrame = false;
 
     video_stream_idx = -1;
+
+    m_nPts = Int64_Min;
+    m_nDts = Int64_Min;
 }
 
 Result FFmpegStream::ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config, Timers * timers)
@@ -387,6 +395,51 @@ bool FFmpegStream::ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
 
     while(av_read_frame(format_ctx, &packet) >= 0)
     {
+        if(!m_bGotFirstFrame)
+        {
+            if (packet.flags & AV_PKT_FLAG_KEY)
+            {
+                m_bGotFirstFrame = true;
+            }
+            else
+            {
+                av_free_packet(&packet);
+                memset(&packet, 0, sizeof(packet));
+                continue;
+            }
+        }
+
+        if(m_nPts == Int64_Min || m_nPts > packet.pts)
+        {
+            if(packet.pts != AV_NOPTS_VALUE)
+                m_nPts = packet.pts;
+        }
+
+        if(m_nDts == Int64_Min || m_nDts > packet.dts)
+        {
+            if(packet.dts != AV_NOPTS_VALUE)
+                m_nDts = packet.dts;
+        }
+
+        if(m_nPts > m_nDts)
+            m_nDts = m_nPts;        // to prevent situation when result packet.pts is less than packet.dts
+
+        if(packet.pts != AV_NOPTS_VALUE)
+        {
+            packet.pts -= m_nPts;
+        }
+
+        if(packet.dts != AV_NOPTS_VALUE)
+        {
+            packet.dts -= m_nDts;
+        }
+
+        logD_(_func_, "PACKET,indx=", packet.stream_index,
+                            ",pts=", packet.pts,
+                            ",dts=", packet.dts,
+                            ",size=", packet.size,
+                            ",flags=", packet.flags);
+
         // Is this a packet from the video stream?
         bool bVideo = (packet.stream_index == video_stream_idx);
 
@@ -398,11 +451,6 @@ bool FFmpegStream::ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
                                  format_ctx->streams[video_stream_idx]->time_base.den);
         }
 
-//        logD_ (_func, "PACKET,indx=", packet.stream_index,
-//                            ",pts=", packet.pts,
-//                            ",dts=", packet.dts,
-//                            ",size=", packet.size,
-//                            ",flags=", packet.flags);
         // write to file
         if(m_bRecordingState)
         {

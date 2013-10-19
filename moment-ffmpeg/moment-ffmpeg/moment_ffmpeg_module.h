@@ -113,7 +113,8 @@ private:
 
     mt_mutex (mutex) List< Ref<GetFileSession> > get_file_sessions;
 
-    mt_const Ref<ChannelChecker> channel_checker;
+    //mt_const Ref<ChannelChecker> channel_checker;
+    std::map<std::string, Ref<ChannelChecker> > m_channel_checkers;
     mt_const Ref<MediaViewer>     media_viewer;
 
     Result updatePlaylist (ConstMemory  channel_name,

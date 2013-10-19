@@ -56,7 +56,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
 {
     unsigned target = (parent_pos_match ? cur_pos [depth] : 0);
 
-    logD (file_iter, _func, "depth: ", depth, ", parent_dir_name: ", parent_dir_name, ", target: ", target, " pp_match: ", parent_pos_match);
+    //logD (file_iter, _func, "depth: ", depth, ", parent_dir_name: ", parent_dir_name, ", target: ", target, " pp_match: ", parent_pos_match);
 
     Format fmt;
     fmt.min_digits = 2;
@@ -118,7 +118,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
 
             Uint32 number = 0;
             if (strToUint32_safe (number_mem, &number, 10 /* base */)) {
-                logD (file_iter, _func, "is_flv: ", is_flv, ", number_mem: ", number_mem);
+                //logD (file_iter, _func, "is_flv: ", is_flv, ", number_mem: ", number_mem);
                 if (is_flv)
                     flv_tree.add (number);
                 else
@@ -128,7 +128,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
     }
 
     if (flv_tree.isEmpty() && depth < 3) {
-        logD (file_iter, _func, "walking subdir_tree");
+        //logD (file_iter, _func, "walking subdir_tree");
 
         AvlTree<unsigned>::bl_iterator iter (subdir_tree);
         while (!iter.done()) {
@@ -148,7 +148,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
             }
         }
     } else {
-        logD (file_iter, _func, "walking flv_tree");
+        //logD (file_iter, _func, "walking flv_tree");
 
         AvlTree<unsigned>::bl_iterator iter (flv_tree);
         unsigned prv_number = 0;
@@ -165,12 +165,12 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
             got_prv_number = true;
 
             if (number < target) {
-                logD (file_iter, _func, "less than target: ", number, " < ", target);
+                //logD (file_iter, _func, "less than target: ", number, " < ", target);
                 continue;
             } else
             if (number == target) {
                 if (got_first && parent_pos_match) {
-                    logD (file_iter, _func, "number == target; got_first && parent_pos_match");
+                    //logD (file_iter, _func, "number == target; got_first && parent_pos_match");
                     continue;
                 }
             }
@@ -189,7 +189,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
         }
 
         if (got_number) {
-            logD (file_iter, _func, "match: ", number);
+            //logD (file_iter, _func, "match: ", number);
 
             got_first = true;
             cur_pos [depth] = number;
@@ -208,7 +208,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
             else
             {
                 StRef<String> const filename = st_makeString (parent_dir_name, "/", fmt, number, "_", it->second.c_str());
-                logD (file_iter, _func, "result: ", filename);
+                //logD (file_iter, _func, "result: ", filename);
                 return filename;
             }
 
@@ -221,7 +221,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
 StRef<String>
 NvrFileIterator::getNext ()
 {
-    logD (file_iter, _func_);
+    //logD (file_iter, _func_);
     ConstMemory streamNameMem = stream_name->mem();
     Ref<Vfs::VfsDirectory> const dir = vfs->openDirectory (streamNameMem);
     if (!dir) {
@@ -237,7 +237,7 @@ NvrFileIterator::getNext ()
 void
 NvrFileIterator::doSetCurPos (Time const start_unixtime_sec)
 {
-    logD (file_iter, _func, "start_unixtime_sec: ", start_unixtime_sec);
+    //logD (file_iter, _func, "start_unixtime_sec: ", start_unixtime_sec);
 
     struct tm tm;
     if (!unixtimeToStructTm (start_unixtime_sec, &tm)) {
@@ -251,7 +251,7 @@ NvrFileIterator::doSetCurPos (Time const start_unixtime_sec)
     cur_pos [2] = tm.tm_mday;
     cur_pos [3] = tm.tm_hour * 100 * 100 + tm.tm_min * 100 + tm.tm_sec;
 
-    logD (file_iter, _func, "cur_pos (", start_unixtime_sec,"): ", makePathForDepth ("", 3, cur_pos));
+    //logD (file_iter, _func, "cur_pos (", start_unixtime_sec,"): ", makePathForDepth ("", 3, cur_pos));
 }
 
 void

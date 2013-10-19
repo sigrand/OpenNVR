@@ -117,6 +117,10 @@ private:
 
         bool m_bRecordingState;     // true - do record, false - do not
 
+        bool m_bGotFirstFrame;
+        int64_t m_nPts; // correction value for packets
+        int64_t m_nDts; // correction value for packets
+
         class nvrData
         {
 

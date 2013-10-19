@@ -52,22 +52,26 @@ public:
 
     } ChannelFileSummary;
 
-    mt_const void init (Vfs * const vfs, StRef<String> & record_dir);
-    std::vector<std::pair<int,int>> * getChannelExistence (ConstMemory const channel_name);
-    std::vector<ChannelFileSummary> * getChannelFilesExistence (ConstMemory const channel_name);
+    mt_const void init (Timers * mt_nonnull timers, Vfs * const vfs, StRef<String> & record_dir, StRef<String> & channel_name);
+    std::vector<std::pair<int,int>> * getChannelExistence ();
+    std::vector<ChannelFileSummary> * getChannelFilesExistence ();
     ChannelChecker ();
     ~ChannelChecker ();
 
 private:
      Vfs * vfs;
      StRef<String> m_record_dir;
+     StRef<String> m_channel_name;
      std::vector<std::pair<int,int>> existence;
+     std::vector<std::string> m_files;
      std::vector<ChannelFileSummary> files_existence;
 
      void concatenateSuccessiveIntervals();
-     CheckResult check (ConstMemory const channel_name, CheckMode mode);
-     CheckResult checkIdxFile (StRef<String> path, CheckMode mode);
+     CheckResult check ();
+     CheckResult checkIdxFile (StRef<String> path);
      int readTime(Byte * buffer);
+
+     static void refreshTimerTick (void *_self);
 };
 
 }
