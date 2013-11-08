@@ -17,6 +17,7 @@
 */
 
 
+#include <moment-ffmpeg/time_checker.h>
 #include <moment-ffmpeg/nvr_file_iterator.h>
 #include <map>
 #include <math.h>
@@ -221,7 +222,9 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
 StRef<String>
 NvrFileIterator::getNext ()
 {
-    //logD (file_iter, _func_);
+    TimeChecker tc;tc.Start();
+
+    logD (file_iter, _func_);
     ConstMemory streamNameMem = stream_name->mem();
     Ref<Vfs::VfsDirectory> const dir = vfs->openDirectory (streamNameMem);
     if (!dir) {
@@ -231,6 +234,10 @@ NvrFileIterator::getNext ()
 
     StRef<String> const filename = getNext_rec (dir, stream_name->mem(), 0, true /* parent_pos_match */);
     logD (file_iter, _func, "filename: ", filename);
+
+    Time t;tc.Stop(&t);
+    logD (file_iter, _func, "NvrFileIterator.getNext exectime = [", t, "]");
+
     return filename;
 }
 

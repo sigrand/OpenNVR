@@ -49,6 +49,12 @@ libmoment_ffmpeg_1_0_la_SOURCES =	\
         get_file_session.h              \
         types.h                         \
         types.cpp                       \
+        time_checker.cpp                \
+        time_checker.h                  \
+        stat_measurer.cpp               \
+        stat_measurer.h                 \
+        video_part_maker.cpp            \
+        video_part_maker.h              \
         inc.h
 
 moment_ffmpeg_extra_dist =

@@ -109,9 +109,8 @@ public:
         Uint64 timestamp_nanosec;
         bool bKeyFrame;
 
-    private:
-
         AVPacket src_packet;
+
     };
 
     FileReader();
@@ -129,6 +128,10 @@ public:
     {
         return m_fileName;
     };
+    AVFormatContext * GetFormatContext()
+    {
+        return format_ctx;
+    }
 
     // if ReadFrame returns 'true' use FreeFrame() function after using of Frame object.
     bool ReadFrame(Frame & readframe);

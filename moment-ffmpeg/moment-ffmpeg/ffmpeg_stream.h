@@ -26,6 +26,7 @@
 
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/nvr_cleaner.h>
+#include <moment-ffmpeg/stat_measurer.h>
 
 extern "C" {
 #ifndef INT64_C
@@ -44,8 +45,75 @@ namespace MomentFFmpeg {
 using namespace M;
 using namespace Moment;
 
+class nvrData
+{
+
+public:
+
+    nvrData(void);
+    ~nvrData();
+
+    Result Init(AVFormatContext * format_ctx, const char * filepath, const char * segMuxer,
+                Uint64 file_duration_sec = 3600, Uint64 max_age_minutes = 120);
+    void Deinit();
+    bool IsInit() const;
+
+    Result WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & packet);
+
+private /*functions*/:
+
+private /*variables*/:
+
+    Uint64 m_file_duration_sec;
+    Uint64 m_max_age_minutes;
+    AVFormatContext * m_out_format_ctx;
+
+    bool m_bIsInit;
+
+};
+
+class FFmpegStream;
+
+class ffmpegStreamData
+{
+
+public:
+
+    ffmpegStreamData(void);
+    ~ffmpegStreamData();
+
+    Result Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config, Timers * timers);
+    void Deinit();
+
+    // if PushVideoPacket returns 'false' consequently it is the end of stream (EOS).
+    bool PushVideoPacket(FFmpegStream * pParent);
+
+    static void CloseCodecs(AVFormatContext * pAVFrmtCntxt);
+
+    int GetChannelState(bool & bState);
+    int SetChannelState(bool const bState);
+
+private /*functions*/:
+
+private /*variables*/:
+
+    AVFormatContext *   format_ctx;
+    int                 video_stream_idx;
+    Ref<NvrCleaner>     m_nvr_cleaner;
+    static StateMutex   m_mutexFFmpeg;
+
+    bool m_bRecordingState;     // true - do record, false - do not
+
+    bool m_bGotFirstFrame;
+    int64_t m_nPts; // correction value for packets
+    int64_t m_nDts; // correction value for packets
+
+    nvrData m_nvrData;
+};
+
 class FFmpegStream : public MediaSource
 {
+    friend class ffmpegStreamData;
 private:
     StateMutex mutex;
 
@@ -87,75 +155,9 @@ private:
 
     typedef String MemorySafe;
 
-    class ffmpegStreamData
-    {
-
-    public:
-
-        ffmpegStreamData(void);
-        ~ffmpegStreamData();
-
-        Result Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config, Timers * timers);
-        void Deinit();
-
-        // if PushVideoPacket returns 'false' consequently is the end of stream (EOS).
-        bool PushVideoPacket(FFmpegStream * pParent);
-
-        static void CloseCodecs(AVFormatContext * pAVFrmtCntxt);
-
-        int GetChannelState(bool & bState);
-        int SetChannelState(bool const bState);
-
-    private /*functions*/:
-
-    private /*variables*/:
-
-        AVFormatContext *   format_ctx;
-        int                 video_stream_idx;
-        Ref<NvrCleaner>     m_nvr_cleaner;
-        static StateMutex   m_mutexFFmpeg;
-
-        bool m_bRecordingState;     // true - do record, false - do not
-
-        bool m_bGotFirstFrame;
-        int64_t m_nPts; // correction value for packets
-        int64_t m_nDts; // correction value for packets
-
-        class nvrData
-        {
-
-        public:
-
-            nvrData(void);
-            ~nvrData();
-
-            Result Init(AVFormatContext * format_ctx, const char * channel_name, const char * record_dir,
-                        Uint64 file_duration_sec = 3600, Uint64 max_age_minutes = 120);
-            void Deinit();
-            bool IsInit() const;
-
-            Result WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & packet);
-
-        private /*functions*/:
-
-        private /*variables*/:
-
-            mt_const StRef<String> m_record_dir;
-            mt_const StRef<String> m_channel_name;
-            Uint64 m_file_duration_sec;
-            Uint64 m_max_age_minutes;
-            AVFormatContext * m_out_format_ctx;
-
-            bool m_bIsInit;
-
-        };
-
-        nvrData m_nvrData;
-    };
-
     ffmpegStreamData m_ffmpegStreamData;
     Ref<MConfig::Config> config;
-
+    StatMeasurer m_statMeasurer;
 
 
     mt_const Ref<ChannelOptions> channel_opts;
@@ -299,6 +301,8 @@ private:
 
     mt_mutex (mutex) void doVideoData (AVPacket & packet, AVCodecContext * pctx, int time_base_den);
 
+    mt_mutex (mutex) void doAudioData (AVPacket & packet, AVCodecContext * pctx, int time_base_den);
+
     int WriteB8ToBuffer(Int32 b, MemoryEx & memory);
     int WriteB16ToBuffer(Uint32 val, MemoryEx & memory);
     int WriteB32ToBuffer(Uint32 val, MemoryEx & memory);
@@ -306,6 +310,7 @@ private:
     int AvcParseNalUnits(ConstMemory const mem, MemoryEx * pMemoryOut);
     int IsomWriteAvcc(ConstMemory const memory, MemoryEx & memoryOut);
 
+    static VideoStream::AudioCodecId GetAudioCodecId(const AVCodecContext * pctx);
 #if 0
     static gboolean videoDataCb (GstPad    *pad,
                  GstBuffer *buffer,
@@ -338,6 +343,8 @@ public:
 
     int GetChannelState(bool & bState);
     int SetChannelState(bool const bState);
+
+    StatMeasure GetStatMeasure();
   mt_iface_end
 
     mt_const void init (CbDesc<MediaSource::Frontend> const &frontend,

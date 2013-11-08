@@ -405,6 +405,8 @@ MediaViewer::init (MomentServer * const mt_nonnull moment,
     this->vfs = vfs;
     this->record_dir = record_dir;
 
+    logD_(_func_, "record_dir", this->record_dir);
+
     page_pool = moment->getPagePool();
 
     // TODO Use timers from multiple threads for sendDataTimerTick().

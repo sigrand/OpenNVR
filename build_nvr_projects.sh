@@ -181,6 +181,23 @@ make
 make install
 cd ..
 
+
+if [ ! -f "${OUTDIR}/moment.conf" ]; then
+cp ../moment.conf "${OUTDIR}/moment.conf"
+fi
+if [ ! -f "${OUTDIR}/bin/run_moment.sh" ]; then
+cp ../run_moment.sh "${OUTDIR}/bin/run_moment.sh"
+fi
+if [ ! -d "${OUTDIR}/conf.d" ]; then
+mkdir "${OUTDIR}/conf.d"
+fi
+if [ ! -d "${OUTDIR}/records" ]; then
+mkdir "${OUTDIR}/records"
+fi
+if [ ! -d "${OUTDIR}/recordingState" ]; then
+mkdir "${OUTDIR}/recordingState"
+fi
+
 export THIS_CFLAGS="${I_GLIB} ${I_XML} ${I_JSON} \
 	-I${OUTDIR}/include/moment-1.0 \
 	-I${OUTDIR}/include/libmary-1.0 \

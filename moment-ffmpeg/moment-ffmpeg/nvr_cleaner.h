@@ -36,11 +36,18 @@ private:
     mt_const StRef<String> stream_name;
     mt_const Time max_age_sec;
 
+    mt_const DataDepRef<Timers> timers;
+    Timers::TimerKey timer_key;
+
     void doRemoveFiles (ConstMemory filename);
 
     static void cleanupTimerTick (void *_self);
 
 public:
+
+    NvrCleaner();
+    ~NvrCleaner();
+
     mt_const void init (Timers      * mt_nonnull timers,
                         Vfs         * mt_nonnull vfs,
                         ConstMemory  stream_name,

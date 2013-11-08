@@ -3,8 +3,10 @@
 #define MOMENT_FFMPEG__CHANNEL_CHECKER__H__
 
 #include <vector>
+#include <map>
 #include <string>
 #include <utility>
+#include <fstream>
 
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/nvr_file_iterator.h>
@@ -30,31 +32,15 @@ public:
         CheckMode_FileSummary
     };
 
-    typedef struct _ChannelFileSummary
-    {
-        int start;
-        int end;
-        std::string path;
-
-        _ChannelFileSummary()
-        {
-            this->start = 0;
-            this->end = 0;
-            this->path = "";
-        }
-
-        _ChannelFileSummary(int start, int end, const std::string & path)
-        {
-            this->start = start;
-            this->end = end;
-            this->path = path;
-        }
-
-    } ChannelFileSummary;
+    typedef std::map<std::string, std::pair<int,int> > ChannelFileSummary;
 
     mt_const void init (Timers * mt_nonnull timers, Vfs * const vfs, StRef<String> & record_dir, StRef<String> & channel_name);
     std::vector<std::pair<int,int>> * getChannelExistence ();
-    std::vector<ChannelFileSummary> * getChannelFilesExistence ();
+    ChannelFileSummary * getChannelFilesExistence ();
+    bool writeIdx(ChannelFileSummary & files_existence,
+                  StRef<String> const dir_name, StRef<String> const channel_name);
+    bool readIdx(ChannelFileSummary & files_existence,
+                 StRef<String> const dir_name, StRef<String> const channel_name);
     ChannelChecker ();
     ~ChannelChecker ();
 
@@ -63,13 +49,21 @@ private:
      StRef<String> m_record_dir;
      StRef<String> m_channel_name;
      std::vector<std::pair<int,int>> existence;
-     std::vector<std::string> m_files;
-     std::vector<ChannelFileSummary> files_existence;
+     ChannelFileSummary files_existence;
+
+     mt_const DataDepRef<Timers> timers;
+     Timers::TimerKey timer_key;
 
      void concatenateSuccessiveIntervals();
-     CheckResult check ();
-     CheckResult checkIdxFile (StRef<String> path);
+     CheckResult initCache ();
+     CheckResult completeCache ();
+     CheckResult cleanCache ();
+     CheckResult recreateExistence ();
+     CheckResult addRecordInCache (StRef<String> path);
+
      int readTime(Byte * buffer);
+
+     void dumpData();
 
      static void refreshTimerTick (void *_self);
 };

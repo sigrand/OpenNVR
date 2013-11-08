@@ -18,6 +18,7 @@
 
 
 #include <moment-ffmpeg/media_reader.h>
+#include <moment-ffmpeg/time_checker.h>
 #include <moment-ffmpeg/naming_scheme.h>
 #include <string>
 
@@ -323,6 +324,7 @@ bool FileReader::Init(StRef<String> & fileName)
     DeInit();
 
     m_fileName = st_grab (new (std::nothrow) String (fileName->mem()));
+    logD_(_func_, "m_fileName = ", m_fileName);
 
     const char * file_name_path = m_fileName->cstr();
 
@@ -386,8 +388,11 @@ bool FileReader::Init(StRef<String> & fileName)
 
     if(res != Result::Success)
     {
+        logE_(_func_, "init failed, run deinit");
         DeInit();
     }
+
+    logD_(_func_, "init succeeded");
 
     return (res == Result::Success);
 }
@@ -442,8 +447,13 @@ FileReader::~FileReader()
 
 bool FileReader::ReadFrame(Frame & readframe)
 {
+    TimeChecker tc;tc.Start();
+
     if(!IsInit())
+    {
+        logE_(_func_, "IsInit returns false");
         return false;
+    }
 
     AVPacket packet = {};
 
@@ -477,6 +487,7 @@ bool FileReader::ReadFrame(Frame & readframe)
                 if(readpacket.flags & AV_PKT_FLAG_KEY)
                 {
                     first_key_frame_received = true;
+                    logD (reader, _func, "first_key_frame_received");
                 }
                 else
                 {
@@ -510,8 +521,6 @@ bool FileReader::ReadFrame(Frame & readframe)
                 memEx.len() == avc_codec_data.len() &&
                 !memcmp(memEx.mem(), avc_codec_data.cstr(), avc_codec_data.len()))
             {
-                // Codec data has not changed.
-                //logD_ (_func, "Codec data has not changed");
                 readframe.header = ConstMemory();
                 bEmptyHeader = true;
             }
@@ -523,6 +532,7 @@ bool FileReader::ReadFrame(Frame & readframe)
 
         if(!bEmptyHeader)
         {
+            logD_ (_func, "Codec data has changed");
             avc_codec_data.allocate(memEx.len());
 
             memcpy(avc_codec_data.cstr(), memEx.mem(), memEx.len());
@@ -537,6 +547,9 @@ bool FileReader::ReadFrame(Frame & readframe)
     readframe.timestamp_nanosec = m_initTimeOfRecord + packet.pts / (double)format_ctx->streams[video_stream_idx]->time_base.den * 1000000000LL;
     readframe.src_packet = packet;
 
+    Time t;tc.Stop(&t);
+    logD_(_func_, "FileReader.ReadFrame exectime = [", t, "]");
+
     return true;
 }
 
@@ -548,13 +561,21 @@ void FileReader::FreeFrame(Frame & readframe)
 
 bool FileReader::Seek(double dSeconds)
 {
+    TimeChecker tc;tc.Start();
+
     if(!IsInit())
+    {
+        logD_(_func_, "IsInit returns false");
         return false;
+    }
 
     int64_t llTimeStamp = (int64_t)(dSeconds * AV_TIME_BASE);
     int res = avformat_seek_file(format_ctx, -1, Int64_Min, llTimeStamp, Int64_Max, 0);
 
     // alter variant: avformat_seek_file(ic, -1, INT64_MIN, llTimeStamp, llTimeStamp, 0);
+
+    Time t;tc.Stop(&t);
+    logD_(_func_, "FileReader.Seek exectime = [", t, "]");
 
     return (res >= 0);
 }
@@ -564,6 +585,8 @@ bool FileReader::Seek(double dSeconds)
 mt_mutex (mutex) bool
 MediaReader::tryOpenNextFile ()
 {
+    TimeChecker tc;tc.Start();
+
     StRef<String> const filename = file_iter.getNext ();
     if (!filename) {
         logD (reader, _func, "filename is null");
@@ -576,7 +599,7 @@ MediaReader::tryOpenNextFile ()
 
     if(!m_fileReader.Init(cur_filename))
     {
-        logD (reader, _func,"m_fileReader.Init failed");
+        logE_(_func_,"m_fileReader.Init failed");
         return false;
     }
 
@@ -604,6 +627,9 @@ MediaReader::tryOpenNextFile ()
         return false;
     }
 
+    Time t;tc.Stop(&t);
+    logD_(_func_, "MediaReader.tryOpenNextFile exectime = [", t, "]");
+
     return true;
 }
 
@@ -612,6 +638,8 @@ MediaReader::sendFrame (const FileReader::Frame & inputFrame,
                         ReadFrameBackend const * const read_frame_cb,
                         void                   * const read_frame_cb_data)
 {
+    TimeChecker tc;tc.Start();
+
     ReadFrameResult client_res = ReadFrameResult_Success;
     VideoStream::VideoCodecId video_codec_id = VideoStream::VideoCodecId::AVC;
 
@@ -671,9 +699,12 @@ MediaReader::sendFrame (const FileReader::Frame & inputFrame,
 
     page_pool->msgUnref (page_list.first);
 
+    Time t;tc.Stop(&t);
+    logD_(_func_, "MediaReader.sendFrame exectime = [", t, "]");
+
     if (client_res != ReadFrameResult_Success)
     {
-        //logD (reader, _func, "return burst");
+        logD (reader, _func, "return burst");
         return client_res;
     }
 
@@ -684,6 +715,11 @@ MediaReader::ReadFrameResult
 MediaReader::readMoreData (ReadFrameBackend const * const read_frame_cb,
                            void                   * const read_frame_cb_data)
 {
+    logD_(_func_);
+    TimeChecker tc;tc.Start();
+
+    ReadFrameResult rf_res = ReadFrameResult_Success;
+
     if (!m_fileReader.IsInit())
     {
         if (!tryOpenNextFile ())
@@ -700,13 +736,13 @@ MediaReader::readMoreData (ReadFrameBackend const * const read_frame_cb,
 
         if(m_fileReader.ReadFrame(frame))
         {
-            ReadFrameResult const rf_res = sendFrame (frame, read_frame_cb, read_frame_cb_data);
+            rf_res = sendFrame (frame, read_frame_cb, read_frame_cb_data);
             if (rf_res == ReadFrameResult_BurstLimit) {
                 logD (reader, _func, "session 0x", fmt_hex, (UintPtr) this, ": BurstLimit, ", "Filename: ", m_fileReader.GetFilename());
-                return ReadFrameResult_BurstLimit;
+                break;
             } else
             if (rf_res == ReadFrameResult_Finish) {
-                return ReadFrameResult_Finish;
+                break;
             } else
             if (rf_res == ReadFrameResult_Success) {
                 res = Result::Success;
@@ -720,12 +756,16 @@ MediaReader::readMoreData (ReadFrameBackend const * const read_frame_cb,
         {
             if (!tryOpenNextFile ())
             {
-                return ReadFrameResult_NoData;
+                rf_res = ReadFrameResult_NoData;
+                break;
             }
         }
     }
 
-    return ReadFrameResult_Success;
+    Time t;tc.Stop(&t);
+    logD_(_func_, "MediaReader.readMoreData exectime = [", t, "]");
+
+    return rf_res;
 }
 
 mt_const void
@@ -742,7 +782,11 @@ MediaReader::init (PagePool    * const mt_nonnull page_pool,
     this->burst_size_limit = burst_size_limit;
     this->record_dir = record_dir;
 
-    logD (reader, _func, "start_unixtime_sec: ", start_unixtime_sec, "stream_name: ", (const char *)stream_name.mem());
+    logD_(_func_, "start_unixtime_sec = ", this->start_unixtime_sec);
+    logD_(_func_, "burst_size_limit = ", this->burst_size_limit);
+    logD_(_func_, "record_dir = ", this->record_dir);
+
+    logD (reader, _func, "stream_name: ", (const char *)stream_name.mem());
     file_iter.init (vfs, stream_name, start_unixtime_sec);
 }
 

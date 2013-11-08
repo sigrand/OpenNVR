@@ -22,6 +22,7 @@
 
 #include <moment-ffmpeg/nvr_file_iterator.h>
 #include <moment-ffmpeg/inc.h>
+#include <moment-ffmpeg/time_checker.h>
 #include <moment-ffmpeg/nvr_cleaner.h>
 
 using namespace M;
@@ -42,7 +43,9 @@ NvrCleaner::cleanupTimerTick (void * const _self)
 {
     NvrCleaner * const self = static_cast <NvrCleaner*> (_self);
 
-//    logD_ (_func, "0x", fmt_hex, (UintPtr) self);
+    logD_ (_func, "0x", fmt_hex, (UintPtr) self);
+
+    TimeChecker tc;tc.Start();
 
     NvrFileIterator file_iter;
     file_iter.init (self->vfs, self->stream_name->mem(), 0 /* start_unixtime_sec */);
@@ -55,6 +58,8 @@ NvrCleaner::cleanupTimerTick (void * const _self)
     while (true)
     {
         StRef<String> const filename = file_iter.getNext ();
+
+        logD_(_func_, "current filename = ", filename);
 
         if (!filename)
             break;
@@ -84,9 +89,13 @@ NvrCleaner::cleanupTimerTick (void * const _self)
             logD_ (_func, "Removing ", flv_filename);
             self->doRemoveFiles (flv_filename->mem());
         } else {
+            logD_ (_func, "end of removing");
             break;
         }
     }
+
+    Time t;tc.Stop(&t);
+    logD_(_func_, "NvrCleaner.cleanupTimerTick exectime = [", t, "]");
 }
 
 mt_const void
@@ -100,14 +109,30 @@ NvrCleaner::init (Timers      * const mt_nonnull timers,
     this->stream_name = st_grab (new (std::nothrow) String (stream_name));
     this->max_age_sec = max_age_sec;
 
-    if (clean_interval_sec) {
-        timers->addTimer (CbDesc<Timers::TimerCallback> (cleanupTimerTick, this, this),
-                          5    /* time_seconds */,
-                          true /* periodical */,
-                          false /* auto_delete */);
-    }
+    logD_(_func_, "stream_name = ", this->stream_name);
+    logD_(_func_, "max_age_sec = ", this->max_age_sec);
+
+    this->timers = timers;
+
+    this->timer_key = timers->addTimer (CbDesc<Timers::TimerCallback> (cleanupTimerTick, this, this),
+                      5    /* time_seconds */,
+                      true /* periodical */,
+                      false /* auto_delete */);
 
     MOMENT_FFMPEG__NVR_CLEANER
+}
+
+NvrCleaner::NvrCleaner(): timers(this), timer_key (NULL)
+{
+
+}
+
+NvrCleaner::~NvrCleaner()
+{
+    if (this->timer_key) {
+        this->timers->deleteTimer (this->timer_key);
+        this->timer_key = NULL;
+    }
 }
 
 }

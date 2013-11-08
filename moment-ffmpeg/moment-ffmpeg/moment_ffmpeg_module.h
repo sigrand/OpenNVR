@@ -26,11 +26,13 @@
 #include <utility>
 #include <sstream>
 #include <fstream>
+#include <sys/time.h>
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/ffmpeg_stream.h>
 #include <moment-ffmpeg/channel_checker.h>
 #include <moment-ffmpeg/media_viewer.h>
 #include <moment-ffmpeg/get_file_session.h>
+#include <moment-ffmpeg/stat_measurer.h>
 
 
 namespace MomentFFmpeg {
@@ -113,9 +115,28 @@ private:
 
     mt_mutex (mutex) List< Ref<GetFileSession> > get_file_sessions;
 
-    //mt_const Ref<ChannelChecker> channel_checker;
     std::map<std::string, Ref<ChannelChecker> > m_channel_checkers;
     mt_const Ref<MediaViewer>     media_viewer;
+
+    // statistics stuff
+    Timers::TimerKey timer_keyStat;
+    StatMeasurer m_statMeasurer;
+
+    std::map<time_t, StatMeasure> statPoints;
+
+    bool CreateStatPoint();
+
+    bool DeleteOldPoints();
+
+    bool DumpStatInFile();
+
+    bool ReadStatFromFile();
+
+    static void refreshTimerTickStat (void *_self);
+    //
+
+    bool removeVideoFiles(StRef<String> const dir_name, StRef<String> const channel_name,
+                                     Time const startTime, Time const endTime);
 
     Result updatePlaylist (ConstMemory  channel_name,
 			   bool         keep_cur_item,
@@ -133,7 +154,10 @@ private:
             std::vector<std::pair<int,int>> * const mt_nonnull existence);
 
     static StRef<String>  channelFilesExistenceToJson (
-            std::vector<ChannelChecker::ChannelFileSummary> * const mt_nonnull files_existence);
+            ChannelChecker::ChannelFileSummary * const mt_nonnull files_existence);
+
+    static StRef<String>  statisticsToJson (
+            std::map<time_t, StatMeasure> * const mt_nonnull statPoints);
 
     mt_iface (GetFileSession::Frontend)
       static GetFileSession::Frontend const get_file_session_frontend;
@@ -142,12 +166,11 @@ private:
                                        void   *_self);
     mt_iface_end
 
-    void doGetFile (HttpRequest * mt_nonnull req,
+    StRef<String> doGetFile (HttpRequest * mt_nonnull req,
                     Sender      * mt_nonnull sender,
                     ConstMemory  stream_name,
                     Time         start_unixtime_sec,
-                    Time         duration_sec,
-                    bool         download);
+                    Time         end_unixtime_sec);
 
     static Result httpGetChannelsStat (HttpRequest  * mt_nonnull req,
 				       Sender       * mt_nonnull conn_sender,
@@ -197,12 +220,6 @@ private:
 				ConstMemory channel_name,
 				ConstMemory filename_prefix);
 
-    void parseSourcesConfigSection ();
-    void parseChainsConfigSection ();
-    Result parseStreamsConfigSection ();
-    Result parseStreams ();
-    void parseRecordingsConfigSection ();
-
 public:
   mt_iface (MediaSourceProvider)
     Ref<MediaSource> createMediaSource (CbDesc<MediaSource::Frontend> const &frontend,
@@ -217,6 +234,8 @@ public:
   mt_iface_end
 
     Result init (MomentServer *moment);
+
+    void RefreshStat ();
 
     MomentFFmpegModule ();
 
