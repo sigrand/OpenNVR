@@ -3,8 +3,7 @@
 <html style="height: 100%" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <title>Moment Video Server - http://momentvideo.org</title>
-  <link rel="icon" type="image/vnd.microsoft.icon" href="favicon.ico"/>
+  <title>NVR Server</title>
   <style type="text/css">
     body {
         font-family: sans-serif;

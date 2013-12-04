@@ -54,6 +54,8 @@
     #include <string.h>
     #include "sys/stat.h"    /* Fix up for Windows - inc mode_t */
 
+    #define ERR_NOSPACE -10000
+
     typedef struct stat Stat;
 
     //if CONFIG_SMALL
@@ -63,6 +65,9 @@
     //#endif
 
     extern int MakeFullPath(const char * channel_name, int const file_duration_sec, char * fullPath, int iBufSize);
+
+    extern unsigned long GetPermission(const char * filename, int64_t nDuration);
+    extern int Notify(const char * filename, int bDone, unsigned long size);
 
 #endif  // MOMENT_CHANGE ]
 
@@ -227,6 +232,13 @@ static int segment_start(AVFormatContext *s, int write_header)
     seg->segment_idx++;
     if ((err = set_segment_filename(s)) < 0)
         return err;
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+    int64_t ssize = GetPermission(oc->filename, seg->time / 1000000);
+    if(!ssize){
+        err = ERR_NOSPACE;
+        return err;
+    }
+#endif // MOMENT_CHANGE ]
     seg->segment_count++;
 
     if ((err = avio_open2(&oc->pb, oc->filename, AVIO_FLAG_WRITE,
@@ -361,7 +373,12 @@ static int segment_end(AVFormatContext *s, int write_trailer, int is_last)
     }
 
 end:
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
     avio_close(oc->pb);
+    Notify(oc->filename, 1, 0);
+#else   // MOMENT_CHANGE ], [ !MOMENT_CHANGE
+    avio_close(oc->pb);
+#endif  // !MOMENT_CHANGE ]
 
     return ret;
 }
@@ -650,6 +667,13 @@ static int seg_write_header(AVFormatContext *s)
     seg->segment_count++;
 
     if (seg->write_header_trailer) {
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+    int64_t ssize = GetPermission(oc->filename, seg->time / 1000000);
+    if(!ssize){
+        ret = ERR_NOSPACE;
+        goto fail;
+    }
+#endif // MOMENT_CHANGE ]
         if ((ret = avio_open2(&oc->pb, oc->filename, AVIO_FLAG_WRITE,
                               &s->interrupt_callback, NULL)) < 0)
             goto fail;
@@ -714,8 +738,21 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
          (pkt->pts != AV_NOPTS_VALUE &&
           av_compare_ts(pkt->pts, st->time_base,
                         end_pts-seg->time_delta, AV_TIME_BASE_Q) >= 0))) {
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+    if(oc->streams && oc->streams[pkt->stream_index] && oc->streams[pkt->stream_index]->pts.den != 0)
         ret = segment_end(s, seg->individual_header_trailer, 0);
-
+    else ret = 0;
+    while(1){
+        seg->segment_count++;
+        int64_t end_pts2 = seg->time * seg->segment_count;
+        if(av_compare_ts(pkt->pts, st->time_base, end_pts2-seg->time_delta, AV_TIME_BASE_Q) < 0){
+            seg->segment_count--;
+            break;
+        }
+    }
+#else   // MOMENT_CHANGE ], [ !MOMENT_CHANGE
+        ret = segment_end(s, seg->individual_header_trailer, 0);
+#endif  // !MOMENT_CHANGE ]
         if (!ret)
             ret = segment_start(s, seg->individual_header_trailer);
 
@@ -756,9 +793,17 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
                av_ts2str(pkt->pts), av_ts2timestr(pkt->pts, &st->time_base),
                av_ts2str(pkt->dts), av_ts2timestr(pkt->dts, &st->time_base));
     }
-
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+    if(oc->streams && oc->streams[pkt->stream_index] && oc->streams[pkt->stream_index]->pts.den != 0)
+    {
+        ret = ff_write_chained(oc, pkt->stream_index, pkt, s);
+        Notify(oc->filename, 0, oc->pb->pos+1);
+    }
+    else
+        return ERR_NOSPACE;
+#else   // MOMENT_CHANGE ], [ !MOMENT_CHANGE
     ret = ff_write_chained(oc, pkt->stream_index, pkt, s);
-
+#endif  // !MOMENT_CHANGE ]
 fail:
     if (pkt->stream_index == seg->reference_stream_index)
         seg->frame_count++;
@@ -766,7 +811,13 @@ fail:
     if (ret < 0) {
         if (seg->list)
             avio_close(seg->list_pb);
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+    if(ret != ERR_NOSPACE){
         avformat_free_context(oc);
+    }
+#else   // MOMENT_CHANGE ], [ !MOMENT_CHANGE
+        avformat_free_context(oc);
+#endif  // !MOMENT_CHANGE ]
     }
 
     return ret;

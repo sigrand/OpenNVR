@@ -299,6 +299,7 @@ ChannelChecker::addRecordInCache(StRef<String> path)
     FileNameToUnixTimeStamp().Convert(flv_filenameFull, timeOfRecord);
     int const unixtime_timestamp_start = timeOfRecord / 1000000000LL;
     int const unixtime_timestamp_end = unixtime_timestamp_start + (int)fileReader.GetDuration();
+    logD_(_func_, "(int)fileReader.GetDuration() = [", (int)fileReader.GetDuration(), "]");
 
     existence.push_back(std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end));
     files_existence[std::string(path->cstr())] = std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end);

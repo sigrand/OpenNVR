@@ -5,42 +5,17 @@ before building all projects you have to do next:
 sudo apt-get install automake autoconf libtool
 sudo apt-get install libxml2-dev
 sudo apt-get install glib2.0
-sudo apt-get install libgstreamer0.10
-sudo apt-get install gstreamer0.10-plugins-base
-sudo apt-get install libgstreamer-plugins-base0.10-dev
-sudo apt-get install gstreamer0.10-plugins-good
-sudo apt-get install gstreamer0.10-plugins-bad
-sudo apt-get install gstreamer0.10-plugins-ugly
-sudo apt-get install gstreamer0.10-ffmpeg
 
 glib should be >= glib 2.30 (ubuntu 12.04 repo contains appropriate glib version)
 
-also you need to download flex (from here: http://www.adobe.com/devnet/flex/flex-sdk-download.html)
-unpack it to /opt/flex/
-change owner and group to current user and group:
-sudo chown -R username /opt/flex
-sudo chgrp -R usergrp /opt/flex
 
-also you need to install jre from official site (detailed instruction see at http://www.liberiangeek.net/2012/04/install-oracle-java-runtime-jre-7-in-ubuntu-12-04-precise-pangolin/?ModPagespeed=noscript):
-
-1) sudo apt-get purge openjdk*
-2) download latest java from here: http://www.oracle.com/technetwork/java/javase/downloads/index.html
-3) tar -xvf ~/Downloads/jre-7u3-linux-i586.tar.gz
-4) sudo mkdir -p /usr/lib/jvm/jre1.7.0
-5) sudo mv jre1.7.0_03/* /usr/lib/jvm/jre1.7.0/
-6) sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/jre1.7.0/bin/java 0
-7) mkdir ~/.mozilla/plugins 
-8) for 32bit OS: ln -s /usr/lib/jvm/jre1.7.0/lib/i386/libnpjp2.so ~/.mozilla/plugins/
-9) for 64bit OS: ln -s /usr/lib/jvm/jre1.7.0/lib/amd64/libnpjp2.so ~/.mozilla/plugins/
-
-also you need to install jsoncpp library:
-
+you need to install jsoncpp library:
 sudo apt-get install libjsoncpp0 libjsoncpp-dev
 
 HOW TO BUILD MOMENT:
 
 for first time of building do:
-build_nvr_projects.sh /home/username/moment gen noclean
+build_nvr_projects.sh /home/username/moment gen noclean ffmpegbuild
 
 for rebuild do:
 build_nvr_projects.sh /home/username/moment nogen clean

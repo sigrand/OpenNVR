@@ -9,14 +9,12 @@ myplayerdir = $(datadir)/moment/myplayer
 myplayer_DATA = index.tpl		\
 		MyPlayer.swf            \
 		playlist.json.tpl	\
-		splash.png		\
 		buffering.png		\
 		connecting.png		\
 		error.png		\
 		horizontal.png		\
 		fullscreen.png		\
 		playlist.png		\
-		favicon.ico		\
 		url.js			\
 		jquery-1.6.2.min.js	\
 		jquery.js		\

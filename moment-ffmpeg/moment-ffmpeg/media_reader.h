@@ -72,9 +72,46 @@ private:
 
     typedef String MemorySafe;
 
+    class StreamParams
+    {
+        // use VideoParams or AudioParams dependending on stream_type.
+        class VideoParams
+        {
+        public:
+            VideoStream::VideoCodecId   codec_id;
+
+            VideoParams() : codec_id(VideoStream::VideoCodecId::Unknown)
+            {
+            }
+        };
+
+        class AudioParams
+        {
+        public:
+            VideoStream::AudioCodecId   codec_id;
+
+            AudioParams() : codec_id(VideoStream::AudioCodecId::Unknown)
+            {
+            }
+        };
+
+    public:
+
+        VideoStream::Message::Type stream_type;
+
+        VideoParams video_params;   // it is valid when (stream_type == VideoStream::Message::Type_Video)
+        AudioParams audio_params;   // it is valid when (stream_type == VideoStream::Message::Type_Audio)
+
+        MemorySafe  extra_data; // it is used only to prevent the sending of header each time
+        MemorySafe  codec_data; // this data will sent
+
+        StreamParams() : stream_type(VideoStream::Message::Type_None)
+        {
+        }
+    };
+
     AVFormatContext *   format_ctx;
-    int                 video_stream_idx;
-    MemorySafe          avc_codec_data;
+    StreamParams *      stream_params;   // array. the amount is equal format_ctx->nb_streams.
     bool                first_key_frame_received;
     static StateMutex   m_mutexFFmpeg;
 
@@ -97,20 +134,57 @@ public:
     {
         friend class FileReader;
 
+        class VideoInfo
+        {
+        public:
+            VideoStream::VideoCodecId   codec_id;
+            VideoStream::VideoFrameType type;
+            VideoStream::VideoFrameType header_type;    // it is valid if 'header' member of Frame is set
+
+            VideoInfo()
+                : codec_id(VideoStream::VideoCodecId::Unknown)
+                , type(VideoStream::VideoFrameType::Unknown)
+                , header_type(VideoStream::VideoFrameType::Unknown)
+            { }
+        };
+
+        class AudioInfo
+        {
+        public:
+            VideoStream::AudioCodecId   codec_id;
+            VideoStream::AudioFrameType type;
+            VideoStream::AudioFrameType header_type;    // it is valid if 'header' member of Frame is set
+
+            AudioInfo()
+                : codec_id(VideoStream::AudioCodecId::Unknown)
+                , type(VideoStream::AudioFrameType::Unknown)
+                , header_type(VideoStream::AudioFrameType::Unknown)
+            { }
+        };
+
     public:
 
-        Frame(void) : timestamp_nanosec(0), bKeyFrame(false)
+        ConstMemory header;
+        ConstMemory frame;
+
+        Uint64 timestamp_nanosec;
+
+        VideoStream::Message::Type frame_type;
+
+        // use VideoInfo or AudioInfo dependending on frame_type.
+        VideoInfo video_info;   // it is valid when (frame_type == VideoStream::Message::Type_Video)
+        AudioInfo audio_info;   // it is valid when (frame_type == VideoStream::Message::Type_Audio)
+
+        Frame(void) : timestamp_nanosec(0), frame_type(VideoStream::Message::Type_None)
         {
             memset(&src_packet, 0, sizeof(src_packet));
         }
 
-        ConstMemory header;
-        ConstMemory frame;
-        Uint64 timestamp_nanosec;
-        bool bKeyFrame;
+        const AVPacket & GetPacket() const { return src_packet; }
+
+    private:
 
         AVPacket src_packet;
-
     };
 
     FileReader();

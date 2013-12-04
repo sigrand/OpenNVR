@@ -20,6 +20,7 @@
 #include <moment-ffmpeg/media_reader.h>
 #include <moment-ffmpeg/time_checker.h>
 #include <moment-ffmpeg/naming_scheme.h>
+#include <moment-ffmpeg/ffmpeg_stream.h>
 #include <string>
 
 
@@ -337,6 +338,12 @@ bool FileReader::Init(StRef<String> & fileName)
         {
             // Dump information about file onto standard error
             av_dump_format(format_ctx, 0, file_name_path, 0);
+
+            if(format_ctx->nb_streams <= 0)
+            {
+                logE_(_func_,"format_ctx->nb_streams <= 0");
+                res = Result::Failure;
+            }
         }
         else
         {
@@ -353,19 +360,46 @@ bool FileReader::Init(StRef<String> & fileName)
 
     if(res == Result::Success)
     {
+        stream_params = new (std::nothrow) StreamParams[format_ctx->nb_streams];
+
+        if(!stream_params)
+        {
+            logE_(_func_,"ffmpegStreamData::Init, Out of memory");
+            res = Result::Failure;
+        }
+    }
+
+    if(res == Result::Success)
+    {
+        int iActualStreams = 0;
         // Find the first video stream
         for(int i = 0; i < format_ctx->nb_streams; i++)
         {
-            if(format_ctx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
+            if(format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
             {
-                video_stream_idx = i;
-                break;
+                stream_params[i].video_params.codec_id = FFmpegStream::GetVideoCodecId(format_ctx->streams[i]->codec->codec_id);
+
+                if(stream_params[i].video_params.codec_id != VideoStream::VideoCodecId::Unknown)
+                {
+                    stream_params[i].stream_type = VideoStream::Message::Type_Video;
+                    ++iActualStreams;
+                }
+            }
+            else if(format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+            {
+                stream_params[i].audio_params.codec_id = FFmpegStream::GetAudioCodecId(format_ctx->streams[i]->codec);
+
+                if(stream_params[i].audio_params.codec_id != VideoStream::AudioCodecId::Unknown)
+                {
+                    stream_params[i].stream_type = VideoStream::Message::Type_Audio;
+                    ++iActualStreams;
+                }
             }
         }
 
-        if(video_stream_idx == -1)
+        if(iActualStreams <= 0)
         {
-            logE_(_func_,"ffmpegStreamData::Init, Didn't find a video stream");
+            logE_(_func_,"ffmpegStreamData::Init, Didn't find any stream");
             res = Result::Failure;
         }
     }
@@ -399,10 +433,11 @@ bool FileReader::Init(StRef<String> & fileName)
 
 void FileReader::DeInit()
 {
-    if(!avc_codec_data.isNull())
+    if(stream_params)
     {
         // free memory
-        avc_codec_data.allocate(0);
+        delete [] stream_params;
+        stream_params = NULL;
     }
 
     if(format_ctx)
@@ -418,8 +453,6 @@ void FileReader::DeInit()
 
     m_initTimeOfRecord = 0;
 
-    video_stream_idx = -1;
-
     m_dDuration = -1.0;
 
     first_key_frame_received = false;
@@ -433,11 +466,11 @@ FileReader::FileReader()
 
     m_initTimeOfRecord = 0;
 
-    video_stream_idx = -1;
-
     m_dDuration = -1.0;
 
     first_key_frame_received = false;
+
+    stream_params = NULL;
 }
 
 FileReader::~FileReader()
@@ -480,72 +513,136 @@ bool FileReader::ReadFrame(Frame & readframe)
         }
 
         // let it be just video for now
-        if(readpacket.stream_index == video_stream_idx)
+        if(stream_params[readpacket.stream_index].stream_type != VideoStream::Message::Type_None)
         {
+            bool bValidPacket = true;
+
             if(!first_key_frame_received)
             {
-                if(readpacket.flags & AV_PKT_FLAG_KEY)
+                if((stream_params[readpacket.stream_index].stream_type == VideoStream::Message::Type_Video) && (readpacket.flags & AV_PKT_FLAG_KEY))
                 {
                     first_key_frame_received = true;
                     logD (reader, _func, "first_key_frame_received");
                 }
                 else
                 {
-                    logD (reader, _func, "SKIPPED PACKET");
-                    av_free_packet(&readpacket);
-                    // we skip first frames until we get key frame to avoid corrupted playing
-                    continue;
+                    // check if we have any video stream, it is crazy case (if we do not have video), but JIC.
+                    bool bHasVideoStream = false;
+
+                    for(int i = 0; i < (format_ctx->nb_streams) && !bHasVideoStream; i++)
+                    {
+                        bHasVideoStream = (stream_params[readpacket.stream_index].stream_type == VideoStream::Message::Type_Video);
+                    }
+
+                    if(bHasVideoStream)
+                    {
+                        logD (reader, _func, "SKIPPED PACKET");
+                        // we skip first frames until we get key frame to avoid corrupted playing
+                        bValidPacket = false;
+                    }
+                    else
+                    {
+                        first_key_frame_received = true;
+                        logD (reader, _func, "first_key_frame_received AND IT IS AUDIO!!! WARNING!!! SOS!!!");
+                    }
                 }
             }
 
-            packet = readpacket;
-
-            break;
-        }
-    }   // while(1)
-
-    AVCodecContext * pctx = format_ctx->streams[video_stream_idx]->codec;
-
-    if(pctx->extradata_size > 0)
-    {
-        MemorySafe allocMemory(pctx->extradata_size * 2);
-        MemoryEx memEx((Byte *)allocMemory.cstr(), allocMemory.len());
-        memset(memEx.mem(), 0, memEx.len());
-        bool bEmptyHeader = false;
-
-        IsomWriteAvcc(ConstMemory(pctx->extradata, pctx->extradata_size), memEx);
-
-        if(memEx.len())
-        {
-            if (avc_codec_data.len() && // we have old header data
-                memEx.len() == avc_codec_data.len() &&
-                !memcmp(memEx.mem(), avc_codec_data.cstr(), avc_codec_data.len()))
+            if(bValidPacket)
             {
-                readframe.header = ConstMemory();
-                bEmptyHeader = true;
+                packet = readpacket;
+
+                break;
             }
         }
-        else
+
+        logD (reader, _func, "SKIPPED PACKET for this stream = ", readpacket.stream_index);
+        av_free_packet(&readpacket);
+    }   // while(1)
+
+    StreamParams * pStreamParams = &stream_params[packet.stream_index];
+    AVCodecContext * pctx = format_ctx->streams[packet.stream_index]->codec;
+
+    if(pctx->extradata && pctx->extradata_size > 0)
+    {
+        // set header info
+        MemorySafe & codec_data = pStreamParams->codec_data;
+        MemorySafe & extra_data = pStreamParams->extra_data;
+        bool bEmptyHeader = true;
+
+        if(extra_data.len() != pctx->extradata_size || memcmp(pctx->extradata, extra_data.cstr(), extra_data.len()))
         {
-            bEmptyHeader = true;
+            if(pStreamParams->stream_type == VideoStream::Message::Type_Video &&
+               pStreamParams->video_params.codec_id == VideoStream::VideoCodecId::AVC)
+            {
+                MemorySafe allocMemory(pctx->extradata_size * 2);
+                MemoryEx memEx((Byte *)allocMemory.cstr(), allocMemory.len());
+                memset(memEx.mem(), 0, memEx.len());
+
+                IsomWriteAvcc(ConstMemory(pctx->extradata, pctx->extradata_size), memEx);
+
+                if(memEx.len())
+                {
+                    bEmptyHeader = false;
+                    logD_ (_func, "AVC Codec data has changed");
+                    codec_data.allocate(memEx.len());
+
+                    memcpy(codec_data.cstr(), memEx.mem(), memEx.len());
+                    codec_data.setLength(memEx.len());
+                    readframe.video_info.header_type = VideoStream::VideoFrameType::AvcSequenceHeader;
+                }
+            }
+            else if(pStreamParams->stream_type == VideoStream::Message::Type_Audio &&
+                    (pStreamParams->audio_params.codec_id == VideoStream::AudioCodecId::AAC ||
+                     pStreamParams->audio_params.codec_id == VideoStream::AudioCodecId::Speex))
+            {
+                // in this case extra_data == codec_data
+                codec_data.allocate(pctx->extradata_size);
+
+                memcpy(codec_data.cstr(), pctx->extradata, pctx->extradata_size);
+                codec_data.setLength(pctx->extradata_size);
+                bEmptyHeader = false;
+                readframe.audio_info.header_type = (pStreamParams->audio_params.codec_id == VideoStream::AudioCodecId::AAC) ?
+                        VideoStream::AudioFrameType::AacSequenceHeader : VideoStream::AudioFrameType::SpeexHeader;
+                logD_ (_func, "AAC or Speex Codec data has changed");
+            }
         }
 
         if(!bEmptyHeader)
         {
-            logD_ (_func, "Codec data has changed");
-            avc_codec_data.allocate(memEx.len());
+            readframe.header = ConstMemory(codec_data.cstr(), codec_data.len());
 
-            memcpy(avc_codec_data.cstr(), memEx.mem(), memEx.len());
-            avc_codec_data.setLength(memEx.len());
-            readframe.header = ConstMemory(avc_codec_data.cstr(), avc_codec_data.len());
+            // set extra_data
+            extra_data.allocate(pctx->extradata_size);
+            memcpy(extra_data.cstr(), pctx->extradata, pctx->extradata_size);
+            extra_data.setLength(pctx->extradata_size);
         }
     }
 
     // retrive frame
     readframe.frame = ConstMemory(packet.data, packet.size);
-    readframe.bKeyFrame = (packet.flags & AV_PKT_FLAG_KEY);
-    readframe.timestamp_nanosec = m_initTimeOfRecord + packet.pts / (double)format_ctx->streams[video_stream_idx]->time_base.den * 1000000000LL;
+    readframe.frame_type = pStreamParams->stream_type;
+    readframe.timestamp_nanosec = m_initTimeOfRecord + packet.pts / (double)format_ctx->streams[packet.stream_index]->time_base.den * 1000000000LL;
     readframe.src_packet = packet;
+
+    if(pStreamParams->stream_type == VideoStream::Message::Type_Video)
+    {
+        readframe.video_info.codec_id = pStreamParams->video_params.codec_id;
+        readframe.video_info.type = (packet.flags & AV_PKT_FLAG_KEY) ?
+                    VideoStream::VideoFrameType::KeyFrame : VideoStream::VideoFrameType::InterFrame;
+    }
+    else        // audio
+    {
+        readframe.audio_info.codec_id = pStreamParams->audio_params.codec_id;
+        readframe.audio_info.type = VideoStream::AudioFrameType::RawData;
+    }
+
+    logD_(_func_, "NEW FRAME GOT");
+    logD_(_func_, "readframe.header.len() = [", readframe.header.len(), "]");
+    logD_(_func_, "readframe.frame.len() = [", readframe.frame.len(), "]");
+    logD_(_func_, "readframe.timestamp_nanosec = [", readframe.timestamp_nanosec, "]");
+    logD_(_func_, "readframe.bKeyFrame = [", (readframe.video_info.type == VideoStream::VideoFrameType::KeyFrame), "]");
+    logD_(_func_, "readframe.frameType = [", (int)readframe.frame_type, "]");
 
     Time t;tc.Stop(&t);
     logD_(_func_, "FileReader.ReadFrame exectime = [", t, "]");
@@ -641,7 +738,6 @@ MediaReader::sendFrame (const FileReader::Frame & inputFrame,
     TimeChecker tc;tc.Start();
 
     ReadFrameResult client_res = ReadFrameResult_Success;
-    VideoStream::VideoCodecId video_codec_id = VideoStream::VideoCodecId::AVC;
 
     if (inputFrame.header.len())
     {
@@ -653,11 +749,60 @@ MediaReader::sendFrame (const FileReader::Frame & inputFrame,
                                  inputFrame.header);
         msg_len += inputFrame.header.len();
 
+        if(inputFrame.frame_type == VideoStream::Message::Type_Video)
+        {
+            VideoStream::VideoMessage msg;
+            msg.timestamp_nanosec = inputFrame.timestamp_nanosec;
+            msg.prechunk_size = 0;
+            msg.frame_type = inputFrame.video_info.header_type;
+            msg.codec_id = inputFrame.video_info.codec_id;
+
+            msg.page_pool = page_pool;
+            msg.page_list = page_list;
+            msg.msg_len = msg_len;
+            msg.msg_offset = 0;
+            msg.is_saved_frame = false;
+
+            client_res = read_frame_cb->videoFrame (&msg, read_frame_cb_data);
+        }
+        else if(inputFrame.frame_type == VideoStream::Message::Type_Audio)
+        {
+            VideoStream::AudioMessage msg;
+            msg.timestamp_nanosec = inputFrame.timestamp_nanosec;
+            msg.prechunk_size = 0;
+            msg.frame_type = inputFrame.audio_info.header_type;
+            msg.codec_id = inputFrame.audio_info.codec_id;
+
+            msg.page_pool = page_pool;
+            msg.page_list = page_list;
+            msg.msg_len = msg_len;
+            msg.msg_offset = 0;
+
+            client_res = read_frame_cb->audioFrame (&msg, read_frame_cb_data);
+        }
+        else
+        {
+            logE_(_func_, "unknown frame type");
+        }
+
+        page_pool->msgUnref (page_list.first);
+    }
+
+    if(inputFrame.frame_type == VideoStream::Message::Type_Video)
+    {
         VideoStream::VideoMessage msg;
+        msg.frame_type = inputFrame.video_info.type;
+        msg.codec_id = inputFrame.video_info.codec_id;
+
+        PagePool::PageListHead page_list;
+
+        page_pool->getFillPages (&page_list,
+                                 inputFrame.frame);
+
+        Size msg_len = inputFrame.frame.len();
         msg.timestamp_nanosec = inputFrame.timestamp_nanosec;
+
         msg.prechunk_size = 0;
-        msg.frame_type = VideoStream::VideoFrameType::AvcSequenceHeader;
-        msg.codec_id = video_codec_id;
 
         msg.page_pool = page_pool;
         msg.page_list = page_list;
@@ -669,35 +814,35 @@ MediaReader::sendFrame (const FileReader::Frame & inputFrame,
 
         page_pool->msgUnref (page_list.first);
     }
-
-    VideoStream::VideoMessage msg;
-    msg.frame_type = VideoStream::VideoFrameType::InterFrame;
-    msg.codec_id = video_codec_id;
-
-    if (inputFrame.bKeyFrame)
+    else if(inputFrame.frame_type == VideoStream::Message::Type_Audio)
     {
-        msg.frame_type = VideoStream::VideoFrameType::KeyFrame;
+        VideoStream::AudioMessage msg;
+        msg.frame_type = inputFrame.audio_info.type;
+        msg.codec_id = inputFrame.audio_info.codec_id;
+
+        PagePool::PageListHead page_list;
+
+        page_pool->getFillPages (&page_list,
+                                 inputFrame.frame);
+
+        Size msg_len = inputFrame.frame.len();
+        msg.timestamp_nanosec = inputFrame.timestamp_nanosec;
+
+        msg.prechunk_size = 0;
+
+        msg.page_pool = page_pool;
+        msg.page_list = page_list;
+        msg.msg_len = msg_len;
+        msg.msg_offset = 0;
+
+        client_res = read_frame_cb->audioFrame (&msg, read_frame_cb_data);
+
+        page_pool->msgUnref (page_list.first);
     }
-
-    PagePool::PageListHead page_list;
-
-    page_pool->getFillPages (&page_list,
-                             inputFrame.frame);
-
-    Size msg_len = inputFrame.frame.len();
-    msg.timestamp_nanosec = inputFrame.timestamp_nanosec;
-
-    msg.prechunk_size = 0;
-
-    msg.page_pool = page_pool;
-    msg.page_list = page_list;
-    msg.msg_len = msg_len;
-    msg.msg_offset = 0;
-    msg.is_saved_frame = false;
-
-    client_res = read_frame_cb->videoFrame (&msg, read_frame_cb_data);
-
-    page_pool->msgUnref (page_list.first);
+    else
+    {
+        logE_(_func_, "unknown frame type");
+    }
 
     Time t;tc.Stop(&t);
     logD_(_func_, "MediaReader.sendFrame exectime = [", t, "]");

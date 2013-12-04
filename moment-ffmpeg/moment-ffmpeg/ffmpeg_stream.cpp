@@ -19,6 +19,9 @@
 
 #include <moment-ffmpeg/ffmpeg_stream.h>
 #include <moment-ffmpeg/time_checker.h>
+#include <moment-ffmpeg/nvr_file_iterator.h>
+#include <moment-ffmpeg/media_reader.h>
+#include <moment-ffmpeg/memory_dispatcher.h>
 #include "naming_scheme.h"
 #include <libmary/vfs.h>
 #include <iostream>
@@ -52,6 +55,9 @@ static LogGroup libMary_logGroup_plug     ("mod_ffmpeg.autoplug", LogLevel::D);
         ( ((const Byte*)(x))[1] <<  8) |			\
         (  (const Byte*)(x))[2])
 
+#define AV_RB16(x)                           \
+    ((((const uint8_t*)(x))[0] << 8) |       \
+      ((const uint8_t*)(x))[1])
 
 extern "C"
 {
@@ -144,12 +150,13 @@ extern "C"
             // TODO: need to use 'level'
             char chLogBuffer[2048] = {};
             vsnprintf(chLogBuffer, sizeof(chLogBuffer), outFmt, vl);
+            //printf(chLogBuffer);
             logD_(_func_, "ffmpeg LOG: ", chLogBuffer);
         }
     }
 }   // extern "C" ]
 
-StateMutex ffmpegStreamData::m_mutexFFmpeg;
+StateMutex ffmpegStreamData::g_mutexFFmpeg;
 
 static void RegisterFFMpeg(void)
 {
@@ -183,11 +190,10 @@ ffmpegStreamData::ffmpegStreamData(void)
 
     m_bRecordingState = false;
     m_bGotFirstFrame = false;
+    m_bCheckAudioMode = true;
 
-    video_stream_idx = -1;
-
-    m_nPts = Int64_Min;
-    m_nDts = Int64_Min;
+    audio_stream_idx = video_stream_idx = -1;
+    m_file_duration_sec = -1;
 }
 
 ffmpegStreamData::~ffmpegStreamData()
@@ -230,11 +236,10 @@ void ffmpegStreamData::Deinit()
 
     m_bRecordingState = false;
     m_bGotFirstFrame = false;
+    m_bCheckAudioMode = true;
 
-    video_stream_idx = -1;
-
-    m_nPts = Int64_Min;
-    m_nDts = Int64_Min;
+    audio_stream_idx = video_stream_idx = -1;
+    m_file_duration_sec = -1;
 }
 
 Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config, Timers * timers)
@@ -256,7 +261,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         logD_(_func_, "avformat_open_input, success");
         // Retrieve stream information
 
-        m_mutexFFmpeg.lock();
+        g_mutexFFmpeg.lock();
         if(avformat_find_stream_info(format_ctx, NULL) >= 0)
         {
             logD_(_func_,"avformat_find_stream_info, success");
@@ -269,7 +274,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
             logE_(_func_, "Couldn't find stream information");
             res = Result::Failure;
         }
-        m_mutexFFmpeg.unlock();
+        g_mutexFFmpeg.unlock();
     }
     else
     {
@@ -279,13 +284,16 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
 
     if(res == Result::Success)
     {
-        // Find the first video stream
+        // Find the first video and audio stream
         for(int i = 0; i < format_ctx->nb_streams; i++)
         {
-            if(format_ctx->streams[i]->codec->codec_type==AVMEDIA_TYPE_VIDEO)
+            if(video_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
             {
                 video_stream_idx = i;
-                break;
+            }
+            else if(audio_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+            {
+                audio_stream_idx = i;
             }
         }
 
@@ -295,13 +303,18 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
             res = Result::Failure;
         }
     }
+    if(format_ctx)
+    {
+        m_vecPts.resize(format_ctx->nb_streams, Int64_Min);
+        m_vecDts.resize(format_ctx->nb_streams, Int64_Min);
+    }
 
     // reading configs
 
     ConstMemory record_dir;
     ConstMemory confd_dir;
     Uint64 max_age_minutes = 120;
-    Uint64 file_duration_sec = 3600;
+    m_file_duration_sec = 3600;
 
     // get cycle time
     {
@@ -332,11 +345,11 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     {
         ConstMemory const opt_name = "mod_nvr/file_duration";
         MConfig::GetResult const res =
-                config->getUint64_default (opt_name, &file_duration_sec, file_duration_sec);
+                config->getUint64_default (opt_name, &m_file_duration_sec, m_file_duration_sec);
         if (!res)
             logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
         else
-            logI_ (_func, opt_name, ": ", file_duration_sec);
+            logI_ (_func, opt_name, ": ", m_file_duration_sec);
     }
 
     // get path for recording
@@ -355,10 +368,8 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
 
     if(res == Result::Success)
     {
-        StRef<String> filepath = st_makeString (record_dir, "/", channel_name, ".flv");
-        Result nvrResult = m_nvrData.Init(format_ctx, filepath->cstr(), "segment2", file_duration_sec, max_age_minutes);
-        logD_(_func_, " m_nvrData.Init = ", (nvrResult == Result::Success) ? "Success" : "Failed");
-
+        m_recordDir = st_makeString(record_dir);
+        m_channelName = st_makeString(channel_name);
         Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir);
         m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
         m_nvr_cleaner->init (timers, vfs, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
@@ -394,16 +405,16 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     return res;
 }
 
-bool ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
+bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
 {
     if(!format_ctx || video_stream_idx == -1)
     {
-        logD_(_func_, "PushVideoPacket failed, video_stream_idx = [", video_stream_idx, "]");
+        logD_(_func_, "PushMediaPacket failed, video_stream_idx = [", video_stream_idx, "]");
         return false;
     }
 
     AVPacket packet = {};
-    bool video_found = false;
+    bool media_found = false;
 
     while(1)
     {
@@ -437,36 +448,50 @@ bool ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
             }
         }
 
-        if(m_nPts == Int64_Min || m_nPts > packet.pts)
+        if(m_vecPts[packet.stream_index] == Int64_Min || m_vecPts[packet.stream_index] > packet.pts)
         {
             if(packet.pts != AV_NOPTS_VALUE)
-                m_nPts = packet.pts;
+                m_vecPts[packet.stream_index] = packet.pts;
         }
 
-        if(m_nDts == Int64_Min || m_nDts > packet.dts)
+        if(m_vecDts[packet.stream_index] == Int64_Min || m_vecDts[packet.stream_index] > packet.dts)
         {
             if(packet.dts != AV_NOPTS_VALUE)
-                m_nDts = packet.dts;
+                m_vecDts[packet.stream_index] = packet.dts;
         }
 
-        if(m_nPts > m_nDts)
-            m_nDts = m_nPts;        // to prevent situation when result packet.pts is less than packet.dts
+        if(m_vecPts[packet.stream_index] > m_vecDts[packet.stream_index])
+            m_vecDts[packet.stream_index] = m_vecPts[packet.stream_index];        // to prevent situation when result packet.pts is less than packet.dts
+
+        if(packet.stream_index == video_stream_idx)
+        {
+            logD_(_func_, "PACKET IS VIDEO");
+        }
+        else if(packet.stream_index == audio_stream_idx)
+        {
+            logD_(_func_, "PACKET IS AUDIO");
+        }
+        else
+        {
+            logD_(_func_, "PACKET IS NEITHER");
+        }
 
         logD_(_func_, "ORIGIN PACKET,indx=", packet.stream_index,
                             ",pts=", packet.pts,
                             ",dts=", packet.dts,
                             ",size=", packet.size,
                             ",flags=", packet.flags);
-        logD_(_func_, "m_nPts = ", m_nPts, ", m_nDts = ", m_nDts);
+        logD_(_func_, "m_vecPts[packet.stream_index] = ", m_vecPts[packet.stream_index],
+                ", m_vecPts[packet.stream_index] = ", m_vecDts[packet.stream_index]);
 
         if(packet.pts != AV_NOPTS_VALUE)
         {
-            packet.pts -= m_nPts;
+            packet.pts -= m_vecPts[packet.stream_index];
         }
 
         if(packet.dts != AV_NOPTS_VALUE)
         {
-            packet.dts -= m_nDts;
+            packet.dts -= m_vecDts[packet.stream_index];
         }
 
         logD_(_func_, "PACKET,indx=", packet.stream_index,
@@ -475,48 +500,102 @@ bool ffmpegStreamData::PushVideoPacket(FFmpegStream * pParent)
                             ",size=", packet.size,
                             ",flags=", packet.flags);
 
-        // Is this a packet from the video stream?
-        bool bVideo = (packet.stream_index == video_stream_idx);
-
-        if(bVideo)
+        // Is this a packet from the video or audio stream?
+        if(packet.stream_index == video_stream_idx || packet.stream_index == audio_stream_idx)
         {
             TimeChecker tc;tc.Start();
-            // write to moment videostream
-            pParent->doVideoData(packet,
-                                 format_ctx->streams[video_stream_idx]->codec,
-                                 format_ctx->streams[video_stream_idx]->time_base.den);
+            // write to moment video or audio stream
+            if(packet.stream_index == video_stream_idx)
+                pParent->doVideoData(packet, *(format_ctx->streams[packet.stream_index]));
+            else
+                pParent->doAudioData(packet, *(format_ctx->streams[packet.stream_index]));
+
             Time t;tc.Stop(&t);
-            logD_(_func_, "FFmpegStream.doVideoData exectime = [", t, "]");
+            logD_(_func_, "FFmpegStream.",
+                  (packet.stream_index == video_stream_idx) ? "doVideoData" : "doAudioData", " exectime = [", t, "]");
 
             Time tInOut;tcInOut.Stop(&tInOut);
             pParent->m_statMeasurer.AddTimeInOut(tInOut);
+
+            media_found = true;
         }
 
         // write to file
         if(m_bRecordingState)
         {
-            TimeChecker tc;tc.Start();
-            m_nvrData.WritePacket(format_ctx, packet);
-            Time t;tc.Stop(&t);
-            logD_(_func_, "NvrData.WritePacket exectime = [", t, "]");
+            // prepare to write in file
+            if(m_bCheckAudioMode)
+            {
+                int nSkipAudioIndex = -1; // no skip audio
 
-            Time tInNvr;tcInNvr.Stop(&tInNvr);
-            pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
+                if(packet.stream_index == audio_stream_idx)
+                {
+                    // validation of audio
+                    if (format_ctx->streams[packet.stream_index]->codec->codec_id == AV_CODEC_ID_AAC && packet.size > 2 && (AV_RB16(packet.data) & 0xfff0) == 0xfff0)
+                    {
+//                        if (!format_ctx->streams[packet.stream_index]->nb_frames)
+//                        {
+//                            logE_(_func_, "Malformed AAC bitstream detected: use audio bitstream filter 'aac_adtstoasc' to fix it ('-bsf:a aac_adtstoasc' option with ffmpeg)");
+//                        }
+                        logE_(_func_, "aac bitstream error");
+                        nSkipAudioIndex = audio_stream_idx;
+                    }
+                    m_bCheckAudioMode = false;
+                }
+                else if(packet.stream_index == video_stream_idx)
+                {
+                    int time_base_den = format_ctx->streams[packet.stream_index]->time_base.den;
+                    Uint64 timestamp = packet.pts / (double)time_base_den * 1000000;
+                    if(timestamp > 1000000)
+                    {
+                        nSkipAudioIndex = audio_stream_idx;
+                        m_bCheckAudioMode = false;
+                    }
+                }
+
+                if(!m_bCheckAudioMode && !m_nvrData.IsInit())
+                {
+                    StRef<String> filepath = st_makeString (m_recordDir, "/", m_channelName, ".flv");
+                    Result nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec, nSkipAudioIndex);
+                    logD_(_func_, "m_nvrData.Init = ", (nvrResult == Result::Success) ? "Success" : "Failed");
+                }
+            }
+
+            // write in file
+            if(!m_bCheckAudioMode)
+            {
+                TimeChecker tc;tc.Start();
+
+                int res = 0;
+                if(m_nvrData.IsInit())
+                {
+                    res = m_nvrData.WritePacket(format_ctx, packet);
+                }
+                else
+                {
+                    m_nvrData.Reinit(format_ctx);
+                }
+
+                Time t;tc.Stop(&t);
+                logD_(_func_, "NvrData.WritePacket exectime = [", t, "]");
+
+                Time tInNvr;tcInNvr.Stop(&tInNvr);
+                pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
+            }
         }
 
         // Free the packet that was allocated by av_read_frame
         av_free_packet(&packet);
 
-        if(bVideo)
+        if(media_found)
         {
-            video_found = true;
             break;
         }
 
         memset(&packet, 0, sizeof(packet));
     }
 
-    return video_found;
+    return media_found;
 }
 
 int ffmpegStreamData::SetChannelState(bool const bState)
@@ -534,11 +613,12 @@ int ffmpegStreamData::GetChannelState(bool & bState)
 nvrData::nvrData(void)
 {
     m_file_duration_sec = 0;
-    m_max_age_minutes = 0;
+    m_skipAudioIndex = -1;
 
     m_out_format_ctx = NULL;
 
     m_bIsInit = false;
+    m_bWriteTrailer = false;
 }
 
 nvrData::~nvrData(void)
@@ -546,8 +626,8 @@ nvrData::~nvrData(void)
     Deinit();
 }
 
-Result nvrData::Init(AVFormatContext * format_ctx, const char * filepath, const char * segMuxer,
-                                                     Uint64 file_duration_sec, Uint64 max_age_minutes)
+Result nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, const char * filepath,
+                        const char * segMuxer, Uint64 file_duration_sec, int skipAudioIndex)
 {
     if(!format_ctx || !filepath)
     {
@@ -564,22 +644,38 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * filepath, const 
 
     // set internal members
     m_file_duration_sec = file_duration_sec;
-    m_max_age_minutes = max_age_minutes;
 
-    logD_ (_func, "filepath: ", filepath);
-    logD_ (_func, "segMuxer: ", segMuxer ? segMuxer : "NONE");
+    StRef<String> temp_channel_name = st_makeString(channel_name);
+    m_channelName = st_grab (new (std::nothrow) String);
+    m_channelName->set(temp_channel_name->mem());
+
+    StRef<String> temp_filepath = st_makeString(filepath);
+    m_filepath = st_grab (new (std::nothrow) String);
+    m_filepath->set(temp_filepath->mem());
+
+    StRef<String> temp_segMuxer = st_makeString(segMuxer);
+    m_segMuxer = st_grab (new (std::nothrow) String);
+    m_segMuxer->set(temp_segMuxer->mem());
+
+    logD_ (_func, "filepath: ", m_filepath);
+    logD_ (_func, "segMuxer: ", !m_segMuxer->isNullString() ? m_segMuxer->cstr() : "NONE");
     logD_ (_func, "m_file_duration_sec: ", m_file_duration_sec);
-    logD_ (_func, "m_max_age_minutes: ", m_max_age_minutes);
 
-    StRef<String> const path = st_makeString (filepath);
-
-    logD_ (_func, "The output path: ", path);
+    logD_ (_func, "The output path: ", m_filepath);
     Result res = Result::Success;
 
-    if(avformat_alloc_output_context2(&m_out_format_ctx, NULL, segMuxer, path->cstr()) >= 0)
+    if(avformat_alloc_output_context2(&m_out_format_ctx, NULL, m_segMuxer->cstr(), m_filepath->cstr()) >= 0)
     {
+        if(skipAudioIndex != -1)
+            m_skipAudioIndex = skipAudioIndex;
+
         for (int i = 0; i < format_ctx->nb_streams; ++i)
         {
+            if (m_skipAudioIndex != -1 && i == m_skipAudioIndex)
+            {
+                continue;
+            }
+
             AVStream * pStream = NULL;
 
             if (!(pStream = avformat_new_stream(m_out_format_ctx, NULL)))
@@ -626,16 +722,17 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * filepath, const 
     {
         logD_ (_func, "check m_out_format_ctx");
 
-        av_dump_format(m_out_format_ctx, 0, path->cstr(), 1);
+        av_dump_format(m_out_format_ctx, 0, m_filepath->cstr(), 1);
 
         AVOutputFormat * fmt = m_out_format_ctx->oformat;
 
         if (!(fmt->flags & AVFMT_NOFILE))
         {
+            int rres;
             // we need open file here
-            if (avio_open(&m_out_format_ctx->pb, path->cstr(), AVIO_FLAG_WRITE) < 0)
+            if ((rres = avio_open(&m_out_format_ctx->pb, m_filepath->cstr(), AVIO_FLAG_WRITE)) < 0)
             {
-                logE_(_func_, "fail to avio_open ", path);
+                logE_(_func_, "fail to avio_open ", m_filepath);
                 res = Result::Failure;
             }
         }
@@ -643,34 +740,9 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * filepath, const 
 
     if(res == Result::Success)
     {
-        logD_ (_func, "set options");
-
-        AVDictionary * pOptions = NULL;
-
-        int ret = 0;
-        if(segMuxer)
-        {
-            av_dict_set(&pOptions, "segment_time", st_makeString(m_file_duration_sec)->cstr(), 0);
-            ret = avformat_write_header(m_out_format_ctx, &pOptions);
-        }
-        else
-        {
-            ret = avformat_write_header(m_out_format_ctx, NULL);
-        }
-
-        av_dict_free(&pOptions);
-
-        if (ret < 0)
-        {
-            logE_(_func_, "Error occurred when opening output file");
-            res = Result::Failure;
-        }
-    }
-
-    if(res == Result::Success)
-    {
         logD_ (_func, "init succeed");
         m_bIsInit = true;
+        this->WriteHeader();
     }
     else
     {
@@ -687,19 +759,23 @@ void nvrData::Deinit()
 
     if(m_out_format_ctx)
     {
-        av_write_trailer(m_out_format_ctx);
+        if(m_bWriteTrailer)
+        {
+            av_write_trailer(m_out_format_ctx);
+        }
 
         ffmpegStreamData::CloseCodecs(m_out_format_ctx);
+
+        int ret = avio_close(m_out_format_ctx->pb);
 
         avformat_free_context(m_out_format_ctx);
 
         m_out_format_ctx = NULL;
     }
 
-    m_file_duration_sec = 0;
-    m_max_age_minutes = 0;
-
     m_bIsInit = false;
+    m_bWriteTrailer = false;
+    m_skipAudioIndex = -1;
 
     logD_(_func_, "Deinit succeed");
 }
@@ -709,13 +785,59 @@ bool nvrData::IsInit() const
     return m_bIsInit;
 }
 
-Result nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & packet)
+Result nvrData::Reinit(AVFormatContext * format_ctx)
+{
+    Result res = Result::Success;
+
+    Deinit();
+
+    res = Init(format_ctx, m_channelName->cstr(), m_filepath->cstr(), m_segMuxer->cstr(), m_file_duration_sec, m_skipAudioIndex);
+
+    return res;
+}
+
+int nvrData::WriteHeader()
+{
+    if(!m_bIsInit)
+    {
+        return -1;
+    }
+
+    logD_ (_func, "set options");
+
+    AVDictionary * pOptions = NULL;
+
+    int ret = 0;
+    if(!m_segMuxer->isNullString())
+    {
+        av_dict_set(&pOptions, "segment_time", st_makeString(m_file_duration_sec)->cstr(), 0);
+        ret = avformat_write_header(m_out_format_ctx, &pOptions);
+    }
+    else
+    {
+        ret = avformat_write_header(m_out_format_ctx, NULL);
+    }
+
+    av_dict_free(&pOptions);
+
+    if (ret < 0)
+        logE_(_func_, "Error occurred when opening output file");
+    else
+        m_bWriteTrailer = true;
+
+    return ret;
+}
+
+int nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & packet)
 {
     if(!IsInit())
     {
         logE_(_func_, "fail, nvrdata IsInit is false");
-        return Result::Failure;
+        return -1;
     }
+
+    if(m_skipAudioIndex == packet.stream_index)
+        return 0;
 
 //    AVCodecContext * pInpCodec = inCtx->streams[packet.stream_index]->codec;
 
@@ -731,45 +853,41 @@ Result nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & 
 //    logD_(_func_, "m_out_format_ctx->streams[i]->time_base.num: ", m_out_format_ctx->streams[packet.stream_index]->time_base.num);
 //    logD_(_func_, "m_out_format_ctx->streams[i]->time_base.den: ", m_out_format_ctx->streams[packet.stream_index]->time_base.den);
 
-    if(inCtx->streams[packet.stream_index]->time_base.den != m_out_format_ctx->streams[packet.stream_index]->time_base.den)
+    AVPacket opkt;
+    av_init_packet(&opkt);
+
+    if (packet.pts != AV_NOPTS_VALUE)
     {
-        AVPacket opkt;
-        av_init_packet(&opkt);
-
-        if (packet.pts != AV_NOPTS_VALUE)
-        {
-            opkt.pts = av_rescale_q(packet.pts, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
-            //av_log(NULL, 0, "**********packet.pts != AV_NOPTS_VALUE\n");
-        }
-        else
-        {
-            opkt.pts = AV_NOPTS_VALUE;
-            //av_log(NULL, 0, "**********packet.pts == AV_NOPTS_VALUE\n");
-        }
-
-        if (packet.dts != AV_NOPTS_VALUE)
-        {
-            opkt.dts = av_rescale_q(packet.dts, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
-            //av_log(NULL, 0, "**********packet.dts != AV_NOPTS_VALUE\n");
-        }
-        else
-        {
-            opkt.dts = AV_NOPTS_VALUE;
-            //av_log(NULL, 0, "**********packet.dts == AV_NOPTS_VALUE\n");
-        }
-
-        opkt.duration = av_rescale_q(packet.duration, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
-        opkt.flags    = packet.flags;
-        opkt.data = packet.data;
-        opkt.size = packet.size;
-        opkt.stream_index = packet.stream_index;
-
-        //logD_(_func_, "opkt.pts = ", opkt.pts, ", opkt.dts = ", opkt.dts);
-
-        return (av_interleaved_write_frame(m_out_format_ctx, &opkt) == 0) ? Result::Success : Result::Failure;
+        opkt.pts = av_rescale_q(packet.pts, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
+        //av_log(NULL, 0, "**********packet.pts != AV_NOPTS_VALUE\n");
+    }
+    else
+    {
+        opkt.pts = AV_NOPTS_VALUE;
+        //av_log(NULL, 0, "**********packet.pts == AV_NOPTS_VALUE\n");
     }
 
-    return (av_interleaved_write_frame(m_out_format_ctx, &/*opkt*/packet) == 0) ? Result::Success : Result::Failure;
+    if (packet.dts != AV_NOPTS_VALUE)
+    {
+        opkt.dts = av_rescale_q(packet.dts, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
+        //av_log(NULL, 0, "**********packet.dts != AV_NOPTS_VALUE\n");
+    }
+    else
+    {
+        opkt.dts = AV_NOPTS_VALUE;
+        //av_log(NULL, 0, "**********packet.dts == AV_NOPTS_VALUE\n");
+    }
+
+    opkt.duration = av_rescale_q(packet.duration, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
+    opkt.flags    = packet.flags;
+    opkt.data = packet.data;
+    opkt.size = packet.size;
+    opkt.stream_index = packet.stream_index;
+
+    //int nres = av_interleaved_write_frame(m_out_format_ctx, &opkt); // may return -1094995529
+    int nres = av_write_frame(m_out_format_ctx, &opkt);
+
+    return nres;
 }
 
 int FFmpegStream::SetChannelState(bool const bState)
@@ -1107,8 +1225,6 @@ FFmpegStream::ffmpegThreadFunc (void * const _self)
 void
 FFmpegStream::beginPushPacket()
 {
-    m_bIsPlaying = true;
-
     mutex.lock ();
     if (channel_opts->no_video_timeout > 0)
     {
@@ -1126,7 +1242,7 @@ FFmpegStream::beginPushPacket()
 
     while(m_bIsPlaying)
     {
-        if(!m_ffmpegStreamData.PushVideoPacket(this))
+        if(!m_ffmpegStreamData.PushMediaPacket(this))
         {
             logD_(_func_, "EOS");
 
@@ -1171,6 +1287,8 @@ FFmpegStream::createSmartPipelineForUri ()
                                                                          this)));
     if (!ffmpeg_thread->spawn (true /* joinable */))
         logE_ (_func, "Failed to spawn ffmpeg thread: ", exc->toString());
+
+    m_bIsPlaying = true;
 
     logD_ (_func, "all ok");
     goto _return;
@@ -1302,8 +1420,11 @@ FFmpegStream::reportMetaData ()
 
 
 void
-FFmpegStream::doVideoData (AVPacket & packet, AVCodecContext * pctx, int time_base_den)
+FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
 {
+    AVCodecContext * pctx = stream.codec;
+    int time_base_den = stream.time_base.den;
+
     updateTime ();
 
 //    mutex.lock ();
@@ -1509,10 +1630,13 @@ FFmpegStream::doVideoData (AVPacket & packet, AVCodecContext * pctx, int time_ba
     page_pool->msgUnref (page_list.first);
 
 }
-/*
-void FFmpegStream::doAudioData(AVPacket & packet, AVCodecContext * pctx, int time_base_den)
+
+void FFmpegStream::doAudioData(AVPacket & packet, const AVStream & stream)
 {
-    UpdateTime();
+    AVCodecContext * pctx = stream.codec;
+    int time_base_den = stream.time_base.den;
+
+    updateTime();
 
     last_frame_time = getTime ();
     logD (frames, _func, "last_frame_time: 0x", fmt_hex, last_frame_time);
@@ -1626,6 +1750,7 @@ void FFmpegStream::doAudioData(AVPacket & packet, AVCodecContext * pctx, int tim
         // TODO: need to support this codec, now we skip audio packets
         return;
     }
+
     bool skip_frame = false;
     {
         if(audio_skip_counter > 0)
@@ -1650,11 +1775,11 @@ void FFmpegStream::doAudioData(AVPacket & packet, AVCodecContext * pctx, int tim
 
         Uint64 const cd_timestamp_nanosec = 0;
 
-        if (logLevelOn (frames, LogLevel::D))
+        if(logLevelOn (frames, LogLevel::D))
         {
             logLock ();
             logD_unlocked_ (_func, "CODEC DATA");
-            hexdump (logs, ConstMemory (pctx->extradata, pctx->extradata_size));
+            hexdump (logs, ConstMemory(pctx->extradata, pctx->extradata_size));
             logUnlock ();
         }
 
@@ -1663,7 +1788,8 @@ void FFmpegStream::doAudioData(AVPacket & packet, AVCodecContext * pctx, int tim
         if(playback_item->enable_prechunking)
         {
             Size msg_audio_hdr_len = 1;
-            if (codec_data_type == VideoStream::AudioFrameType::AacSequenceHeader)
+
+            if(codec_data_type == VideoStream::AudioFrameType::AacSequenceHeader)
                 msg_audio_hdr_len = 2;
 
             RtmpConnection::PrechunkContext prechunk_ctx (msg_audio_hdr_len);   // initial_offset
@@ -1706,15 +1832,13 @@ void FFmpegStream::doAudioData(AVPacket & packet, AVCodecContext * pctx, int tim
 
     {
         Size msg_len = 0;
-
-        Uint64 const timestamp_nanosec = packet.pts / (double)time_base_den * 1000000000LL;
-
+        Uint64 const timestamp_nanosec = ((packet.pts == AV_NOPTS_VALUE) ? 0.0 : (double)packet.pts) / (double)time_base_den * 1000000000LL;
         PagePool::PageListHead page_list;
 
         Byte *buffer_data = packet.data;
         Size  buffer_size = packet.size;
 
-        if (playback_item->enable_prechunking)
+        if(playback_item->enable_prechunking)
         {
             Size gen_audio_hdr_len = 1;
 
@@ -1762,7 +1886,6 @@ VideoStream::AudioCodecId FFmpegStream::GetAudioCodecId(const AVCodecContext * p
     {
         case AV_CODEC_ID_PCM_U8:        return VideoStream::AudioCodecId::LinearPcmPlatformEndian;
         case AV_CODEC_ID_ADPCM_SWF:		return VideoStream::AudioCodecId::ADPCM;
-        case AV_CODEC_ID_MP3:			return VideoStream::AudioCodecId::MP3;
         case AV_CODEC_ID_PCM_S16LE:		return VideoStream::AudioCodecId::LinearPcmLittleEndian;
         case AV_CODEC_ID_NELLYMOSER:
         {
@@ -1785,32 +1908,48 @@ VideoStream::AudioCodecId FFmpegStream::GetAudioCodecId(const AVCodecContext * p
 
             return VideoStream::AudioCodecId::MP3;
         }
+        default: break;
     }
 
     return VideoStream::AudioCodecId::Unknown;
-}*/
-
-#if 0
-gboolean
-FFmpegStream::videoDataCb (GstPad    * const /* pad */,
-            GstBuffer * const buffer,
-            gpointer    const _self)
-{
-    FFmpegStream * const self = static_cast <FFmpegStream*> (_self);
-    self->doVideoData (buffer);
-    return TRUE;
 }
 
-void
-FFmpegStream::handoffVideoDataCb (GstElement * const /* element */,
-                   GstBuffer  * const buffer,
-                   GstPad     * const /* pad */,
-                   gpointer     const _self)
+VideoStream::AudioCodecId FFmpegStream::GetAudioCodecId(AVCodecID codec_id)
 {
-    FFmpegStream * const self = static_cast <FFmpegStream*> (_self);
-    self->doVideoData (buffer);
+    switch(codec_id)
+    {
+        case AV_CODEC_ID_PCM_U8:        return VideoStream::AudioCodecId::LinearPcmPlatformEndian;
+        case AV_CODEC_ID_ADPCM_SWF:		return VideoStream::AudioCodecId::ADPCM;
+        case AV_CODEC_ID_PCM_S16LE:		return VideoStream::AudioCodecId::LinearPcmLittleEndian;
+        case AV_CODEC_ID_NELLYMOSER:    return VideoStream::AudioCodecId::Nellymoser;
+        case AV_CODEC_ID_PCM_ALAW:      return VideoStream::AudioCodecId::G711ALaw;
+        case AV_CODEC_ID_PCM_MULAW:     return VideoStream::AudioCodecId::G711MuLaw;
+        case AV_CODEC_ID_AAC:           return VideoStream::AudioCodecId::AAC;
+        case AV_CODEC_ID_SPEEX:         return VideoStream::AudioCodecId::Speex;
+        case AV_CODEC_ID_MP3:           return VideoStream::AudioCodecId::MP3;
+        default: break; // need to support new type
+    }
+
+    return VideoStream::AudioCodecId::Unknown;
 }
-#endif
+
+VideoStream::VideoCodecId FFmpegStream::GetVideoCodecId(AVCodecID codec_id)
+{
+    switch(codec_id)
+    {
+        case AV_CODEC_ID_FLV1:      return VideoStream::VideoCodecId::SorensonH263;
+        case AV_CODEC_ID_H263:		return VideoStream::VideoCodecId::SorensonH263; // need to add new type
+        case AV_CODEC_ID_FLASHSV:   return VideoStream::VideoCodecId::ScreenVideo;
+        case AV_CODEC_ID_FLASHSV2:  return VideoStream::VideoCodecId::ScreenVideoV2;
+        case AV_CODEC_ID_VP6F:      return VideoStream::VideoCodecId::VP6;
+        case AV_CODEC_ID_VP6A:      return VideoStream::VideoCodecId::VP6Alpha;
+        case AV_CODEC_ID_H264:      return VideoStream::VideoCodecId::AVC;
+        case AV_CODEC_ID_MPEG4: // need to support new type
+        default: break; // need to support new type
+    }
+
+    return VideoStream::VideoCodecId::Unknown;
+}
 
 void
 FFmpegStream::noVideoTimerTick (void * const _self)

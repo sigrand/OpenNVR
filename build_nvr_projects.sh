@@ -231,29 +231,29 @@ makeclean "$CLEAN"
 make
 make install
 
-cd ../moment-onvif
-makeclean "$CLEAN"
+#cd ../moment-onvif
+#makeclean "$CLEAN"
 
-export THIS_CFLAGS="${I_GLIB} ${I_XML} \
-	-I${OUTDIR}/include/moment-1.0 \
-	-I${OUTDIR}/include/libmary-1.0 \
-	-I${OUTDIR}/include/mconfig-1.0 \
-	-I${OUTDIR}/include/pargen-1.0 \
-	-I../onvif-sdk/include"
-export THIS_LIBS="${L_GLIB} ${L_XML} \
-	-L${OUTDIR}/lib -lmoment-1.0 \
-	-L${OUTDIR}/lib -lmary-1.0 \
-	-L${OUTDIR}/lib -lmconfig-1.0 \
-	-L${OUTDIR}/lib -lpargen-1.0"
+#export THIS_CFLAGS="${I_GLIB} ${I_XML} \
+#	-I${OUTDIR}/include/moment-1.0 \
+#	-I${OUTDIR}/include/libmary-1.0 \
+#	-I${OUTDIR}/include/mconfig-1.0 \
+#	-I${OUTDIR}/include/pargen-1.0 \
+#	-I../onvif-sdk/include"
+#export THIS_LIBS="${L_GLIB} ${L_XML} \
+#	-L${OUTDIR}/lib -lmoment-1.0 \
+#	-L${OUTDIR}/lib -lmary-1.0 \
+#	-L${OUTDIR}/lib -lmconfig-1.0 \
+#	-L${OUTDIR}/lib -lpargen-1.0"
 	
 
-if [ $(uname -m) == "x86_64" ]
-then
-	export THIS_LIBS+=" -L../onvif-sdk/lib/x64 -lWsDiscovery -lOnvifSDK"
-else
-	export THIS_LIBS+=" -L../onvif-sdk/lib/x86 -lWsDiscovery -lOnvifSDK"
-fi
+#if [ $(uname -m) == "x86_64" ]
+#then
+#	export THIS_LIBS+=" -L../onvif-sdk/lib/x64 -lWsDiscovery -lOnvifSDK"
+#else
+#	export THIS_LIBS+=" -L../onvif-sdk/lib/x86 -lWsDiscovery -lOnvifSDK"
+#fi
 
-./configure --prefix="${OUTDIR}"
-make
-make install
+#./configure --prefix="${OUTDIR}"
+#make
+#make install

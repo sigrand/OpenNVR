@@ -455,17 +455,23 @@ MomentFFmpegModule::statisticsToJson (
                          << " " << timeinfo->tm_hour << ":" << timeinfo->tm_min \
                          << ":" << timeinfo->tm_sec << "\",\n";
 
-         s << "\"packet time from ffmpeg to restreamer\":{\n";
-         s << "\"min\":\"" << (*it).second.minInOut << "\",\n";
-         s << "\"max\":\"" << (*it).second.maxInOut << "\",\n";
-         s << "\"avg\":\"" << (*it).second.avgInOut << "\",\n";
-         s << "\"avg amount\":\"" << (*it).second.packetAmountInOut << "\"},\n";
+         if((*it).second.packetAmountInOut != 0)
+         {
+             s << "\"packet time from ffmpeg to restreamer\":{\n";
+             s << "\"min\":\"" << (*it).second.minInOut << "\",\n";
+             s << "\"max\":\"" << (*it).second.maxInOut << "\",\n";
+             s << "\"avg\":\"" << (*it).second.avgInOut << "\",\n";
+             s << "\"avg amount\":\"" << (*it).second.packetAmountInOut << "\"},\n";
+         }
 
-         s << "\"packet time from ffmpeg to nvr\":{\n";
-         s << "\"min\":\"" << (*it).second.minInNvr << "\",\n";
-         s << "\"max\":\"" << (*it).second.maxInNvr << "\",\n";
-         s << "\"avg\":\"" << (*it).second.avgInNvr << "\",\n";
-         s << "\"avg amount\":\"" << (*it).second.packetAmountInNvr << "\"},\n";
+         if((*it).second.packetAmountInNvr != 0)
+         {
+             s << "\"packet time from ffmpeg to nvr\":{\n";
+             s << "\"min\":\"" << (*it).second.minInNvr << "\",\n";
+             s << "\"max\":\"" << (*it).second.maxInNvr << "\",\n";
+             s << "\"avg\":\"" << (*it).second.avgInNvr << "\",\n";
+             s << "\"avg amount\":\"" << (*it).second.packetAmountInNvr << "\"},\n";
+         }
 
          s << "\"RAM utilization\":{\n";
          s << "\"min\":\"" << (*it).second.minRAM << "\",\n";
@@ -480,9 +486,9 @@ MomentFFmpegModule::statisticsToJson (
          std::map<time_t, StatMeasure>::iterator it1 = it;
          it1++;
          if(it1 != statPoints->end())
-             s << ",\n";
+             s << "},\n";
          else
-             s << "\n";
+             s << "}\n";
      }
 
      return st_makeString("{\n"

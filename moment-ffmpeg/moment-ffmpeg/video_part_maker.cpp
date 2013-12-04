@@ -143,8 +143,9 @@ VideoPartMaker::Process ()
 
         if(m_fileReader.ReadFrame(frame))
         {
-            logD_(_func_, "====== frame.src_packet.pts before: ", frame.src_packet.pts);
-            Time nCurAbsPos = nCurFileStartTime + nCurFileShift + (frame.src_packet.pts / (double)tb_den);
+            AVPacket packet = frame.GetPacket();
+            logD_(_func_, "====== packet.pts before: ", packet.pts);
+            Time nCurAbsPos = nCurFileStartTime + nCurFileShift + (packet.pts / (double)tb_den);
             logD_(_func_, "====== nCurFileStartTime: ", nCurFileStartTime);
             logD_(_func_, "====== nCurFileShift: ", nCurFileShift);
             logD_(_func_, "====== nCurAbsPos: ", nCurAbsPos);
@@ -155,18 +156,18 @@ VideoPartMaker::Process ()
                 break;
             }
             logD_(_func_, "====== ptsExtra: ", ptsExtra);
-            frame.src_packet.pts += ptsExtra;
-            frame.src_packet.dts += dtsExtra;
-            logD_(_func_, "====== frame.src_packet.pts after: ", frame.src_packet.pts);
+            packet.pts += ptsExtra;
+            packet.dts += dtsExtra;
+            logD_(_func_, "====== packet.pts after: ", packet.pts);
             logD_(_func_, "====== nStartTime: ", (double)nStartTime);
             logD_(_func_, "====== nEndTime: ", (double)nEndTime);
 
 //            logD_(_func_, "====== before write");
-            m_nvrData.WritePacket(m_fileReader.GetFormatContext(), frame.src_packet);
+            m_nvrData.WritePacket(m_fileReader.GetFormatContext(), packet);
 //            logD_(_func_, "====== after write");
 
-            ptsExtraPrv = frame.src_packet.pts;
-            dtsExtraPrv = frame.src_packet.dts;
+            ptsExtraPrv = packet.pts;
+            dtsExtraPrv = packet.dts;
 
             m_fileReader.FreeFrame(frame);
         }
