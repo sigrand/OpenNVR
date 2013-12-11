@@ -56,10 +56,10 @@ private:
 
      void concatenateSuccessiveIntervals();
      CheckResult initCache ();
-     CheckResult completeCache ();
+     CheckResult completeCache (bool bUpdate); // bUpdate means if it is true then update record that exists in cache
      CheckResult cleanCache ();
      CheckResult recreateExistence ();
-     CheckResult addRecordInCache (StRef<String> path);
+     CheckResult addRecordInCache (StRef<String> path, bool bUpdate);
 
      int readTime(Byte * buffer);
 

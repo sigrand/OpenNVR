@@ -119,13 +119,13 @@ Result FileNameToUnixTimeStamp::Convert(const StRef<String> & fileName, /*output
     std::string delimiter2 = ".";
     size_t pos = 0;
     std::string token;
-    pos = stdStr.find(delimiter1);
+    pos = stdStr.rfind(delimiter1);
 
     if(pos != std::string::npos)
     {
         token = stdStr.substr(0, pos);
         stdStr.erase(0, pos + delimiter1.length());
-        pos = stdStr.find(delimiter2);
+        pos = stdStr.rfind(delimiter2);
 
         if(pos != std::string::npos)
         {

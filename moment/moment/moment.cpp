@@ -986,6 +986,10 @@ void handler(int sig) {
 int main (int argc, char **argv)
 {
     signal(SIGSEGV, handler);   // install error handler
+    signal(SIGKILL, handler);
+    signal(SIGSTOP, handler);
+    signal(SIGINT,  handler);
+    signal(SIGTERM, handler);
 
     libMaryInit ();
 

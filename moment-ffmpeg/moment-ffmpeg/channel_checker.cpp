@@ -110,7 +110,7 @@ ChannelChecker::getChannelExistence()
     logD_(_func_);
 
     cleanCache();
-    completeCache();
+    completeCache(true);
 
     return &this->existence;
 }
@@ -121,7 +121,7 @@ ChannelChecker::getChannelFilesExistence()
     logD_(_func_);
 
     cleanCache();
-    completeCache();
+    completeCache(true);
 
     return &this->files_existence;
 }
@@ -139,7 +139,7 @@ ChannelChecker::initCache()
     {
         std::string lastfile = files_existence.rbegin()->first;
         StRef<String> strLastfile = st_makeString(lastfile.c_str());
-        addRecordInCache(strLastfile);
+        addRecordInCache(strLastfile, true);
     }
 
     recreateExistence();
@@ -152,7 +152,7 @@ ChannelChecker::initCache()
 }
 
 ChannelChecker::CheckResult
-ChannelChecker::completeCache()
+ChannelChecker::completeCache(bool bUpdate)
 {
     logD_(_func_, "channel_name: [", m_channel_name, "]");
 
@@ -173,18 +173,19 @@ ChannelChecker::completeCache()
     NvrFileIterator file_iter;
     file_iter.init (this->vfs, m_channel_name->mem(), timeOfRecord);
 
-    while(1)
+    StRef<String> path = file_iter.getNext();
+    while(path != NULL && !path->isNullString())
     {
-        StRef<String> path = file_iter.getNext();
-
-        if (path != NULL)
+        StRef<String> pathNext = file_iter.getNext();
+        if (pathNext != NULL)
         {
-            rez = addRecordInCache(path);
+            rez = addRecordInCache(path, true);
         }
         else
         {
-            break;
+            rez = addRecordInCache(path, bUpdate);
         }
+        path = st_makeString(pathNext);
     }
     writeIdx(files_existence, m_record_dir, m_channel_name);
     concatenateSuccessiveIntervals();
@@ -283,26 +284,29 @@ ChannelChecker::recreateExistence()
 }
 
 ChannelChecker::CheckResult
-ChannelChecker::addRecordInCache(StRef<String> path)
+ChannelChecker::addRecordInCache(StRef<String> path, bool bUpdate)
 {
     logD_ (_func_, "addRecordInCache:", path->cstr());
 
     TimeChecker tc;tc.Start();
 
-    StRef<String> const flv_filename = st_makeString (path, ".flv");
-    StRef<String> flv_filenameFull = st_makeString(m_record_dir, "/", flv_filename);
+    if(files_existence.find(std::string(path->cstr())) == files_existence.end() || bUpdate)
+    {
+        StRef<String> const flv_filename = st_makeString (path, ".flv");
+        StRef<String> flv_filenameFull = st_makeString(m_record_dir, "/", flv_filename);
 
-    FileReader fileReader;
-    fileReader.Init(flv_filenameFull);
-    Time timeOfRecord = 0;
+        FileReader fileReader;
+        fileReader.Init(flv_filenameFull);
+        Time timeOfRecord = 0;
 
-    FileNameToUnixTimeStamp().Convert(flv_filenameFull, timeOfRecord);
-    int const unixtime_timestamp_start = timeOfRecord / 1000000000LL;
-    int const unixtime_timestamp_end = unixtime_timestamp_start + (int)fileReader.GetDuration();
-    logD_(_func_, "(int)fileReader.GetDuration() = [", (int)fileReader.GetDuration(), "]");
+        FileNameToUnixTimeStamp().Convert(flv_filenameFull, timeOfRecord);
+        int const unixtime_timestamp_start = timeOfRecord / 1000000000LL;
+        int const unixtime_timestamp_end = unixtime_timestamp_start + (int)fileReader.GetDuration();
+        logD_(_func_, "(int)fileReader.GetDuration() = [", (int)fileReader.GetDuration(), "]");
 
-    existence.push_back(std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end));
-    files_existence[std::string(path->cstr())] = std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end);
+        existence.push_back(std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end));
+        files_existence[std::string(path->cstr())] = std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end);
+    }
 
     Time t;tc.Stop(&t);
     logD_(_func_, "ChannelChecker.addRecordInCache exectime = [", t, "]");
@@ -344,7 +348,7 @@ ChannelChecker::refreshTimerTick (void * const _self)
     logD_(_func_);
 
     self->cleanCache();
-    self->completeCache();
+    self->completeCache(false);
 }
 
 mt_const void
