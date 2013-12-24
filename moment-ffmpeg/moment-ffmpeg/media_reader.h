@@ -118,6 +118,7 @@ private:
     StRef<String> m_fileName;
     Time m_initTimeOfRecord;
     double m_dDuration;
+    int64_t m_totalSize;
 
     int WriteB8ToBuffer(Int32 b, MemoryEx & memory);
     int WriteB16ToBuffer(Uint32 val, MemoryEx & memory);
@@ -190,7 +191,7 @@ public:
     FileReader();
     ~FileReader();
 
-    bool Init(StRef<String> & fileName);
+    bool Init(StRef<String> & fileName, bool bFileDownload = false);
     void DeInit();
     bool IsInit();
     bool Seek(double dSeconds);
@@ -205,6 +206,10 @@ public:
     AVFormatContext * GetFormatContext()
     {
         return format_ctx;
+    }
+    int64_t GetTotalSize()
+    {
+        return m_totalSize;
     }
 
     // if ReadFrame returns 'true' use FreeFrame() function after using of Frame object.
@@ -271,6 +276,8 @@ private:
     mt_mutex (mutex) Size avc_seq_hdr_len;
 
     FileReader m_fileReader;
+    mt_mutex (mutex) StRef<String> fileDownload;
+    bool bDownload;
 
     mt_mutex (mutex) void releaseSequenceHeaders_unlocked ();
 
@@ -302,12 +309,24 @@ public:
         mutex.unlock ();
     }
 
+    size_t GetTotalSize(StRef<String> fileDownload)
+    {
+        if (!m_fileReader.IsInit())
+        {
+            m_fileReader.Init(fileDownload, true);
+
+            return m_fileReader.IsInit() ? m_fileReader.GetTotalSize() : -1;
+        }
+    }
+
     mt_const void init (PagePool    * mt_nonnull page_pool,
                         Vfs         * mt_nonnull vfs,
                         ConstMemory  stream_name,
                         Time         start_unixtime_sec,
                         Size         burst_size_limit,
-                        StRef<String> record_dir);
+                        StRef<String> record_dir,
+                        StRef<String> fileDownload,
+                        bool bDownload = false);
 
     MediaReader (Object * const coderef_container)
         : DependentCodeReferenced (coderef_container),
@@ -322,7 +341,8 @@ public:
           aac_seq_hdr_len       (0),
           got_avc_seq_hdr       (false),
           avc_seq_hdr_sent      (false),
-          avc_seq_hdr_len       (0)
+          avc_seq_hdr_len       (0),
+          bDownload             (false)
     {}
 
     ~MediaReader ();

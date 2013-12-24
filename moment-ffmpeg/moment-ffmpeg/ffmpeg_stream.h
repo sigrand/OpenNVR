@@ -45,6 +45,8 @@ namespace MomentFFmpeg {
 using namespace M;
 using namespace Moment;
 
+static int ff_lockmgr(void **mutex, enum AVLockOp op);
+
 class nvrData
 {
 
@@ -115,6 +117,7 @@ private /*variables*/:
     Uint64              m_file_duration_sec;
 
     bool m_bRecordingState;     // true - do record, false - do not
+    bool m_bRecordingEnable;    // the same thing, value gets from config (mod_nvr.enable)
     bool m_bGotFirstFrame;
     bool m_bCheckAudioMode;
     std::vector<int64_t> m_vecPts; // correction values for packets

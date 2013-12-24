@@ -33,6 +33,7 @@
 #include <moment-ffmpeg/media_viewer.h>
 #include <moment-ffmpeg/get_file_session.h>
 #include <moment-ffmpeg/stat_measurer.h>
+#include <moment/moment_request_handler.h>
 
 
 namespace MomentFFmpeg {
@@ -193,6 +194,10 @@ private:
 				 void        ** mt_nonnull ret_msg_data,
 				 void         *_self);
     mt_iface_end
+
+    static bool _adminHttpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+
+    static bool _httpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
     void createPlaylistChannel (ConstMemory     playlist_filename,
                                 bool            is_dir,

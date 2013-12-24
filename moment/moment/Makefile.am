@@ -86,7 +86,10 @@ moment_target_headers +=        \
 				\
 	module_init.h           \
                                 \
-        transcoder.h
+        transcoder.h            \
+                                \
+        moment_http_server.h    \
+        moment_request_handler.h
 
 #	flv_file_source.h
 
@@ -143,6 +146,8 @@ libmoment_1_0_la_SOURCES =	\
 	hmac/sha2.c		\
 	hmac/hmac_sha2.c        \
                                 \
+        moment_request_handler.cpp \
+        moment_http_server.cpp  \
         $(moment_target_sources)
 
 #	flv_file_source.cpp

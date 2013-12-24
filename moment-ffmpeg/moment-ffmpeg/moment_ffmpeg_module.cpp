@@ -510,6 +510,7 @@ MomentFFmpegModule::removeVideoFiles(StRef<String> const dir_name, StRef<String>
     NvrFileIterator file_iter;
     file_iter.init (vfs, channel_name->mem(), startTime);
 
+    bool bRes = false;
     while (true)
     {
         StRef<String> const filename = file_iter.getNext ();
@@ -528,6 +529,7 @@ MomentFFmpegModule::removeVideoFiles(StRef<String> const dir_name, StRef<String>
                 logD_(_func_, "remove by request: [", filenameFull, "]");
                 vfs->removeFile (filenameFull->mem());
                 vfs->removeSubdirsForFilename (filenameFull->mem());
+                bRes = true;
             }
         }
     }
@@ -535,7 +537,7 @@ MomentFFmpegModule::removeVideoFiles(StRef<String> const dir_name, StRef<String>
 
     ChannelChecker().writeIdx(file_existence, dir_name, channel_name);
 
-    return true;
+    return bRes;
 }
 
 Result
@@ -765,6 +767,244 @@ _return:
     return Result::Success;
 }
 
+bool
+MomentFFmpegModule::_adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
+{
+    MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
+
+    logD_ (_func_);
+
+    URI uri(req.getURI());
+    std::vector < std::string > segments;
+    uri.getPathSegments(segments);
+
+    if (segments.size() >= 2 &&
+        (segments[1].compare("rec_on") == 0 || segments[1].compare("rec_off") == 0) )
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
+        std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+
+        NameValueCollection::ConstIterator seq_iter = form.find("seq");
+        std::string seq = (seq_iter != form.end()) ? seq_iter->second: "";
+
+        StRef<String> st_channel_name = st_makeString(channel_name.c_str());
+
+        bool channel_state = false; // false - isn't writing
+        bool channelIsFound = false;
+        bool const set_on = (segments[1].compare("rec_on") == 0);
+
+        std::map<std::string, Ref<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
+        if(it != self->m_streams.end())
+            channelIsFound = true;
+
+        if (!channelIsFound)
+        {
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "404 Channel Not Found (mod_nvr_admin)";
+            out.flush();
+
+            logA_ ("mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        it->second->SetChannelState(set_on);
+        it->second->GetChannelState(channel_state);
+
+        bool bDisableRecordFound = false;
+        StRef<String> channelFullPath = st_makeString(self->confd_dir, "/", st_channel_name);
+        std::string line;
+        std::string allLines = "";
+        std::ifstream channelPath (channelFullPath->cstr());
+        logD_(_func_, "channelFullPath = ", channelFullPath);
+        if (channelPath.is_open())
+        {
+            logD_(_func_, "opened");
+            while ( std::getline (channelPath, line) )
+            {
+                logD_(_func_, "got line: [", line.c_str(), "]");
+                if(line.compare("disable_record") == 0)
+                    bDisableRecordFound = true;
+                else
+                    allLines += line + "\n";
+            }
+            channelPath.close();
+        }
+
+        if(bDisableRecordFound && set_on)
+        {
+            logD_(_func_, "bDisableRecordFound && set_on");
+            std::ofstream fout;
+            fout.open(channelFullPath->cstr());
+            if (fout.is_open())
+            {
+                logD_(_func_, "CHANGED");
+                fout << allLines;
+                fout.close();
+            }
+        }
+        else if (!bDisableRecordFound && !set_on)
+        {
+            std::ofstream fout;
+            fout.open(channelFullPath->cstr(),std::ios::app);
+            if (fout.is_open())
+            {
+                logD_(_func_, "!bDisableRecordFound && !set_on");
+                fout << "disable_record" << std::endl;
+                fout.close();
+            }
+        }
+
+        StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq.c_str(), "\", \"recording\": ", channel_state, " }");
+        logD_ (_func, "reply: ", reply_body);
+
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << reply_body->cstr();
+        out.flush();
+
+        logA_ ("mod_nvr_admin 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+    }
+    else if(segments.size() >= 2 &&
+            (segments[1].compare("files_existence") == 0))
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
+        std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+
+        ChannelChecker::ChannelFileSummary * files_existence;
+        StRef<String> st_channel_name = st_makeString(channel_name.c_str());
+        std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(st_channel_name->cstr());
+        if(it == self->m_channel_checkers.end())
+            files_existence = NULL;
+        else
+            files_existence = it->second->getChannelFilesExistence ();
+
+        if (files_existence == NULL)
+        {
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "404 Channel Not Found (mod_nvr_admin)";
+            out.flush();
+            logA_ ("mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        StRef<String> const reply_body = channelFilesExistenceToJson (files_existence);
+        logD_ (_func, "reply: ", reply_body);
+
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << reply_body->cstr();
+        out.flush();
+    }
+    else if(segments.size() >= 2 && (segments[1].compare("statistics") == 0))
+    {
+        StRef<String> reply_body = statisticsToJson(&self->statPoints);
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << reply_body->cstr();
+        out.flush();
+    }
+    else if(segments.size() >= 2 && (segments[1].compare("remove_video") == 0))
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator channel_name_iter = form.find("conf_file");
+        std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+
+        if (channel_name.size() == 0)
+        {
+            logE_ (_func, "Bad Request: no conf_file parameter");
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "400 Bad Request: no conf_file parameter";
+            out.flush();
+            logA_ ("mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+        StRef<String> st_channel_name = st_makeString(channel_name.c_str());
+
+        Uint64 start_unixtime_sec = 0;
+        NameValueCollection::ConstIterator start_time_iter = form.find("start");
+        std::string start_time = (start_time_iter != form.end()) ? start_time_iter->second: "";
+
+        if (!strToUint64_safe (start_time.c_str(), &start_unixtime_sec, 10 /* base */))
+        {
+            logE_ (_func, "Bad \"start\" request parameter value");
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "400 Bad \"start\" request parameter value";
+            out.flush();
+            logA_ ("mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        Uint64 end_unixtime_sec = 0;
+        NameValueCollection::ConstIterator end_time_iter = form.find("end");
+        std::string end_time = (end_time_iter != form.end()) ? end_time_iter->second: "";
+
+        if (!strToUint64_safe (end_time.c_str(), &end_unixtime_sec, 10 /* base */)) {
+            logE_ (_func, "Bad \"end\" request parameter value");
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "400 Bad \"end\" request parameter value";
+            out.flush();
+            logA_ ("mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        if(start_unixtime_sec >= end_unixtime_sec)
+        {
+            logE_ (_func, "start_unixtime_sec >= end_unixtime_sec");
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "400 start_unixtime_sec >= end_unixtime_sec";
+            out.flush();
+            logA_ ("mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        bool bRes = self->removeVideoFiles(self->record_dir, st_channel_name, start_unixtime_sec, end_unixtime_sec);
+
+        if(bRes)
+        {
+            logD_ (_func, "reply: OK");
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            resp.setContentType("text/html");
+            std::ostream& out = resp.send();
+            out << "OK";
+            out.flush();
+        }
+        else
+        {
+            logD_ (_func, "reply: 500 Internal server error");
+            resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+            std::ostream& out = resp.send();
+            out << "500 Internal Server Error: fail to remove video files";
+            out.flush();
+        }
+
+    }
+    else
+    {
+        logE_ (_func, "Unknown request: ", req.getURI().c_str());
+
+        logA_ ("mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+        return false;
+    }
+
+_return:
+    return true;
+}
+
 StRef<String>
 MomentFFmpegModule::channelExistenceToJson(std::vector<std::pair<int,int>> * const mt_nonnull existence)
 {
@@ -876,12 +1116,15 @@ MomentFFmpegModule::httpRequest (HttpRequest  * const mt_nonnull req,
 
         StRef<String> const reply_body = self->doGetFile (req, conn_sender,
                                                           channel_name, start_unixtime_sec, end_unixtime_sec);
-        logD_ (_func, "reply: ", reply_body);
-        conn_sender->send (self->page_pool,
-                           true /* do_flush */,
-                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
-                           "\r\n",
-                           reply_body->mem());
+
+//        StRef<String> const reply_body = self->doGetFile (req, conn_sender,
+//                                                          channel_name, start_unixtime_sec, end_unixtime_sec);
+//        logD_ (_func, "reply: ", reply_body);
+//        conn_sender->send (self->page_pool,
+//                           true /* do_flush */,
+//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+//                           "\r\n",
+//                           reply_body->mem());
     }
     else if (req->getNumPathElems() >= 2 && (equal (req->getPath (1), "existence")))
     {
@@ -952,6 +1195,169 @@ _return:
     return Result::Success;
 }
 
+bool
+MomentFFmpegModule::_httpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
+{
+    MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
+
+    logD_ (_func, req.getURI().c_str());
+
+    URI uri(req.getURI());
+    std::vector < std::string > segments;
+    uri.getPathSegments(segments);
+
+    if (segments.size() >= 2 && segments[1].compare("unixtime") == 0)
+    {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+
+        StRef<String> const unixtime_str = st_makeString (tv.tv_sec);
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << unixtime_str->cstr();
+        out.flush();
+        logA_ ("mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+    }
+    else if (segments.size() >= 2 && segments[1].compare("channel_state") == 0)
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
+        std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+
+        NameValueCollection::ConstIterator seq_iter = form.find("seq");
+        std::string seq = (seq_iter != form.end()) ? seq_iter->second: "";
+
+        bool channel_state = false; // false - isn't writing
+        bool channelIsFound = false;
+
+        std::map<std::string, Ref<FFmpegStream> >::iterator it = self->m_streams.find(channel_name);
+        if(it != self->m_streams.end())
+            channelIsFound = true;
+
+        if (!channelIsFound)
+        {
+            logE_ (_func, "Channel Not Found (mod_nvr): ", channel_name.c_str());
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "404 Channel Not Found (mod_nvr)";
+            out.flush();
+            logA_ ("mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        it->second->GetChannelState(channel_state);
+
+        StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq.c_str(), "\", \"recording\": ", channel_state, " }");
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << reply_body->cstr();
+        out.flush();
+        logA_ ("mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+    }
+    else if (segments.size() >= 2 && (segments[1].compare("file") == 0 || segments[1].rfind(".mp4") != std::string::npos))
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
+        std::string channel_name_str = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+
+        ConstMemory const channel_name = ConstMemory(channel_name_str.c_str(), channel_name_str.size());
+
+        Uint64 start_unixtime_sec = 0;
+        NameValueCollection::ConstIterator start_time_iter = form.find("start");
+        std::string start_time = (start_time_iter != form.end()) ? start_time_iter->second: "";
+
+        if (!strToUint64_safe (start_time.c_str(), &start_unixtime_sec, 10 /* base */))
+        {
+            logE_ (_func, "Bad \"start\" request parameter value");
+            goto _bad_request;
+        }
+
+        Uint64 end_unixtime_sec = 0;
+        NameValueCollection::ConstIterator end_time_iter = form.find("end");
+        std::string end_time = (end_time_iter != form.end()) ? end_time_iter->second: "";
+
+        if (!strToUint64_safe (end_time.c_str(), &end_unixtime_sec, 10 /* base */))
+        {
+            logE_ (_func, "Bad \"end\" request parameter value");
+            goto _bad_request;
+        }
+
+//        StRef<String> const reply_body = self->doGetFile (req, conn_sender,
+//                                                          channel_name, start_unixtime_sec, end_unixtime_sec);
+//        logD_ (_func, "reply: ", reply_body);
+//        conn_sender->send (self->page_pool,
+//                           true /* do_flush */,
+//                           MOMENT_SERVER__OK_HEADERS ("text/html", reply_body->len()),
+//                           "\r\n",
+//                           reply_body->mem());
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << "Download .mp4 is not supported on new webserver";
+        out.flush();
+    }
+    else if (segments.size() >= 2 && segments[1].compare("existence") == 0)
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
+        std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+
+        logD_(_func_, "channel_name: [", channel_name.c_str(), "]");
+
+        std::vector<std::pair<int,int>> * channel_existence;
+        std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(channel_name);
+        if(it == self->m_channel_checkers.end())
+            channel_existence = NULL;
+        else
+            channel_existence = it->second->getChannelExistence ();
+
+        if (channel_existence == NULL)
+        {
+            logE_ (_func, "Channel Not Found (mod_nvr): ", channel_name.c_str());
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "404 Channel Not Found (mod_nvr)";
+            out.flush();
+            logA_ ("mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+        StRef<String> const reply_body = channelExistenceToJson (channel_existence);
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << reply_body->cstr();
+        out.flush();
+        logA_ ("mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+    }
+    else
+    {
+        logE_ (_func, "Unknown request: ", req.getURI().c_str());
+
+        logA_ ("mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+        return false;
+    }
+
+    goto _return;
+
+_bad_request:
+    {
+        resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+        std::ostream& out = resp.send();
+        out << "400 Bad Request (mod_nvr)";
+        out.flush();
+        logA_ ("mod_nvr 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+    }
+
+_return:
+    return true;
+}
+
 GetFileSession::Frontend const MomentFFmpegModule::get_file_session_frontend = {
     getFileSession_done
 };
@@ -979,7 +1385,7 @@ MomentFFmpegModule::doGetFile (HttpRequest * const mt_nonnull req,
            "end: ", end_unixtime_sec);
 
     VideoPartMaker vpm;
-    StRef<String> filePathRes = st_makeString(record_dir, "/", channel_name, ".mp4");
+    StRef<String> filePathRes = st_makeString(record_dir, "/", channel_name, "/", channel_name, ".mp4");
 
     bool bRes = vpm.Init(vfs, channel_name, record_dir->mem(), filePathRes->mem(), start_unixtime_sec, end_unixtime_sec);
     if(!bRes)
@@ -987,6 +1393,28 @@ MomentFFmpegModule::doGetFile (HttpRequest * const mt_nonnull req,
     vpm.Process();
 
     logD_(_func_, "mp4 is done: [", filePathRes, "]");
+
+    Ref<GetFileSession> const get_file_session = grab (new (std::nothrow) GetFileSession);
+    {
+        get_file_session->init (moment,
+                                req,
+                                sender,
+                                page_pool,
+                                vfs,
+                                channel_name,
+                                start_unixtime_sec,
+                                end_unixtime_sec,
+                                true,
+                                CbDesc<GetFileSession::Frontend> (&get_file_session_frontend, this, this),
+                                filePathRes/*record_dir*/);
+    }
+
+    mutex.lock ();
+#warning TODO GetFileSession lifetime
+    get_file_sessions.append (get_file_session);
+    mutex.unlock ();
+
+    get_file_session->start ();
 
     return st_makeString(filePathRes);
 }
@@ -1366,6 +1794,11 @@ MomentFFmpegModule::init (MomentServer * const moment)
         true /* preassembly */,
         1 << 20 /* 1 Mb */ /* preassembly_limit */,
         true /* parse_body_params */);
+
+    //=========================================== POCO HTTP SERVER ====================================
+    HttpReqHandler::addHandler(std::string("mod_nvr"), _httpRequest, this);
+    AdminHttpReqHandler::addHandler(std::string("mod_nvr_admin"), _adminHttpRequest, this);
+    //=================================================================================================
 
     return Result::Success;
 }

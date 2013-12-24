@@ -25,6 +25,12 @@ then
 	FFBUILD=1
 fi
 
+if [ "$5" = "ffmpegbuild" ]
+then
+	POCOBUILD=1
+fi
+
+
 function autogen()
 {
 	if [ -n "$1" ]
@@ -49,6 +55,14 @@ function ffmpegrebuild()
 	fi
 }
 
+function pocorebuild()
+{
+	if [ -n "$1" ]
+	then
+		sh ./build_poco.sh
+	fi
+}
+
 # check prerequisites
 CHECK_GLIB="`pkg-config --cflags glib-2.0`"
 if [ -z "${CHECK_GLIB}" ]; then
@@ -70,6 +84,9 @@ fi
 
 # build ffmpeg
 ffmpegrebuild "$FFBUILD"
+
+# build poco
+pocorebuild "$POCOBUILD"
 
 # Generate projects
 cd libmary
@@ -158,7 +175,7 @@ cd ../moment
 makeclean "$CLEAN"
 
 
-export THIS_CFLAGS="-I${OUTDIR}/ctemplate/include \
+export THIS_CFLAGS="-I${OUTDIR}/ctemplate/include -I../../poco/poco_build/include\
 	${I_GLIB} ${I_XML} ${I_JSON} \
 	-I${OUTDIR}/include/pargen-1.0 \
 	-I${OUTDIR}/include/libmary-1.0 \
@@ -169,7 +186,13 @@ export THIS_LIBS="${L_GLIB} ${L_XML} ${L_JSON} \
 	-L${OUTDIR}/lib -lmary-1.0 \
 	-L${OUTDIR}/lib -lscruffy-1.0 \
 	-L${OUTDIR}/lib -lmconfig-1.0 \
-	-L${OUTDIR}/ctemplate/lib -lctemplate"
+	-L${OUTDIR}/ctemplate/lib -lctemplate \
+	-Wl,--whole-archive \
+	../../poco/poco_build/lib/libPocoFoundation.a \
+	../../poco/poco_build/lib/libPocoNet.a \
+	../../poco/poco_build/lib/libPocoUtil.a \
+	../../poco/poco_build/lib/libPocoXML.a \
+	-Wl,--no-whole-archive -Wl,-Bsymbolic -lz -lm -lpthread -ldl -lrt"
 
 ./configure --prefix="${OUTDIR}" --disable-gstreamer
 
@@ -211,7 +234,7 @@ export THIS_LIBS="${L_GLIB} ${L_XML} ${L_JSON} \
 
 
 cd ../moment-ffmpeg
-export THIS_CFLAGS+=" -I../../ffmpeg/ffmpeg_build/include -I../../ffmpeg/ffmpeg_build/include/libavformat"
+export THIS_CFLAGS+=" -I../../ffmpeg/ffmpeg_build/include -I../../ffmpeg/ffmpeg_build/include/libavformat -I../../poco/poco_build/include"
 export THIS_LIBS+=" -Wl,--whole-archive \
 	../../ffmpeg/ffmpeg_build/lib/libavformat.a \
 	../../ffmpeg/ffmpeg_build/lib/libavdevice.a \

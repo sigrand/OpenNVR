@@ -1,6 +1,7 @@
 #include <moment-ffmpeg/inc.h>
 #include <moment-ffmpeg/naming_scheme.h>
 #include <moment-ffmpeg/video_part_maker.h>
+#include <moment-ffmpeg/memory_dispatcher.h>
 
 
 using namespace M;
@@ -99,8 +100,16 @@ bool VideoPartMaker::Init (Vfs         * const mt_nonnull vfs,
         }
     }
 
-    StRef<String> st = st_makeString(res_file_path);
-    bIsInit = m_nvrData.Init(m_fileReader.GetFormatContext(), st->cstr(), NULL, 0, 0);
+    m_filepath = st_makeString(res_file_path);
+    StRef<String> channel_name = st_makeString (stream_name);
+
+    if(!MemoryDispatcher::Instance().GetPermission(m_filepath->cstr(), end_unixtime_sec - start_unixtime_sec))
+    {
+        logE_(_func_, "no space for file");
+        return false;
+    }
+
+    bIsInit = m_nvrData.Init(m_fileReader.GetFormatContext(), channel_name->cstr(), m_filepath->cstr(), NULL, end_unixtime_sec - start_unixtime_sec);
 
     return bIsInit;
 }
@@ -131,11 +140,11 @@ VideoPartMaker::Process ()
     }
     int tb_den = fmtctx->streams[video_stream_idx]->time_base.den;
 
-    int c = 0;
     int ptsExtra = 0;
     int dtsExtra = 0;
     int ptsExtraPrv = 0;
     int dtsExtraPrv = 0;
+    unsigned long fileSize = 0;
     // read packets from file
     while (1)
     {
@@ -144,27 +153,23 @@ VideoPartMaker::Process ()
         if(m_fileReader.ReadFrame(frame))
         {
             AVPacket packet = frame.GetPacket();
-            logD_(_func_, "====== packet.pts before: ", packet.pts);
             Time nCurAbsPos = nCurFileStartTime + nCurFileShift + (packet.pts / (double)tb_den);
-            logD_(_func_, "====== nCurFileStartTime: ", nCurFileStartTime);
-            logD_(_func_, "====== nCurFileShift: ", nCurFileShift);
-            logD_(_func_, "====== nCurAbsPos: ", nCurAbsPos);
             if(nCurAbsPos > nEndTime)
             {
-                logD_(_func_, "====== ENOUGH");
+                logD_(_func_, "done");
                 m_fileReader.FreeFrame(frame);
                 break;
             }
-            logD_(_func_, "====== ptsExtra: ", ptsExtra);
             packet.pts += ptsExtra;
             packet.dts += dtsExtra;
-            logD_(_func_, "====== packet.pts after: ", packet.pts);
-            logD_(_func_, "====== nStartTime: ", (double)nStartTime);
-            logD_(_func_, "====== nEndTime: ", (double)nEndTime);
 
 //            logD_(_func_, "====== before write");
             m_nvrData.WritePacket(m_fileReader.GetFormatContext(), packet);
 //            logD_(_func_, "====== after write");
+
+            fileSize += packet.size;
+
+            MemoryDispatcher::Instance().Notify(m_filepath->cstr(), false, fileSize);
 
             ptsExtraPrv = packet.pts;
             dtsExtraPrv = packet.dts;
@@ -175,20 +180,18 @@ VideoPartMaker::Process ()
         {
             if (!tryOpenNextFile ())
             {
-                logD_(_func_, "====== ALL FILES ARE OVER");
+                logD_(_func_, "all files are over");
                 break;
             }
 
-            logD_(_func_, "====== ptsExtraPrv: ", ptsExtraPrv);
-            logD_(_func_, "====== dtsExtraPrv: ", dtsExtraPrv);
             ptsExtra = ptsExtraPrv;
             dtsExtra = dtsExtraPrv;
 
-            logD_(_func_, "====== NEXT FILE");
+            logD_(_func_, "next file");
         }
-        c++;
-        logD_(_func_, "====== counter = ", c);
     }
+
+    MemoryDispatcher::Instance().Notify(m_filepath->cstr(), true, 0);
 
     return true;
 }

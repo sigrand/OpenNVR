@@ -1,0 +1,13 @@
+API MyPlayer.swf
+
+setFirstUri(uri, stream)
+example: setFirstUri(rtmp://192.168.10.21:1935/live/cam102, cam102)
+в index.tpl вызывается на старте страницы, при операциях Add, Modify.
+
+setSource(uri, stream)
+example: setSource(rtmp://192.168.10.21:1935/live/cam102, cam102)
+аналогичный вызову верхнему, внутренние различия функций минимальны. вызывается на клике по источнику
+
+setSourceSeeked(uri, stream, time_start, time_end)
+example: setSourceSeeked(rtmp://192.168.10.21:1935/nvr/cam102, cam102, 1386128644, 1386129006)
+функция для получения записанного видео и сикания по нему. вызывается по клику на прогресбаре.

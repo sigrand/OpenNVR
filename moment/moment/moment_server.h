@@ -34,6 +34,8 @@
 #include <moment/transcoder.h>
 #include <moment/media_source_provider.h>
 
+#include <moment/moment_request_handler.h>
+
 
 #define MOMENT_SERVER__HEADERS_DATE \
 	Byte date_buf [unixtimeToString_BufSize]; \
@@ -236,6 +238,10 @@ private:
                                      Memory const  &msg_body,
                                      void         ** mt_nonnull ret_msg_data,
                                      void          *_self);
+
+    static bool _adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+
+    static bool _serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
 public:
     struct HttpRequestResult {

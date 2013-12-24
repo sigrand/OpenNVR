@@ -64,6 +64,8 @@ private:
     mt_const IpAddress req_client_addr;
     mt_const StRef<String> req_request_line;
 
+    mt_const StRef<String> fileName;
+
     // Bytes per second. 0 means no limit.
     mt_const Uint64 first_burst_size;
     mt_const Uint64 bps_limit;
@@ -74,7 +76,7 @@ private:
     mt_const ServerThreadContext *reader_thread_ctx;
 
     MediaReader media_reader;
-    mt_sync_domain (readTask) Mp4Muxer mp4_muxer;
+    //mt_sync_domain (readTask) Mp4Muxer mp4_muxer;
 
     mt_sync_domain (readTask) SessionState session_state;
     mt_sync_domain (readTask) bool first_data_read;
@@ -118,6 +120,7 @@ private:
     static mt_sync_domain (readTask) void bpsLimitTimerTick (void * const _self);
 
     mt_sync_domain (readTask) void doReadData ();
+    mt_sync_domain (readTask) void doSendFile ();
 
   mt_iface (Sender::Frontend)
     static Sender::Frontend const sender_frontend;
@@ -142,7 +145,7 @@ public:
                         Time           const duration_sec,
                         bool           const octet_stream_mime,
                         CbDesc<Frontend> const &frontend,
-                        StRef<String> const record_dir);
+                        StRef<String>  const fileName);
 
      GetFileSession ();
     ~GetFileSession ();

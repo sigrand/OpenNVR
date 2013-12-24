@@ -320,7 +320,7 @@ bool FileReader::IsInit()
     return (format_ctx != NULL);
 }
 
-bool FileReader::Init(StRef<String> & fileName)
+bool FileReader::Init(StRef<String> & fileName, bool bFileDownload)
 {
     DeInit();
 
@@ -417,7 +417,22 @@ bool FileReader::Init(StRef<String> & fileName)
 
     if(res == Result::Success)
     {
-        res = FileNameToUnixTimeStamp().Convert(m_fileName, m_initTimeOfRecord);
+        if(!bFileDownload)
+        {
+            res = FileNameToUnixTimeStamp().Convert(m_fileName, m_initTimeOfRecord);
+        }
+        else
+        {
+            if (avio_open(&format_ctx->pb, m_fileName->cstr(), AVIO_FLAG_READ) < 0)
+            {
+                logE_(_func_, "fail to avio_open ", m_fileName);
+                res = Result::Failure;
+            }
+            m_totalSize = avio_size(format_ctx->pb);
+            avio_close(format_ctx->pb);
+
+            res = Result::Success;
+        }
     }
 
     if(res != Result::Success)
@@ -456,6 +471,8 @@ void FileReader::DeInit()
     m_dDuration = -1.0;
 
     first_key_frame_received = false;
+
+    m_totalSize = 0;
 }
 
 FileReader::FileReader()
@@ -471,6 +488,8 @@ FileReader::FileReader()
     first_key_frame_received = false;
 
     stream_params = NULL;
+
+    m_totalSize = 0;
 }
 
 FileReader::~FileReader()
@@ -855,20 +874,75 @@ MediaReader::sendFrame (const FileReader::Frame & inputFrame,
 
     return ReadFrameResult_Success;
 }
-
+static int64_t sizecounter = 0;
 MediaReader::ReadFrameResult
 MediaReader::readMoreData (ReadFrameBackend const * const read_frame_cb,
                            void                   * const read_frame_cb_data)
 {
     logD_(_func_);
+
+    ReadFrameResult rf_res = ReadFrameResult_Success;
+
+    logD_(_func_, "bDownload is : ", bDownload);
+    if(bDownload)
+    {
+        logD_(_func_, "Just download mp4 file: ", fileDownload);
+        if (!m_fileReader.IsInit())
+        {
+            if(!m_fileReader.Init(fileDownload, true))
+            {
+                logE_(_func_,"m_fileReader.Init failed");
+                return ReadFrameResult_NoData;
+            }
+        }
+
+        // read packets from file
+        while (1)
+        {
+            Result res = Result::Failure;
+            FileReader::Frame frame;
+
+            if(m_fileReader.ReadFrame(frame))
+            {
+                sizecounter += frame.GetPacket().size;
+                rf_res = sendFrame (frame, read_frame_cb, read_frame_cb_data);
+                if (rf_res == ReadFrameResult_BurstLimit) {
+                    logD (reader, _func, "session 0x", fmt_hex, (UintPtr) this, ": BurstLimit, ", "Filename: ", m_fileReader.GetFilename());
+                    break;
+                } else
+                if (rf_res == ReadFrameResult_Finish) {
+                    break;
+                } else
+                if (rf_res == ReadFrameResult_Success) {
+                    res = Result::Success;
+                } else {
+                    res = Result::Failure;
+                }
+
+                m_fileReader.FreeFrame(frame);
+            }
+            else
+            {
+                logD_(_func_, "&&&&&^ sizecounter = ", sizecounter);
+                rf_res = ReadFrameResult_NoData;
+                break;
+            }
+        }
+
+        return rf_res;
+    }
+    else
+    {
     TimeChecker tc;tc.Start();
 
     ReadFrameResult rf_res = ReadFrameResult_Success;
 
     if (!m_fileReader.IsInit())
     {
+        logD_(_func_, "&&&& m_fileReader isnt init");
         if (!tryOpenNextFile ())
         {
+            logD_(_func_, "&&&& tryOpenNextFile returned false");
             return ReadFrameResult_NoData;
         }
     }
@@ -911,6 +985,7 @@ MediaReader::readMoreData (ReadFrameBackend const * const read_frame_cb,
     logD_(_func_, "MediaReader.readMoreData exectime = [", t, "]");
 
     return rf_res;
+    }
 }
 
 mt_const void
@@ -919,13 +994,18 @@ MediaReader::init (PagePool    * const mt_nonnull page_pool,
                    ConstMemory   const stream_name,
                    Time          const start_unixtime_sec,
                    Size          const burst_size_limit,
-                   StRef<String> const record_dir)
+                   StRef<String> const record_dir,
+                   StRef<String> const fileDownload,
+                   bool                bDownload)
 {
     this->page_pool = page_pool;
     this->vfs = vfs;
     this->start_unixtime_sec = start_unixtime_sec;
     this->burst_size_limit = burst_size_limit;
     this->record_dir = record_dir;
+
+    this->fileDownload = fileDownload;
+    this->bDownload = bDownload;
 
     logD_(_func_, "start_unixtime_sec = ", this->start_unixtime_sec);
     logD_(_func_, "burst_size_limit = ", this->burst_size_limit);

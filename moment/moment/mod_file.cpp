@@ -22,6 +22,8 @@
 
 #include <libmary/module_init.h>
 #include <moment/libmoment.h>
+#include <moment/moment_request_handler.h>
+#include <fstream>
 
 #ifdef MOMENT_CTEMPLATE
 #include <ctemplate/template.h>
@@ -714,6 +716,556 @@ Result httpRequest (HttpRequest   * const mt_nonnull req,
     return Result::Success;
 }
 
+
+bool
+_httpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _path_entry )
+{
+    PathEntry * const path_entry = static_cast <PathEntry*> (_path_entry);
+
+    logD_ (_func, req.getURI().c_str());
+
+    HTMLForm form( req );
+
+    resp.setKeepAlive(true);
+
+    ConstMemory file_path;
+    {
+        ConstMemory full_path = ConstMemory(req.getURI().c_str(), req.getURI().size());
+        if (full_path.len() > 0 && full_path.mem() [0] == '/')
+        {
+            full_path = full_path.region (1);
+        }
+        ConstMemory const prefix = path_entry->prefix->mem();
+        if (full_path.len() < prefix.len()
+            || memcmp (full_path.mem(), prefix.mem(), prefix.len()))
+        {
+            logE_ (_func, "full_path \"", full_path, "\" does not match prefix \"", prefix, "\"");
+
+            resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+            std::ostream& out = resp.send();
+            out << "500 Internal Server Error";
+            out.flush();
+
+            logA_ ("file 500 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+            return true;
+        }
+
+        file_path = full_path.region (prefix.len());
+    }
+    logD_ (_func, "file_path: ", file_path);
+
+    while (file_path.len() > 0
+       && file_path.mem() [0] == '/')
+    {
+        file_path = file_path.region (1);
+    }
+
+    if (file_path.len() == 0)
+    {
+        file_path = "index.html";
+    }
+
+    ConstMemory mime_type = "text/plain";
+    bool try_template = false;
+    bool try_lang = false;
+    Size ext_length = 0;
+    ConstMemory ext;
+    {
+#ifdef PLATFORM_WIN32
+        // MinGW doesn't have memrchr().
+        void const *dot_ptr = NULL;
+        {
+            unsigned char const * const mem = file_path.mem();
+            Size const len = file_path.len();
+            for (Size i = len; i > 0; --i) {
+                if (mem [i - 1] == '.') {
+                    dot_ptr = mem + (i - 1);
+                    break;
+                }
+            }
+        }
+#else
+    void const * const dot_ptr = memrchr (file_path.mem(), '.', file_path.len());
+#endif
+    if (dot_ptr) {
+        ext = file_path.region ((Byte const *) (dot_ptr) + 1 - file_path.mem());
+            if (equal (ext, "ts"))
+                mime_type = "video/MP2T";
+            else
+            if (equal (ext, "m3u8"))
+//                mime_type = "application/x-mpegURL";
+                mime_type = "application/vnd.apple.mpegurl";
+            else
+        if (equal (ext, "html")) {
+        mime_type = "text/html";
+        try_template = true;
+                try_lang = true;
+        ext_length = 5;
+        } else
+        if (equal (ext, "json")) {
+        // application/json doesn't work on client side somewhy.
+        // mime_type = "application/json";
+        try_template = true;
+        ext_length = 0;
+        } else
+        if (equal (ext, "css"))
+        mime_type = "text/css";
+        else
+        if (equal (ext, "js"))
+        mime_type = "application/javascript";
+        else
+        if (equal (ext, "swf"))
+        mime_type = "application/x-shockwave-flash";
+        else
+        if (equal (ext, "png"))
+        mime_type = "image/png";
+        else
+        if (equal (ext, "jpg"))
+        mime_type = "image/jpeg";
+            else
+            if (equal (ext, "mp4"))
+                mime_type = "video/mp4";
+            else
+            if (equal (ext, "mov"))
+                mime_type = "video/quicktime";
+    }
+    }
+//    logD_ (_func, "try_template: ", try_template);
+
+    StRef<String> const filename = st_makeString (path_entry->path->mem(),
+                                                  !path_entry->path->isNull() ? "/" : "",
+                                                  file_path);
+
+    NativeFile native_file;
+    logD_ (_func, "Trying ", filename->mem());
+    if (!native_file.open (filename->mem(),
+                           0 /* open_flags */,
+                           File::AccessMode::ReadOnly))
+    {
+        struct AcceptedLanguage {
+            ConstMemory lang;
+            double      weight;
+            bool        extra;
+        };
+
+        struct AcceptedLanguageComparator {
+            static bool greater (AcceptedLanguage const &left,
+                                 AcceptedLanguage const &right)
+            {
+                return (left.weight > right.weight)
+                       || (left.weight == right.weight && left.extra < right.extra);
+            }
+
+            static bool equals (AcceptedLanguage const &left,
+                                AcceptedLanguage const &right)
+                { return left.weight == right.weight && left.extra == right.extra; }
+        };
+
+        typedef AvlTree< AcceptedLanguage,
+                         DirectExtractor<AcceptedLanguage>,
+                         AcceptedLanguageComparator >
+                AcceptedLanguageTree;
+
+        typedef AvlTree< AcceptedLanguageTree::Node*,
+                         MemberExtractor< AcceptedLanguageTree::Node,
+                                          AcceptedLanguage,
+                                          &AcceptedLanguageTree::Node::value,
+                                          ConstMemory,
+                                          MemberExtractor< AcceptedLanguage,
+                                                           ConstMemory,
+                                                           &AcceptedLanguage::lang > >,
+                         MemoryComparator<> >
+                AcceptedLanguageSet;
+
+        // Keep 'langs' around, because it holds string references.
+        List<HttpRequest::AcceptedLanguage> langs;
+        AcceptedLanguageTree lang_tree;
+        AcceptedLanguageSet  lang_set;
+        StRef<String> strings_filename;
+        StRef<String> stringvars_filename;
+        if (try_lang) {
+          // TODO Set default language in config etc.
+            NameValueCollection::ConstIterator accept_language_iter = form.find("Accept-Language");
+            std::string accept_language = (accept_language_iter != form.end()) ? accept_language_iter->second: "";
+            ConstMemory accept_language_mem = ConstMemory(accept_language.c_str(), accept_language.size());
+            HttpRequest::parseAcceptLanguage (accept_language_mem, &langs);
+
+            logD_ (_func, "accepted languages (", accept_language_mem, "):");
+            {
+                List<HttpRequest::AcceptedLanguage>::iter iter (langs);
+                while (!langs.iter_done (iter)) {
+                    List<HttpRequest::AcceptedLanguage>::Element * const el = langs.iter_next (iter);
+                    HttpRequest::AcceptedLanguage * const req_alang = &el->data;
+                    logD_ (req_alang->lang, ", weight ", req_alang->weight);
+
+                    AcceptedLanguage alang;
+                    alang.lang   = req_alang->lang->mem();
+                    alang.weight = req_alang->weight;
+                    alang.extra  = false;
+                    {
+                        AcceptedLanguageSet::Node * const node = lang_set.lookup (alang.lang);
+                        if (!node) {
+                            lang_set.add (lang_tree.add (alang));
+                        } else
+                        if (node->value->value.extra) {
+                            AcceptedLanguageTree::Node * const tmp_node = node->value;
+                            lang_set.remove (node);
+                            lang_tree.remove (tmp_node);
+                            lang_set.add (lang_tree.add (alang));
+                        }
+                    }
+
+                    Byte const * const dash = (Byte const *) memchr (alang.lang.mem(), '-', alang.lang.len());
+                    if (dash && dash != alang.lang.mem()) {
+                        AcceptedLanguage extra_alang;
+                        extra_alang.lang   = ConstMemory (alang.lang.mem(), dash - alang.lang.mem());
+                        extra_alang.weight = alang.weight;
+                        extra_alang.extra  = true;
+                        if (!lang_set.lookup (extra_alang.lang))
+                            lang_set.add (lang_tree.add (extra_alang));
+                    }
+                }
+            }
+
+            if (!lang_set.lookup (ConstMemory ("en"))) {
+              // Default language with the lowest priority.
+                AcceptedLanguage alang;
+                alang.lang = ConstMemory ("en");
+                // HTTP allows only positive weights, so '-1.0' is always the lowest.
+                alang.weight = -1.0;
+                alang.extra = true;
+                lang_tree.add (alang);
+            }
+
+            {
+                AcceptedLanguageTree::BottomRightIterator iter (lang_tree);
+                while (!iter.done()) {
+                    AcceptedLanguage * const alang = &iter.next ().value;
+                    logD_ (_func, "Trying strings for language \"", alang->lang, "\"");
+
+                    // TODO Use Vfs::stat instead.
+                    StRef<String> const tmp_filename =
+                            st_makeString (path_entry->path->mem(),
+                                           path_entry->path->len() ? "/" : "", "strings.",
+                                           alang->lang,
+                                           ".tpl");
+                    NativeFile tmp_file;
+                    if (tmp_file.open (tmp_filename->mem(), 0 /* open_flags */, File::AccessMode::ReadOnly)) {
+                        strings_filename = tmp_filename;
+                        break;
+                    }
+                }
+            }
+
+            {
+                AcceptedLanguageTree::BottomRightIterator iter (lang_tree);
+                while (!iter.done()) {
+                    AcceptedLanguage * const alang = &iter.next ().value;
+                    logD_ (_func, "Trying stringvars for language \"", alang->lang, "\"");
+
+                    // TODO Use Vfs::stat instead.
+                    StRef<String> const tmp_filename =
+                            st_makeString (path_entry->path->mem(),
+                                           path_entry->path->len() ? "/" : "", "strings.",
+                                           alang->lang,
+                                           ".var");
+                    NativeFile tmp_file;
+                    if (tmp_file.open (tmp_filename->mem(), 0 /* open_flags */, File::AccessMode::ReadOnly)) {
+                        stringvars_filename = tmp_filename;
+                        break;
+                    }
+                }
+            }
+        }
+//#ifdef MOMENT_CTEMPLATE
+    if (try_template)
+    {
+        logD_ (_func, "Trying .tpl");
+        do
+        {
+            StRef<String> const filename_tpl =
+                    st_makeString (filename->mem().region (0, filename->mem().len() - ext_length),
+                                   ".tpl");
+            {
+              // Avoiding ctemplate warnings on stderr.
+                NativeFile tmp_file;
+                if (!tmp_file.open (filename_tpl->mem(), 0 /* open_flags */, FileAccessMode::ReadOnly))
+                    break;
+            }
+            resp.setChunkedTransferEncoding(true);
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            StRef<String> st_mime_type = st_makeString(mime_type);
+            resp.setContentType(st_mime_type->cstr());
+            std::ostream& out = resp.send();
+            std::string line;
+            std::ifstream myfile (filename_tpl->cstr());
+            if (myfile.is_open())
+            {
+                while ( std::getline (myfile,line) )
+                {
+                    out << line << '\n';
+                }
+                myfile.close();
+            }
+
+            out.flush();
+
+            logA_ ("file 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+            return true;
+        } while (0);
+    }
+//#endif
+
+        bool opened = false;
+        if (equal (ext, "html"))
+        {
+//#ifdef MOMENT_CTEMPLATE
+            if (try_template) {
+                AcceptedLanguageTree::BottomRightIterator iter (lang_tree);
+                while (!iter.done()) {
+                    AcceptedLanguage * const alang = &iter.next ().value;
+                    logD_ (_func, "Trying .tpl for language \"", alang->lang, "\"");
+                    do {
+                        StRef<String> const filename_tpl =
+                                st_makeString (filename->mem().region (0, filename->mem().len() - ext_length),
+                                               ".",
+                                               alang->lang,
+                                               ".tpl");
+                        {
+                          // Avoiding ctemplate warnings on stderr.
+                            NativeFile tmp_file;
+                            if (!tmp_file.open (filename_tpl->mem(), 0 /* open_flags */, FileAccessMode::ReadOnly))
+                                break;
+                        }
+
+                        resp.setChunkedTransferEncoding(true);
+                        resp.setStatus(HTTPResponse::HTTP_OK);
+                        StRef<String> st_mime_type = st_makeString(mime_type);
+                        resp.setContentType(st_mime_type->cstr());
+                        std::ostream& out = resp.send();
+                        std::string line;
+                        std::ifstream myfile (filename_tpl->cstr());
+                        if (myfile.is_open())
+                        {
+                            while ( std::getline (myfile,line) )
+                            {
+                                out << line << '\n';
+                            }
+                            myfile.close();
+                        }
+                        out.flush();
+                        logA_ ("file 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+                        return true;
+                    } while (0);
+                }
+            }
+//#endif
+            {
+                AcceptedLanguageTree::BottomRightIterator iter (lang_tree);
+                while (!iter.done())
+                {
+                    AcceptedLanguage * const alang = &iter.next ().value;
+                    logD_ (_func, "Trying .html for language \"", alang->lang, "\"");
+
+                    if (native_file.open (st_makeString (filename->mem().region (0, filename->mem().len() - ext_length),
+                                                         ".",
+                                                         alang->lang,
+                                                         ".html")->mem(),
+                                          0 /* open_flags */,
+                                          File::AccessMode::ReadOnly))
+                    {
+                        opened = true;
+                        break;
+                    }
+                }
+            }
+        } // if ("html")
+
+        if (!opened)
+        {
+            logE_ (_func, "Could not open \"", filename, "\": ", exc->toString());
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "404 Not Found";
+            out.flush();
+
+            logA_ ("moment_ctl 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+            return true;
+        }
+    }
+
+    bool got_mtime = false;
+    struct tm mtime;
+
+    if (native_file.getModificationTime (&mtime))
+        got_mtime = true;
+    else
+        logE_ (_func, "native_file.getModificationTime() failed: ", exc->toString());
+
+    if (got_mtime)
+    {
+        bool if_none_match__any = false;
+        List<HttpRequest::EntityTag> etags;
+
+        bool send_not_modified = false;
+        if (if_none_match__any) {
+          // We have already opened the file, so it does exist.
+            send_not_modified = true;
+        } else {
+            bool got_if_modified_since = false;
+            struct tm if_modified_since;
+
+            if (got_if_modified_since ||
+                if_none_match__any    ||
+                !etags.isEmpty())
+            {
+                bool expired = false;
+                if (compareTime (&mtime, &if_modified_since) == ComparisonResult::Greater)
+                    expired = true;
+
+                bool etag_match = etags.isEmpty();
+                {
+                    List<HttpRequest::EntityTag>::iter iter (etags);
+                    while (!etags.iter_done (iter)) {
+                        HttpRequest::EntityTag * const etag = &etags.iter_next (iter)->data;
+
+                        struct tm etag_time;
+                        if (parseHttpTime (etag->etag->mem(), &etag_time)) {
+                            if (compareTime (&mtime, &etag_time) == ComparisonResult::Equal) {
+                                etag_match = true;
+                                break;
+                            }
+                        } else {
+                            logW_ (_func, "Could not parse etag time: ", etag->etag->mem());
+                        }
+                    }
+                }
+
+                if (etag_match && !expired)
+                    send_not_modified = true;
+            }
+        }
+
+        if (send_not_modified)
+        {
+            resp.setStatus(HTTPResponse::HTTP_NOT_MODIFIED);
+            std::ostream& out = resp.send();
+            out.flush();
+
+            logA_ ("file 304 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+            return true;
+        }
+    }
+
+    NativeFile::FileStat stat;
+    if (!native_file.stat (&stat))
+    {
+        logE_ (_func, "native_file.stat() failed: ", exc->toString());
+
+        resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+        std::ostream& out = resp.send();
+        out << "500 Internal Server Error";
+        out.flush();
+
+        logA_ ("file 500 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+        return Result::Success;
+    }
+
+    Byte mtime_buf [unixtimeToString_BufSize];
+    Size mtime_len = 0;
+    if (got_mtime)
+        mtime_len = timeToHttpString (Memory::forObject (mtime_buf), &mtime);
+    StRef<String> st_mime_type = st_makeString(mime_type);
+    resp.setStatus(HTTPResponse::HTTP_OK);
+    resp.setContentType(st_mime_type->cstr());
+    std::ostream& out = resp.send();
+
+    if (req.getMethod().compare("HEAD") == 0)
+    {
+        out.flush();
+        logA_ ("file 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+        return true;
+    }
+
+    PagePool::PageListHead page_list;
+    // TODO This doesn't work well with large files (eats too much memory).
+    Byte buf [65536];
+    if(std::string(st_mime_type->cstr()).compare("application/x-shockwave-flash") == 0 ||
+       std::string(st_mime_type->cstr()).compare("image/png") == 0 ||
+        std::string(st_mime_type->cstr()).compare("image/jpeg") == 0 ||
+        std::string(st_mime_type->cstr()).compare("video/quicktime") == 0 ||
+        std::string(st_mime_type->cstr()).compare("video/MP2T") == 0 ||
+        std::string(st_mime_type->cstr()).compare("application/vnd.apple.mpegurl") == 0)
+    {
+        std::string line;
+        std::ifstream myfile (filename->cstr());
+        if (myfile.is_open())
+        {
+          while ( std::getline (myfile,line) )
+          {
+              out << line << "\n";
+          }
+          myfile.close();
+        }
+    }
+    else{
+        Size total_sent = 0;
+        for (;;)
+        {
+            Size toread = sizeof (buf);
+            if (stat.size - total_sent < toread)
+                toread = stat.size - total_sent;
+
+            Size num_read;
+            IoResult const res = native_file.read (Memory (buf, toread), &num_read);
+            if (res == IoResult::Error)
+            {
+                logE_ (_func, "native_file.read() failed: ", exc->toString());
+                out.flush();
+                return true;
+            }
+            assert (num_read <= toread);
+
+            // TODO Double copy - not very smart.
+            page_pool->getFillPages (&page_list, ConstMemory (buf, num_read));
+
+            StRef<String> st_buf = st_makeString(ConstMemory (buf, num_read));
+            out << st_buf->cstr();
+
+            total_sent += num_read;
+            assert (total_sent <= stat.size);
+            if (total_sent == stat.size)
+                break;
+
+            if (res == IoResult::Eof)
+                break;
+        }
+        assert (total_sent <= stat.size);
+        if (total_sent != stat.size)
+        {
+            logE_ (_func, "File size mismatch: total_sent: ", total_sent, ", stat.size: ", stat.size);
+            out.flush();
+            logA_ ("file 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            return true;
+        }
+    }
+
+    out.flush();
+
+    logA_ ("file 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+    return true;
+}
+
+
+
 #ifdef MOMENT_CTEMPLATE
 namespace {
     class SendTemplate_PageRequest : public MomentServer::PageRequest
@@ -981,6 +1533,8 @@ void momentFile_addPathEntry (PathEntry   * const path_entry,
     http_service->addHttpHandler (
 	    CbDesc<HttpService::HttpHandler> (&http_handler, path_entry, NULL /* coderef_container */),
 	    path_entry->prefix->mem());
+
+    HttpReqHandler::addHandler(std::string(path_entry->prefix->cstr()), _httpRequest, (void *) path_entry);
 
     path_list.append (path_entry);
 }

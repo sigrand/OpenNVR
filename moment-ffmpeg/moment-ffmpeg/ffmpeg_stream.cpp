@@ -156,6 +156,30 @@ extern "C"
     }
 }   // extern "C" ]
 
+
+static int ff_lockmgr(void **mutex, enum AVLockOp op)
+{
+   pthread_mutex_t** pmutex = (pthread_mutex_t**) mutex;
+   switch (op) {
+   case AV_LOCK_CREATE:
+      *pmutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
+       pthread_mutex_init(*pmutex, NULL);
+       break;
+   case AV_LOCK_OBTAIN:
+       pthread_mutex_lock(*pmutex);
+       break;
+   case AV_LOCK_RELEASE:
+       pthread_mutex_unlock(*pmutex);
+       break;
+   case AV_LOCK_DESTROY:
+       pthread_mutex_destroy(*pmutex);
+       free(*pmutex);
+       break;
+   }
+   return 0;
+}
+
+
 StateMutex ffmpegStreamData::g_mutexFFmpeg;
 
 static void RegisterFFMpeg(void)
@@ -176,6 +200,7 @@ static void RegisterFFMpeg(void)
     // global ffmpeg initialization
     av_register_all();
     avformat_network_init();
+    av_lockmgr_register(ff_lockmgr);
 
     logD_(_func_, "RegisterFFMpeg succeed");
 }
@@ -189,6 +214,7 @@ ffmpegStreamData::ffmpegStreamData(void)
     format_ctx = NULL;
 
     m_bRecordingState = false;
+    m_bRecordingEnable = false;
     m_bGotFirstFrame = false;
     m_bCheckAudioMode = true;
 
@@ -235,6 +261,7 @@ void ffmpegStreamData::Deinit()
     }
 
     m_bRecordingState = false;
+    m_bRecordingEnable = false;
     m_bGotFirstFrame = false;
     m_bCheckAudioMode = true;
 
@@ -316,13 +343,25 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     Uint64 max_age_minutes = 120;
     m_file_duration_sec = 3600;
 
+    // writing on/off
+    {
+        ConstMemory const opt_name = "mod_nvr/enable";
+        StRef<String> str = st_makeString(config->getString (opt_name));
+        std::string strRecEnable = std::string(str->cstr());
+        if(strRecEnable.compare("y") == 0 || strRecEnable.compare("yes") == 0)
+            m_bRecordingEnable = true;
+    }
+
     // get cycle time
     {
         ConstMemory const opt_name = "mod_nvr/max_age";
         MConfig::GetResult const res =
                 config->getUint64_default (opt_name, &max_age_minutes, max_age_minutes);
         if (!res)
+        {
             logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
+            m_bRecordingEnable = false;
+        }
         else
             logI_ (_func, opt_name, ": ", max_age_minutes);
     }
@@ -336,7 +375,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         {
             logE_ (_func, opt_name, " config option is not set, disabling writing");
             // we can not write without output path
-            return Result::Failure;
+            res = Result::Failure;
         }
         logI_ (_func, opt_name, ": [", record_dir, "]");
     }
@@ -347,7 +386,10 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         MConfig::GetResult const res =
                 config->getUint64_default (opt_name, &m_file_duration_sec, m_file_duration_sec);
         if (!res)
+        {
             logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
+            m_bRecordingEnable = false;
+        }
         else
             logI_ (_func, opt_name, ": ", m_file_duration_sec);
     }
@@ -361,12 +403,12 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         {
             logE_ (_func, opt_name, " config option is not set, disabling writing");
             // we can not write without output path
-            return Result::Failure;
+            m_bRecordingEnable = false;
         }
         logI_ (_func, opt_name, ": [", confd_dir, "]");
     }
 
-    if(res == Result::Success)
+    if(m_bRecordingEnable)
     {
         m_recordDir = st_makeString(record_dir);
         m_channelName = st_makeString(channel_name);
@@ -397,7 +439,8 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
 
         m_bRecordingState = ! bDisableRecord;
     }
-    else
+
+    if(res == Result::Failure)
     {
         Deinit();
     }
@@ -521,7 +564,7 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
         }
 
         // write to file
-        if(m_bRecordingState)
+        if(m_bRecordingState && m_bRecordingEnable)
         {
             // prepare to write in file
             if(m_bCheckAudioMode)
@@ -664,7 +707,7 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, co
     logD_ (_func, "The output path: ", m_filepath);
     Result res = Result::Success;
 
-    if(avformat_alloc_output_context2(&m_out_format_ctx, NULL, m_segMuxer->cstr(), m_filepath->cstr()) >= 0)
+    if(avformat_alloc_output_context2(&m_out_format_ctx, NULL, !m_segMuxer->isNullString() ? m_segMuxer->cstr() : NULL, m_filepath->cstr()) >= 0)
     {
         if(skipAudioIndex != -1)
             m_skipAudioIndex = skipAudioIndex;
@@ -883,6 +926,12 @@ int nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & pac
     opkt.data = packet.data;
     opkt.size = packet.size;
     opkt.stream_index = packet.stream_index;
+
+    if(m_out_format_ctx->streams[packet.stream_index]->pts.den == 0)
+    {
+        logD_(_func_, "stream's den is 0, skipping packet");
+        return 0;
+    }
 
     //int nres = av_interleaved_write_frame(m_out_format_ctx, &opkt); // may return -1094995529
     int nres = av_write_frame(m_out_format_ctx, &opkt);

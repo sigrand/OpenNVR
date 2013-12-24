@@ -39,6 +39,7 @@ private:
 
     bool bIsInit;
     StRef<String>   record_dir;
+    StRef<String>   m_filepath;
     Time nStartTime;
     Time nCurFileStartTime;
     Time nCurFileShift;

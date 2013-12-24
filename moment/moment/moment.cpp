@@ -35,7 +35,10 @@
 
 #include <moment/libmoment.h>
 #include <moment/inc.h>
-
+#include <moment/moment_request_handler.h>
+#include <moment/moment_http_server.h>
+#include <stdlib.h>
+#include <pthread.h>
 
 using namespace M;
 using namespace Moment;
@@ -122,6 +125,8 @@ private:
                                   void         ** mt_nonnull /* ret_msg_data */,
                                   void          *_self);
   mt_iface_end
+
+    static bool _ctlHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
   mt_iface (MomentServer::Events)
     static MomentServer::Events const moment_server_events;
@@ -510,6 +515,44 @@ MomentInstance::ctlHttpRequest (HttpRequest   * const mt_nonnull req,
     return Result::Success;
 }
 
+bool
+MomentInstance::_ctlHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
+{
+    MomentInstance * const self = static_cast <MomentInstance*> (_self);
+
+    logD_ (_func_);
+
+    URI uri(req.getURI());
+    std::vector < std::string > segments;
+    uri.getPathSegments(segments);
+
+    if(segments.size() >= 2 && segments[1].compare("config_reload") == 0)
+    {
+        std::string reply;
+        if (self->initiateConfigReload ()) {
+            reply = "OK";
+        } else {
+            logE_ (_func, "Could not reload config");
+            reply = "ERROR";
+        }
+
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << reply;
+        out.flush();
+
+        logA_ ("moment_ctl 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+        return true;
+    }
+
+    logE_ (_func, "Unknown admin HTTP request: ", req.getURI().c_str());
+    logA_ ("moment_ctl 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+    return false;
+}
+
 MomentServer::Events const MomentInstance::moment_server_events = {
     configReload,
     NULL /* destroy */
@@ -757,6 +800,22 @@ static ServerApp::Events const server_app_events = {
     serverApp_threadStarted
 };
 
+struct strPorts
+{
+  int admin_http_port;
+  int http_port;
+};
+
+void * server_thread_func(void * arg)
+{
+    struct strPorts * ports = (struct strPorts *)arg;
+    MomentHTTPServer app;
+    app.SetPorts(ports->http_port,ports->admin_http_port);
+    char * chNull = "";
+    app.run(1, &chNull);
+    return NULL;
+}
+
 int
 MomentInstance::run ()
 {
@@ -836,7 +895,11 @@ MomentInstance::run ()
 	    return EXIT_FAILURE;
 	}
 
-        if (!http_service.bind (params->http_bind_addr)) {
+        IpAddress ip_dumb;
+        ip_dumb.ip_addr = params->http_bind_addr.ip_addr;
+        ip_dumb.port = 65000;
+
+        if (!http_service.bind (/*params->http_bind_addr*/ ip_dumb)) {
             logE_ (_func, "http_service.bind() failed (http): ", exc->toString());
             return EXIT_FAILURE;
         }
@@ -862,7 +925,11 @@ MomentInstance::run ()
                 return EXIT_FAILURE;
             }
 
-            if (!separate_admin_http_service.bind (params->http_admin_bind_addr)) {
+            IpAddress ip_dumb;
+            ip_dumb.ip_addr = params->http_bind_addr.ip_addr;
+            ip_dumb.port = 65002;
+
+            if (!separate_admin_http_service.bind (/*params->http_admin_bind_addr*/ ip_dumb)) {
                 logE_ (_func, "http_service.bind() failed (admin): ", exc->toString());
                 return EXIT_FAILURE;
             }
@@ -889,6 +956,30 @@ MomentInstance::run ()
         logE_ (_func, "reader_thread_pool.spawn() failed");
         return EXIT_FAILURE;
     }
+
+    //=================================== POCO HTTP SERVER START ======================================
+    struct strPorts ports;
+    ConstMemory const admin_bind = config->getString_default (ConstMemory("http/admin_bind"), ":8092");
+    ConstMemory const http_bind = config->getString_default (ConstMemory("http/http_bind"), ":8090");
+
+    std::string s_admin_bind = st_makeString(admin_bind)->cstr();
+    std::string s_http_bind = st_makeString(http_bind)->cstr();
+
+    Int32 admin_http_port;
+    Int32 http_port;
+
+    strToInt32_safe(s_admin_bind.substr(1).c_str(), &admin_http_port, 10);
+    strToInt32_safe(s_http_bind.substr(1).c_str(), &http_port, 10);
+
+    ports.admin_http_port = admin_http_port;
+    ports.http_port = http_port;
+
+    pthread_t server_thread;
+    pthread_create( &server_thread, NULL, server_thread_func, (void*)&ports);
+    //=================================================================================================
+
+    AdminHttpReqHandler::addHandler(std::string("ctl"), _ctlHttpRequest, this);
+
 
     Ref<ChannelManager> const channel_manager = grab (new (std::nothrow) ChannelManager);
     if (!moment_server.init (&server_app,
@@ -985,11 +1076,18 @@ void handler(int sig) {
 
 int main (int argc, char **argv)
 {
-    signal(SIGSEGV, handler);   // install error handler
-    signal(SIGKILL, handler);
-    signal(SIGSTOP, handler);
-    signal(SIGINT,  handler);
-    signal(SIGTERM, handler);
+    // install signal handlers
+    signal(SIGSEGV, handler);   // term
+    signal(SIGKILL, handler);   // term
+    signal(SIGSTOP, handler);   // stop
+    signal(SIGINT,  handler);   // term
+    signal(SIGTERM, handler);   // term
+    signal(SIGILL, handler);    // core
+    signal(SIGFPE, handler);    // core
+    signal(SIGABRT, handler);   // core
+    signal(SIGIO, handler);     // term
+    signal(SIGSYS, handler);    // core
+
 
     libMaryInit ();
 

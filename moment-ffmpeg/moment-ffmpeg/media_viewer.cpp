@@ -375,7 +375,8 @@ MediaViewer::rtmpStartWatching (ConstMemory        const stream_name,
                                 stream_name,
                                 stream_params.start_unixtime_sec,
                                 0 /* 1 << 23 */ /* 8 Mb */ /* burst_size_limit */ /* TODO Config parameter */,
-                                self->record_dir);
+                                self->record_dir,
+                                NULL, false);
 
     session->session_mutex.unlock ();
 

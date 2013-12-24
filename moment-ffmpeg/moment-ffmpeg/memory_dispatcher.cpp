@@ -12,7 +12,7 @@ extern "C"
 {
     unsigned long GetPermission(const char * filename, int64_t nDuration)
     {
-        logD_(_func_, "filename = ", filename, "nDuration = ", nDuration);
+        logD_(_func_, "filename = ", filename, ", nDuration = ", nDuration);
         return MemoryDispatcher::Instance().GetPermission(filename, nDuration);
     }
 
@@ -118,10 +118,13 @@ bool MemoryDispatcher::Notify(const std::string & fileName, bool bDone, unsigned
         MemManagerStreams::iterator it;
         it = _streams.find(fileName);
         if(it != _streams.end())
-            it->second.first.second = size;
+        {
+            it->second.first.second = size / 1024; // from Bytes to KB
+        }
         else
+        {
             logE_(_func_, "stream not found!");
-        logD_(_func_, "new actual size is [", it->second.first.second, "]");
+        }
     }
 
     g_mutexMemoryDispatcher.unlock();

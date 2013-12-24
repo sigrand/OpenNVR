@@ -116,6 +116,10 @@ private:
                                                                 void        *cb_data);
   mt_iface_end
 
+      static bool _adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+
+      static bool _serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+
 
   // _____________________ Channel creation notification ______________________
 

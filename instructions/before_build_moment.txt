@@ -15,7 +15,7 @@ sudo apt-get install libjsoncpp0 libjsoncpp-dev
 HOW TO BUILD MOMENT:
 
 for first time of building do:
-build_nvr_projects.sh /home/username/moment gen noclean ffmpegbuild
+build_nvr_projects.sh /home/username/moment gen noclean ffmpegbuild pocobuild
 
 for rebuild do:
 build_nvr_projects.sh /home/username/moment nogen clean

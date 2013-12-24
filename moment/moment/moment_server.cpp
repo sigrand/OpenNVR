@@ -143,6 +143,36 @@ MomentServer::adminHttpRequest (HttpRequest   * const mt_nonnull req,
     return Result::Success;
 }
 
+bool
+MomentServer::_adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
+{
+    MomentServer * const self = static_cast <MomentServer*> (_self);
+
+    logD_ (_func_);
+
+    URI uri(req.getURI());
+    std::vector < std::string > segments;
+    uri.getPathSegments(segments);
+
+    if(segments.size() >= 2 && segments[1].compare("stat") == 0)
+    {
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << "stat command is deprecated: use HOST:ADMINPORT/mod_nvr_admin/statistics";
+        out.flush();
+
+        logA_ ("file 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+        return true;
+    }
+
+    logE_ (_func, "Unknown admin HTTP request: ", req.getURI().c_str());
+    logA_ ("moment_server__admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+    return false;
+}
+
 HttpService::HttpHandler const MomentServer::server_http_handler = {
     serverHttpRequest,
     NULL /* httpMessageBody */
@@ -194,6 +224,24 @@ MomentServer::serverHttpRequest (HttpRequest   * const mt_nonnull req,
         conn_sender->closeAfterFlush();
 
     return Result::Success;
+}
+
+bool
+MomentServer::_serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
+{
+    MomentServer * const self = static_cast <MomentServer*> (_self);
+
+    logD_ (_func_);
+
+    URI uri(req.getURI());
+    std::vector < std::string > segments;
+    uri.getPathSegments(segments);
+
+    logE_ (_func, "Unknown server HTTP request: ", req.getURI().c_str());
+
+    logA_ ("moment_server__server 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+
+    return false;
 }
 
 void
@@ -2238,6 +2286,11 @@ MomentServer::init (ServerApp        * const mt_nonnull server_app,
     http_service->addHttpHandler (
             CbDesc<HttpService::HttpHandler> (&server_http_handler, this, this),
             "server");
+
+    HttpReqHandler::addHandler(std::string("server"), _serverHttpRequest, this);
+    AdminHttpReqHandler::addHandler(std::string("admin"), _adminHttpRequest, this);
+
+    //                   error: 'addHandler' is not a member of 'Moment::MomentServer::HttpRequestHandler'
 
     if (!loadModules ())
 	logE_ (_func, "Could not load modules");
