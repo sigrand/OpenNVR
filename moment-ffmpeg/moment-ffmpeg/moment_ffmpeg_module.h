@@ -112,7 +112,7 @@ private:
 
     ChannelSet channel_set;
 
-    std::map<std::string, Ref<FFmpegStream> > m_streams;
+    std::map<std::string, WeakRef<FFmpegStream> > m_streams;
 
     mt_mutex (mutex) List< Ref<GetFileSession> > get_file_sessions;
 
@@ -132,6 +132,8 @@ private:
     bool DumpStatInFile();
 
     bool ReadStatFromFile();
+
+    void clearEmptyChannels();
 
     static void refreshTimerTickStat (void *_self);
     //

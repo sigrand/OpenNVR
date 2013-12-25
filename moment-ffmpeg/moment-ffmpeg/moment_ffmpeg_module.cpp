@@ -566,12 +566,16 @@ MomentFFmpegModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
         bool channelIsFound = false;
         bool const set_on = equal (req->getPath (1), "rec_on");
 
-        std::map<std::string, Ref<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
-        if(it != self->m_streams.end())
+        self->mutex.lock();
+
+        std::map<std::string, WeakRef<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
+        if(it != self->m_streams.end() && it->second.getRefPtr())
             channelIsFound = true;
 
         if (!channelIsFound)
         {
+            self->mutex.unlock();
+
             ConstMemory const reply_body = "404 Channel Not Found (mod_nvr_admin)";
             conn_sender->send (self->page_pool,
                                true /* do_flush */,
@@ -582,8 +586,10 @@ MomentFFmpegModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
             goto _return;
         }
 
-        it->second->SetChannelState(set_on);
-        it->second->GetChannelState(channel_state);
+        it->second.getRefPtr()->SetChannelState(set_on);
+        it->second.getRefPtr()->GetChannelState(channel_state);
+
+        self->mutex.unlock();
 
         bool bDisableRecordFound = false;
         StRef<String> channelFullPath = st_makeString(self->confd_dir, "/", st_channel_name);
@@ -646,11 +652,16 @@ MomentFFmpegModule::adminHttpRequest (HttpRequest  * const mt_nonnull req,
 
         ChannelChecker::ChannelFileSummary * files_existence;
         StRef<String> st_channel_name = st_makeString(channel_name);
+
+        self->mutex.lock();
+
         std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(st_channel_name->cstr());
-        if(it == self->m_channel_checkers.end())
+        if(it == self->m_channel_checkers.end() || it->second.isNull())
             files_existence = NULL;
         else
             files_existence = it->second->getChannelFilesExistence ();
+
+        self->mutex.unlock();
 
         if (files_existence == NULL) {
             ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
@@ -795,12 +806,16 @@ MomentFFmpegModule::_adminHttpRequest (HTTPServerRequest &req, HTTPServerRespons
         bool channelIsFound = false;
         bool const set_on = (segments[1].compare("rec_on") == 0);
 
-        std::map<std::string, Ref<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
-        if(it != self->m_streams.end())
+        self->mutex.lock();
+
+        std::map<std::string, WeakRef<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
+        if(it != self->m_streams.end() && it->second.getRefPtr())
             channelIsFound = true;
 
         if (!channelIsFound)
         {
+            self->mutex.unlock();
+
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
             std::ostream& out = resp.send();
             out << "404 Channel Not Found (mod_nvr_admin)";
@@ -810,8 +825,10 @@ MomentFFmpegModule::_adminHttpRequest (HTTPServerRequest &req, HTTPServerRespons
             goto _return;
         }
 
-        it->second->SetChannelState(set_on);
-        it->second->GetChannelState(channel_state);
+        it->second.getRefPtr()->SetChannelState(set_on);
+        it->second.getRefPtr()->GetChannelState(channel_state);
+
+        self->mutex.unlock();
 
         bool bDisableRecordFound = false;
         StRef<String> channelFullPath = st_makeString(self->confd_dir, "/", st_channel_name);
@@ -878,14 +895,19 @@ MomentFFmpegModule::_adminHttpRequest (HTTPServerRequest &req, HTTPServerRespons
 
         ChannelChecker::ChannelFileSummary * files_existence;
         StRef<String> st_channel_name = st_makeString(channel_name.c_str());
+
+        self->mutex.lock();
+
         std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(st_channel_name->cstr());
-        if(it == self->m_channel_checkers.end())
+        if(it == self->m_channel_checkers.end() || it->second.isNull())
             files_existence = NULL;
         else
             files_existence = it->second->getChannelFilesExistence ();
 
         if (files_existence == NULL)
         {
+            self->mutex.unlock();
+
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
             std::ostream& out = resp.send();
             out << "404 Channel Not Found (mod_nvr_admin)";
@@ -893,6 +915,8 @@ MomentFFmpegModule::_adminHttpRequest (HTTPServerRequest &req, HTTPServerRespons
             logA_ ("mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
+
+        self->mutex.unlock();
 
         StRef<String> const reply_body = channelFilesExistenceToJson (files_existence);
         logD_ (_func, "reply: ", reply_body);
@@ -1069,12 +1093,16 @@ MomentFFmpegModule::httpRequest (HttpRequest  * const mt_nonnull req,
         bool channel_state = false; // false - isn't writing
         bool channelIsFound = false;
 
-        std::map<std::string, Ref<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
-        if(it != self->m_streams.end())
+        self->mutex.lock();
+
+        std::map<std::string, WeakRef<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
+        if(it != self->m_streams.end() && it->second.getRefPtr())
             channelIsFound = true;
 
         if (!channelIsFound)
         {
+            self->mutex.unlock();
+
             ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
             conn_sender->send (self->page_pool,
                                true /* do_flush */,
@@ -1085,7 +1113,9 @@ MomentFFmpegModule::httpRequest (HttpRequest  * const mt_nonnull req,
             goto _return;
         }
 
-        it->second->GetChannelState(channel_state);
+        it->second.getRefPtr()->GetChannelState(channel_state);
+
+        self->mutex.unlock();
 
         StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq, "\", \"recording\": ", channel_state, " }");
         conn_sender->send (self->page_pool,
@@ -1134,11 +1164,16 @@ MomentFFmpegModule::httpRequest (HttpRequest  * const mt_nonnull req,
 
         std::vector<std::pair<int,int>> * channel_existence;
         StRef<String> st_channel_name = st_makeString(channel_name);
+
+        self->mutex.lock();
+
         std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(st_channel_name->cstr());
-        if(it == self->m_channel_checkers.end())
+        if(it == self->m_channel_checkers.end() || it->second.isNull())
             channel_existence = NULL;
         else
             channel_existence = it->second->getChannelExistence ();
+
+        self->mutex.unlock();
 
         if (channel_existence == NULL) {
             ConstMemory const reply_body = "404 Channel Not Found (mod_nvr)";
@@ -1195,6 +1230,72 @@ _return:
     return Result::Success;
 }
 
+void
+MomentFFmpegModule::clearEmptyChannels()
+{
+    //logD_(_func_, "OOOOO m_streams BEFORE CLEANING");
+
+    mutex.lock();
+
+    std::map<std::string, WeakRef<FFmpegStream> >::iterator it1 = m_streams.begin();
+//    while(it1 != m_streams.end())
+//    {
+//        logD_(_func_, "OOOOO m_streams stream_name = ", it1->first.c_str());
+//        it1++;
+//    }
+
+    std::vector<std::string> strNameToDelete;
+    it1 = m_streams.begin();
+    while(it1 != m_streams.end())
+    {
+        if(!it1->second.getRef())
+        {
+//            logD_(_func_, "OOOOO delete ", it1->first.c_str());
+            strNameToDelete.push_back(std::string(it1->first.c_str()));
+            m_streams.erase(it1++);
+        }
+        else
+            it1++;
+    }
+
+//    logD_(_func_, "OOOOO m_streams AFTER CLEANING");
+
+//    it1 = m_streams.begin();
+//    while(it1 != m_streams.end())
+//    {
+//        logD_(_func_, "OOOOO m_streams stream_name = ", it1->first.c_str());
+//        it1++;
+//    }
+
+//////////////////////////////////////////////////////////////////////////////////
+
+//    logD_(_func_, "OOOOO m_channel_checkers BEFORE CLEANING");
+
+    std::map<std::string, Ref<ChannelChecker> >::iterator it2 = m_channel_checkers.begin();
+//    while(it2 != m_channel_checkers.end())
+//    {
+//        logD_(_func_, "OOOOO m_channel_checkers stream_name = ", it2->first.c_str());
+//        it2++;
+//    }
+
+    it2 = m_channel_checkers.begin();
+    for(int i=0;i<strNameToDelete.size();++i)
+    {
+        m_channel_checkers.erase(strNameToDelete[i]);
+    }
+
+//    logD_(_func_, "OOOOO m_channel_checkers AFTER CLEANING");
+
+//    it2 = m_channel_checkers.begin();
+//    while(it2 != m_channel_checkers.end())
+//    {
+//        logD_(_func_, "OOOOO m_channel_checkers stream_name = ", it2->first.c_str());
+//        it2++;
+//    }
+
+    mutex.unlock();
+}
+
 bool
 MomentFFmpegModule::_httpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
 {
@@ -1232,12 +1333,16 @@ MomentFFmpegModule::_httpRequest (HTTPServerRequest &req, HTTPServerResponse &re
         bool channel_state = false; // false - isn't writing
         bool channelIsFound = false;
 
-        std::map<std::string, Ref<FFmpegStream> >::iterator it = self->m_streams.find(channel_name);
-        if(it != self->m_streams.end())
+        self->mutex.lock();
+
+        std::map<std::string, WeakRef<FFmpegStream> >::iterator it = self->m_streams.find(channel_name);
+        if(it != self->m_streams.end() && it->second.getRefPtr())
             channelIsFound = true;
 
         if (!channelIsFound)
         {
+            self->mutex.unlock();
+
             logE_ (_func, "Channel Not Found (mod_nvr): ", channel_name.c_str());
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
             std::ostream& out = resp.send();
@@ -1247,7 +1352,9 @@ MomentFFmpegModule::_httpRequest (HTTPServerRequest &req, HTTPServerResponse &re
             goto _return;
         }
 
-        it->second->GetChannelState(channel_state);
+        it->second.getRefPtr()->GetChannelState(channel_state);
+
+        self->mutex.unlock();
 
         StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq.c_str(), "\", \"recording\": ", channel_state, " }");
         resp.setStatus(HTTPResponse::HTTP_OK);
@@ -1310,11 +1417,16 @@ MomentFFmpegModule::_httpRequest (HTTPServerRequest &req, HTTPServerResponse &re
         logD_(_func_, "channel_name: [", channel_name.c_str(), "]");
 
         std::vector<std::pair<int,int>> * channel_existence;
+
+        self->mutex.lock();
+
         std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(channel_name);
-        if(it == self->m_channel_checkers.end())
+        if(it == self->m_channel_checkers.end() || it->second.isNull())
             channel_existence = NULL;
         else
             channel_existence = it->second->getChannelExistence ();
+
+        self->mutex.unlock();
 
         if (channel_existence == NULL)
         {
@@ -1462,11 +1574,17 @@ MomentFFmpegModule::CreateStatPoint()
 {
     StatMeasure stmRes;
     std::vector<StatMeasure> stmFromStreams;
-    std::map<std::string, Ref<FFmpegStream> >::iterator it = m_streams.begin();
+
+    mutex.lock();
+
+    std::map<std::string, WeakRef<FFmpegStream> >::iterator it = m_streams.begin();
     for(it; it != m_streams.end(); ++it)
     {
-        stmFromStreams.push_back(it->second->GetStatMeasure());
+        if(it->second.getRefPtr())
+            stmFromStreams.push_back(it->second.getRefPtr()->GetStatMeasure());
     }
+
+    mutex.unlock();
 
     // find out most minimum, most maximum, most average, etc
     Time avgsInOut = 0;
@@ -1712,6 +1830,9 @@ MomentFFmpegModule::refreshTimerTickStat (void *_self)
 void
 MomentFFmpegModule::RefreshStat ()
 {
+    // refresh maps with streams and channel_checkers
+    clearEmptyChannels();
+
     // add new point to vec
     CreateStatPoint();
 

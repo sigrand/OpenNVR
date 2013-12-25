@@ -199,89 +199,90 @@ private:
     mt_mutex (mutex)
     mt_begin
 
-      List< Ref<WorkqueueItem> > workqueue_list;
-      Cond workqueue_cond;
+    List< Ref<WorkqueueItem> > workqueue_list;
+    Cond workqueue_cond;
 
-      Timers::TimerKey no_video_timer;
+    Timers::TimerKey no_video_timer;
 
-      Time initial_seek;
-      bool initial_seek_pending;
-      bool initial_seek_complete;
-      bool initial_play_pending;
+    Time initial_seek;
+    bool initial_seek_pending;
+    bool initial_seek_complete;
+    bool initial_play_pending;
 
-      RtmpServer::MetaData metadata;
-      Cond metadata_reported_cond;
-      bool metadata_reported;
+    RtmpServer::MetaData metadata;
+    Cond metadata_reported_cond;
+    bool metadata_reported;
 
-      Time last_frame_time;
+    Time last_frame_time;
 
-      VideoStream::AudioCodecId audio_codec_id;
-      unsigned audio_rate;
-      unsigned audio_channels;
+    VideoStream::AudioCodecId audio_codec_id;
+    unsigned audio_rate;
+    unsigned audio_channels;
 
-      VideoStream::VideoCodecId video_codec_id;
+    VideoStream::VideoCodecId video_codec_id;
 
-      bool got_in_stats;
-      bool got_video;
-      bool got_audio;
+    bool got_in_stats;
+    bool got_video;
+    bool got_audio;
 
-      bool first_audio_frame;
-      bool first_video_frame;
+    bool first_audio_frame;
+    bool first_video_frame;
 
-      Count audio_skip_counter;
-      Count video_skip_counter;
+    Count audio_skip_counter;
+    Count video_skip_counter;
 
-      bool is_adts_aac_stream;
-      bool got_adts_aac_codec_data;
-      Byte adts_aac_codec_data [2];
+    bool is_adts_aac_stream;
+    bool got_adts_aac_codec_data;
+    Byte adts_aac_codec_data [2];
 
-      bool is_h264_stream;
-      //GstBuffer *avc_codec_data_buffer;
-      u_int8_t *avc_codec_data_buffer;
-      size_t avc_codec_data_buffer_size;
+    bool is_h264_stream;
+    //GstBuffer *avc_codec_data_buffer;
+    u_int8_t *avc_codec_data_buffer;
+    size_t avc_codec_data_buffer_size;
 
-      Uint64 prv_audio_timestamp;
+    Uint64 prv_audio_timestamp;
 
-      // This flag helps to prevent concurrent pipeline state transition
-      // requests (to NULL and to PLAYING states).
-      // TODO FIXME chaning_state_to_playing is not used in all cases where it should be.
-      bool changing_state_to_playing;
+    // This flag helps to prevent concurrent pipeline state transition
+    // requests (to NULL and to PLAYING states).
+    // TODO FIXME chaning_state_to_playing is not used in all cases where it should be.
+    bool changing_state_to_playing;
 
-      bool reporting_status_events;
+    bool reporting_status_events;
 
-      // If 'true', then a seek to 'initial_seek' position should be initiated
-      // in reportStatusEvents().
-      bool seek_pending;
-      // If 'true', then the pipeline should be set to PLAYING state
-      // in reportStatusEvents().
-      bool play_pending;
+    // If 'true', then a seek to 'initial_seek' position should be initiated
+    // in reportStatusEvents().
+    bool seek_pending;
+    // If 'true', then the pipeline should be set to PLAYING state
+    // in reportStatusEvents().
+    bool play_pending;
 
-      // No "no_video" notifications should be made after error or eos
-      // notification for the same FFmpegStream instance.
-      bool no_video_pending;
-      bool got_video_pending;
-      bool error_pending;
-      bool eos_pending;
-      // If 'true', then no further notifications for this FFmpegStream
-      // instance should be made.
-      // 'close_notified' is set to true after error or eos notification.
-      bool close_notified;
+    // No "no_video" notifications should be made after error or eos
+    // notification for the same FFmpegStream instance.
+    bool no_video_pending;
+    bool got_video_pending;
+    bool error_pending;
+    bool eos_pending;
+    // If 'true', then no further notifications for this FFmpegStream
+    // instance should be made.
+    // 'close_notified' is set to true after error or eos notification.
+    bool close_notified;
 
-      // If 'true', then the stream associated with this FFmpegStream
-      // instance has been closed, which means that all associated ffmpeg
-      // objects should be released.
-      bool stream_closed;
+    // If 'true', then the stream associated with this FFmpegStream
+    // instance has been closed, which means that all associated ffmpeg
+    // objects should be released.
+    bool stream_closed;
 
-      // Bytes received (in_stats_el's sink pad).
-      Uint64 rx_bytes;
-      // Bytes generated (audio fakesink's sink pad).
-      Uint64 rx_audio_bytes;
-      // Bytes generated (video fakesink's sink pad).
-      Uint64 rx_video_bytes;
+    // Bytes received (in_stats_el's sink pad).
+    Uint64 rx_bytes;
+    // Bytes generated (audio fakesink's sink pad).
+    Uint64 rx_audio_bytes;
+    // Bytes generated (video fakesink's sink pad).
+    Uint64 rx_video_bytes;
 
-      LibMary_ThreadLocal *tlocal;
+    LibMary_ThreadLocal *tlocal;
 
-      bool m_bIsPlaying;
+    bool m_bIsPlaying;
+    bool m_bReleaseCalled;      // called releasePipeline when we are in init stage in createSmartPipelineForUri
 
     mt_end
 

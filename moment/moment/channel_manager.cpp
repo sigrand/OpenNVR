@@ -297,7 +297,7 @@ ChannelManager::_adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &r
         std::string item_name =(item_name_iter != form.end()) ? item_name_iter->second : "";
         NameValueCollection::ConstIterator item_uri_iter = form.find("uri");
         std::string item_uri =(item_uri_iter != form.end()) ? item_uri_iter->second : "";
-        NameValueCollection::ConstIterator item_title_iter = form.find("conf_file");
+        NameValueCollection::ConstIterator item_title_iter = form.find("title");
         std::string item_title =(item_title_iter != form.end()) ? item_title_iter->second : "";
         NameValueCollection::ConstIterator update_iter = form.find("update");
         bool const update = (update_iter != form.end());

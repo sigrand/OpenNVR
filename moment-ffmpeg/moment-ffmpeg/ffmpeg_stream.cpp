@@ -1218,32 +1218,37 @@ FFmpegStream::workqueueThreadFunc (void * const _self)
     updateTime ();
 
     logD (pipeline, _self_func_);
+logD_(_func_);
 
     self->mutex.lock ();
-
+logD_(_func_, "after lock");
     self->tlocal = libMary_getThreadLocal();
 
     for (;;) {
+logD_(_func_, "new iteration");
         if (self->stream_closed) {
             self->mutex.unlock ();
             return;
         }
-
+logD_(_func_, "while (self->workqueue_list.isEmpty())");
         while (self->workqueue_list.isEmpty()) {
+            logD_(_func_, "new while iteration, before wait");
             self->workqueue_cond.wait (self->mutex);
+            logD_(_func_, "after wait");
             updateTime ();
 
             if (self->stream_closed) {
+                logD_(_func_, "stream is closed");
                 self->mutex.unlock ();
                 return;
             }
         }
-
+logD_(_func_, "workqueue_list.getFirst");
         Ref<WorkqueueItem> const workqueue_item = self->workqueue_list.getFirst();
         self->workqueue_list.remove (self->workqueue_list.getFirstElement());
 
         self->mutex.unlock ();
-
+logD_(_func_, "switch (workqueue_item->item_type)");
         switch (workqueue_item->item_type) {
             case WorkqueueItem::ItemType_CreatePipeline:
                 self->doCreatePipeline ();
@@ -1254,7 +1259,7 @@ FFmpegStream::workqueueThreadFunc (void * const _self)
             default:
                 unreachable ();
         }
-
+logD_(_func_, "end of iteration");
         self->mutex.lock ();
     }
 }
@@ -1323,11 +1328,23 @@ FFmpegStream::createSmartPipelineForUri ()
 
     logD_ (_func, "uri: ", playback_item->stream_spec);
 
-    if(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(), this->config, this->timers) != Result::Success)
+//    if(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(), this->config, this->timers) != Result::Success)
+//    {
+//        mutex.lock ();
+//        logE_ (_this_func, "stream is not initialized, uri \"", playback_item->stream_spec->cstr(), "\"");
+//        goto _failure;
+//    }
+
+    while(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(), this->config, this->timers) != Result::Success)
     {
-        mutex.lock ();
-        logE_ (_this_func, "stream is not initialized, uri \"", playback_item->stream_spec->cstr(), "\"");
-        goto _failure;
+        m_ffmpegStreamData.Deinit();
+        logD_(_func_, "wait for 1 sec and init ffmpegStreamData again");
+        sleep(1);
+        if(m_bReleaseCalled)
+        {
+            mutex.lock ();
+            goto _failure;
+        }
     }
 
     ffmpeg_thread =
@@ -1420,6 +1437,8 @@ FFmpegStream::releasePipeline ()
                 unreachable ();
         }
     }
+
+    m_bReleaseCalled = true;
 
     Ref<WorkqueueItem> const new_item = grab (new (std::nothrow) WorkqueueItem);
     new_item->item_type = WorkqueueItem::ItemType_ReleasePipeline;
@@ -2368,7 +2387,8 @@ FFmpegStream::FFmpegStream ()
       rx_video_bytes (0),
 
       tlocal (NULL),
-      m_bIsPlaying(false)
+      m_bIsPlaying(false),
+      m_bReleaseCalled(false)
 {
     logD (pipeline, _this_func_);
 
