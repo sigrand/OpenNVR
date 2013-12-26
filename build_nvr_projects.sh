@@ -25,7 +25,7 @@ then
 	FFBUILD=1
 fi
 
-if [ "$5" = "ffmpegbuild" ]
+if [ "$5" = "pocobuild" ]
 then
 	POCOBUILD=1
 fi

@@ -316,7 +316,10 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         {
             if(video_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
             {
-                video_stream_idx = i;
+                if(format_ctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264)
+                    video_stream_idx = i;
+                else
+                    logE_(_func_, "video stream is not h264");
             }
             else if(audio_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
             {
@@ -574,7 +577,8 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
                 if(packet.stream_index == audio_stream_idx)
                 {
                     // validation of audio
-                    if (format_ctx->streams[packet.stream_index]->codec->codec_id == AV_CODEC_ID_AAC && packet.size > 2 && (AV_RB16(packet.data) & 0xfff0) == 0xfff0)
+                    if ((format_ctx->streams[packet.stream_index]->codec->codec_id == AV_CODEC_ID_AAC && packet.size > 2 && (AV_RB16(packet.data) & 0xfff0) == 0xfff0)
+                            || (format_ctx->streams[packet.stream_index]->codec->codec_id != AV_CODEC_ID_AAC))
                     {
 //                        if (!format_ctx->streams[packet.stream_index]->nb_frames)
 //                        {
