@@ -32,208 +32,9 @@ using namespace M;
 
 namespace Moment {
 
-MomentServer::HttpRequestHandler ChannelManager::admin_http_handler = {
-    adminHttpRequest
-};
-
-MomentServer::HttpRequestResult
-ChannelManager::adminHttpRequest (HttpRequest * const mt_nonnull req,
-                                  Sender      * const mt_nonnull conn_sender,
-                                  Memory        const /* msg_body */,
-                                  void        * const _self)
-{
-    ChannelManager * const self = static_cast <ChannelManager*> (_self);
-
-    MOMENT_SERVER__HEADERS_DATE
-
-    if (req->getNumPathElems() >= 2
-        && equal (req->getPath (1), "reload_channel"))
-    {
-        // TODO get channel name attribute
-
-        logD_ (_func, "reload_channel");
-
-        ConstMemory const item_name = req->getParameter ("conf_file");
-        if (item_name.len() == 0) {
-            ConstMemory const reply_body = "400 Bad Request: no conf_file parameter";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_SERVER__400_HEADERS (reply_body.len()),
-                               "\r\n",
-                               reply_body);
-            logA_ ("moment__channel_manager 400 ", req->getClientAddress(), " ", req->getRequestLine());
-            goto _return;
-        }
-
-        ConstMemory const dir_name = self->confd_dirname->mem();
-        StRef<String> const path = st_makeString (dir_name, "/", item_name);
-
-        if (!self->loadConfigItem (item_name, path->mem())) {
-            ConstMemory const reply_body = "500 Internal Server Error: loadConfigItem() failed";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_SERVER__500_HEADERS (reply_body.len()),
-                               "\r\n",
-                               reply_body);
-            logA_ ("moment__channel_manager 500 ", req->getClientAddress(), " ", req->getRequestLine());
-            goto _return;
-        }
-
-        ConstMemory const reply_body = "OK";
-        conn_sender->send (self->page_pool,
-                           true /* do_flush */,
-                           MOMENT_SERVER__OK_HEADERS ("text/plain", reply_body.len()),
-                           "\r\n",
-                           reply_body);
-        logA_ ("moment__channel_manager OK ", req->getClientAddress(), " ", req->getRequestLine());
-
-    } else if (req->getNumPathElems() >= 2
-            && equal (req->getPath (1), "add_channel"))
-	{        
-        ConstMemory const item_name = req->getParameter ("conf_file");
-        ConstMemory const item_uri = req->getParameter ("uri");
-        ConstMemory const item_title = req->getParameter ("title");
-        bool const update = req->hasParameter ("update");
-        if (item_name.len() == 0 ||
-            item_uri.len() == 0 ||
-            item_title.len() == 0)
-        {
-            ConstMemory const reply_body = "400 Bad Request: no conf_file or uri or title parameter";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_SERVER__400_HEADERS (reply_body.len()),
-                               "\r\n",
-                               reply_body);
-            logA_ ("moment__channel_manager 400 ", req->getClientAddress(), " ", req->getRequestLine());
-            goto _return;
-        }
-
-        ConstMemory const dir_name = self->confd_dirname->mem();
-        StRef<String> const path = st_makeString (dir_name, "/", item_name);
-
-
-        bool bSourceExist = false;
-        if (FILE *file = fopen(path->cstr(), "r")) {
-            fclose(file);
-            bSourceExist = true;
-        }
-
-        if(bSourceExist && !update)
-        {
-            ConstMemory const reply_body = "source already exists (missed update parameter?)";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_SERVER__400_HEADERS (reply_body.len()),
-                               "\r\n",
-                               reply_body);
-            goto _return;
-        }
-        else if (!bSourceExist && update)
-        {
-            ConstMemory const reply_body = "no source to update, need to add";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_SERVER__400_HEADERS (reply_body.len()),
-                               "\r\n",
-                               reply_body);
-            goto _return;
-        }
-        else
-        {
-            FILE *fp;
-            fp = fopen( path->cstr(), "w");
-            if(fp == NULL)
-            {
-                logE_ (_func, "could not open file [", path->cstr(),"]\n");
-            }
-            else
-            {
-                StRef<String> const content = st_makeString ("title = \"", item_title, "\"\nuri = \"", item_uri, "\"\n");
-                fprintf(fp, content->cstr());
-                fclose(fp);
-            }
-        }
-
-        if (!self->loadConfigItem (item_name, path->mem())) {
-            ConstMemory const reply_body = "500 Internal Server Error: loadConfigItem() failed";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_SERVER__500_HEADERS (reply_body.len()),
-                               "\r\n",
-                               reply_body);
-            logA_ ("moment__channel_manager 500 ", req->getClientAddress(), " ", req->getRequestLine());
-            goto _return;
-        }
-
-        ConstMemory const reply_body = "OK";
-        conn_sender->send (self->page_pool,
-                           true /* do_flush */,
-                           MOMENT_SERVER__OK_HEADERS ("text/plain", reply_body.len()),
-                           "\r\n",
-                           reply_body);
-
-    } else if (req->getNumPathElems() >= 2
-            && equal (req->getPath (1), "remove_channel"))
-    {
-        ConstMemory const item_name = req->getParameter ("conf_file");
-        if (item_name.len() == 0) {
-            ConstMemory const reply_body = "400 Bad Request: no conf_file parameter";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_SERVER__400_HEADERS (reply_body.len()),
-                               "\r\n",
-                               reply_body);
-            logA_ ("moment__channel_manager 400 ", req->getClientAddress(), " ", req->getRequestLine());
-            goto _return;
-        }
-
-        ConstMemory const dir_name = self->confd_dirname->mem();
-        StRef<String> const path = st_makeString (dir_name, "/", item_name);
-
-        bool bSourceExist = false;
-        if (FILE *file = fopen(path->cstr(), "r")) {
-            fclose(file);
-            bSourceExist = true;
-        }
-
-        if(bSourceExist)
-        {
-            if( remove( path->cstr() ) != 0 )
-                logE_ (_func, "could not delete file", path->cstr());
-        }
-        else
-        {
-            ConstMemory const reply_body = "no source to delete";
-            conn_sender->send (self->page_pool,
-                               true /* do_flush */,
-                               MOMENT_SERVER__400_HEADERS (reply_body.len()),
-                               "\r\n",
-                               reply_body);
-            goto _return;
-        }
-
-        self->loadConfigItem (item_name, path->mem());
-
-        ConstMemory const reply_body = "OK";
-        conn_sender->send (self->page_pool,
-                           true /* do_flush */,
-                           MOMENT_SERVER__OK_HEADERS ("text/plain", reply_body.len()),
-                           "\r\n",
-                           reply_body);
-
-    } else {
-        return MomentServer::HttpRequestResult::NotFound;
-    }
-
-_return:
-    if (!req->getKeepalive())
-	conn_sender->closeAfterFlush ();
-
-    return MomentServer::HttpRequestResult::Success;
-}
 
 bool
-ChannelManager::_adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
+ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
 {
     ChannelManager * const self = static_cast <ChannelManager*> (_self);
 
@@ -313,6 +114,72 @@ ChannelManager::_adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &r
 
             logA_ ("moment__channel_manager 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
+        }
+
+        // checking for existing url
+        {
+            Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (self->confd_dirname->mem());
+            Ref<Vfs::VfsDirectory> const parent_dir = vfs->openDirectory (".");
+            bool urlIsUsed = false;
+            for (;;)
+            {
+                Ref<String> entry_name;
+
+                if (parent_dir->getNextEntry (entry_name) && entry_name)
+                {
+                    if(std::string(entry_name->cstr()).compare(".") == 0 || std::string(entry_name->cstr()).compare("..") == 0)
+                        continue;
+
+                    StRef<String> fullname = st_makeString(self->confd_dirname, "/", entry_name->cstr());
+                    logD_(_func_, "fullname = ", fullname);
+
+                    if (FILE *file = fopen(fullname->cstr(), "r"))
+                    {
+                        char * line = NULL;
+                        size_t len = 0;
+                        ssize_t read;
+                        while ((read = getline(&line, &len, file)) != -1)
+                        {
+                            std::string strContent(line);
+                            size_t uriSrc_beg = strContent.find("uri = \"");
+                            if(uriSrc_beg == std::string::npos)
+                                continue;
+                            uriSrc_beg += strlen("uri = \"");
+                            size_t uriSrc_end = strContent.rfind("\"");
+                            std::string uriSrc = strContent.substr(uriSrc_beg, uriSrc_end - uriSrc_beg);
+
+                            logD_(_func_, "uriSrc = ", uriSrc.c_str());
+
+                            if(uriSrc.compare(item_uri) == 0)
+                            {
+                                logD_(_func_, "uriSrc is already used");
+                                urlIsUsed = true;
+                            }
+                        }
+                        if (line)
+                            free(line);
+
+                        fclose(file);
+                    }
+                    else
+                    {
+                        logE_(_func_, "fail to open file = ", fullname);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if(urlIsUsed)
+            {
+                resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+                std::ostream& out = resp.send();
+                out << "such url is already used";
+                out.flush();
+
+                goto _return;
+            }
         }
 
         ConstMemory const dir_name = self->confd_dirname->mem();
@@ -445,148 +312,9 @@ _return:
     return true;
 }
 
-MomentServer::HttpRequestHandler ChannelManager::server_http_handler = {
-    serverHttpRequest
-};
-
-MomentServer::HttpRequestResult
-ChannelManager::serverHttpRequest (HttpRequest * const mt_nonnull req,
-                                   Sender      * const mt_nonnull conn_sender,
-                                   Memory        const /* msg_body */,
-                                   void        * const _self)
-{
-    ChannelManager * const self = static_cast <ChannelManager*> (_self);
-
-    MOMENT_SERVER__HEADERS_DATE
-
-    if (req->getNumPathElems() >= 2
-        && equal (req->getPath (1), "playlist.json")
-        && self->serve_playlist_json)
-    {
-        logD_ (_func, "playlist.json");
-
-        PagePool::PageListHead page_list;
-
-        self->mutex.lock ();
-        {
-            // TODO: Update once on config reload
-            StRef<String> this_rtmp_server_addr;
-            StRef<String> this_rtmpt_server_addr;
-            {
-                self->moment->configLock ();
-                MomentServer::VarHash * const var_hash = self->moment->getDefaultVarHash_unlocked ();
-
-                if (MomentServer::VarHashEntry * const entry = var_hash->lookup (ConstMemory ("RtmpAddr")))
-                    this_rtmp_server_addr = st_grab (new (std::nothrow) String (entry->var->getValue()));
-                else
-                    this_rtmp_server_addr = st_grab (new (std::nothrow) String ("127.0.0.1:1935"));
-
-                if (MomentServer::VarHashEntry * const entry = var_hash->lookup (ConstMemory ("RtmptAddr")))
-                    this_rtmpt_server_addr = st_grab (new (std::nothrow) String (entry->var->getValue()));
-                else
-                    this_rtmpt_server_addr = st_grab (new (std::nothrow) String ("127.0.0.1:8080"));
-
-                self->moment->configUnlock ();
-            }
-
-            bool use_rtmpt_proto = equal(self->playlist_json_protocol->mem(), "rtmpt");
-
-            // Create writers
-            Json::FastWriter json_writer_fast;
-            Json::StyledWriter json_writer_styled;
-
-            // Create root and source list Json values
-            Json::Value json_value_root;
-            Json::Value json_value_sources;
-
-            // Run through all sources
-            ItemHash::iterator iter(self->item_hash);
-            while (!iter.done())
-            {
-                ConfigItem * const item = iter.next()->ptr();
-
-                // Prepare Json value describes current source
-                Json::Value json_value_source;
-                json_value_source["name"] = item->channel_name->cstr();
-                json_value_source["title"] = item->channel_title ? item->channel_title->cstr() : item->channel_name->cstr();
-                if (use_rtmpt_proto)
-                    json_value_source["uri"] = st_makeString(ConstMemory("rtmpt://"), this_rtmpt_server_addr->mem(), ConstMemory("/live/"), item->channel_name->mem())->cstr();
-                else
-                    json_value_source["uri"] = st_makeString(ConstMemory("rtmp://"), this_rtmp_server_addr->mem(), ConstMemory("/live/"), item->channel_name->mem())->cstr();
-
-
-
-                ConstMemory const dir_name = self->confd_dirname->mem();
-                StRef<String> const path = st_makeString (dir_name, "/", item->channel_name->cstr());
-
-                if (FILE *file = fopen(path->cstr(), "r")) {
-                    logD_ (_func, "PATH_NAME: ", path->cstr());
-                    char * line = NULL;
-                    size_t len = 0;
-                    ssize_t read;
-                    while ((read = getline(&line, &len, file)) != -1)
-                    {
-                        std::string strContent(line);
-                        size_t uriSrc_beg = strContent.find("uri = \"");
-                        if(uriSrc_beg == std::string::npos)
-                            continue;
-                        uriSrc_beg += strlen("uri = \"");
-                        size_t uriSrc_end = strContent.rfind("\"");
-                        std::string uriSrc = strContent.substr(uriSrc_beg, uriSrc_end - uriSrc_beg);
-                        json_value_source["uriSrc"] = uriSrc.c_str();
-                    }
-                    if (line)
-                        free(line);
-
-                    fclose(file);
-                }
-
-                // Add just created Json value to Json source list
-                json_value_sources.append(json_value_source);
-
-                logD_ (_func, "playlist.json line: ", json_writer_fast.write(json_value_source).c_str());
-            }
-
-            // Add just created Json source list to root Json value
-            json_value_root["sources"] = json_value_sources;
-
-            std::string json_respond = json_writer_styled.write(json_value_root);
-            self->page_pool->getFillPages(&page_list, ConstMemory(json_respond.c_str(), json_respond.length()));
-        }
-        self->mutex.unlock ();
-
-
-        Size content_len = 0;
-        {
-            PagePool::Page *page = page_list.first;
-            while (page)
-            {
-                content_len += page->data_len;
-                page = page->getNextMsgPage();
-            }
-        }
-
-        conn_sender->send (self->page_pool,
-               false /* do_flush */,
-               MOMENT_SERVER__OK_HEADERS ("application/json", content_len),
-               "\r\n");
-        conn_sender->sendPages (self->page_pool, page_list.first, true /* do_flush */);
-
-        logA_ ("moment__channel_manager 200 ", req->getClientAddress(), " ", req->getRequestLine());
-    }
-    else
-    {
-        return MomentServer::HttpRequestResult::NotFound;
-    }
-
-    if (!req->getKeepalive())
-       conn_sender->closeAfterFlush ();
-
-    return MomentServer::HttpRequestResult::Success;
-}
 
 bool
-ChannelManager::_serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
+ChannelManager::serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
 {
     ChannelManager * const self = static_cast <ChannelManager*> (_self);
 
@@ -1258,13 +986,8 @@ ChannelManager::init (MomentServer * const mt_nonnull moment,
     deferred_reg.setDeferredProcessor (
             moment->getServerApp()->getServerContext()->getMainThreadContext()->getDeferredProcessor());
 
-    moment->addAdminRequestHandler (
-            CbDesc<MomentServer::HttpRequestHandler> (&admin_http_handler, this, this));
-    moment->addServerRequestHandler (
-            CbDesc<MomentServer::HttpRequestHandler> (&server_http_handler, this, this));
-
-    HttpReqHandler::addHandler(std::string("server"), _serverHttpRequest, this);
-    AdminHttpReqHandler::addHandler(std::string("admin"), _adminHttpRequest, this);
+    HttpReqHandler::addHandler(std::string("server"), serverHttpRequest, this);
+    AdminHttpReqHandler::addHandler(std::string("admin"), adminHttpRequest, this);
 }
 
 ChannelManager::ChannelManager ()

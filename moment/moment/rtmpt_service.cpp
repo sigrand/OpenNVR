@@ -856,28 +856,6 @@ RtmptService::accepted (void * const _self)
     }
 }
 
-void
-RtmptService::attachToHttpService (HttpService * const http_service,
-                                   // TODO Use path? Does it work with RTMPT?
-                                   ConstMemory   const /* path */)
-{
-    ConstMemory const paths [] = { ConstMemory ("send"),
-                                   ConstMemory ("idle"),
-                                   ConstMemory ("open"),
-                                   ConstMemory ("close"),
-                                   ConstMemory ("fcs") };
-    Size const num_paths = sizeof (paths) / sizeof (ConstMemory);
-
-    for (unsigned i = 0; i < num_paths; ++i) {
-	http_service->addHttpHandler (
-		CbDesc<HttpService::HttpHandler> (&http_handler, this, getCoderefContainer()),
-		paths [i],
-		false /* preassembly */,
-		0     /* preassembly_limit */,
-		false /* parse_body_params */);
-    }
-}
-
 mt_throws Result
 RtmptService::bind (IpAddress const addr)
 {

@@ -23,6 +23,11 @@ extern "C"
     }
 }
 
+MemoryDispatcher& MemoryDispatcher::Instance()
+{
+    static MemoryDispatcher theSingleInstance;
+    return theSingleInstance;
+}
 
 unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, const Uint64 nDuration)
 {
@@ -65,8 +70,9 @@ unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, cons
     while(it != _streams.end())
     {
         logD_(_func_, "filename = [", it->first.c_str(), "]");
-        logD_(_func_, "timeCreation = [", it->second.second, "]");
-        if(curTime - it->second.second > liveTimeInCache)
+        logD_(_func_, "timeCreation = [", it->second.second.first, "]");
+        logD_(_func_, "timeUpdate = [", it->second.second.second, "]");
+        if(curTime - it->second.second.second > liveTimeInCache)
         {
             // expired record
             logD_(_func_, "erase expired file = [", it->first.c_str(), "]");
@@ -87,7 +93,7 @@ unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, cons
     if(bRes)
     {
         logD_(_func_, "add record");
-        _streams[fileName] = std::make_pair(std::make_pair(requiredSize, 0), curTime);
+        _streams.insert(std::make_pair(fileName, std::make_pair(std::make_pair(requiredSize, 0), std::make_pair(curTime, curTime))));
     }
     else
     {
@@ -110,16 +116,41 @@ bool MemoryDispatcher::Notify(const std::string & fileName, bool bDone, unsigned
 
     if(bDone)
     {
+        logD_(_func_, "begin when bDone = ", bDone);
+        MemManagerStreams::iterator it = _streams.begin();
+        while(it != _streams.end())
+        {
+            logD_(_func_, "it->first = ", it->first.c_str());
+            it++;
+        }
+        logD_(_func_, "end");
+
         logD_(_func_, "delete");
         _streams.erase(fileName);
     }
     else
     {
+        {
+            logD_(_func_, "begin when bDone = ", bDone);
+            MemManagerStreams::iterator it = _streams.begin();
+            while(it != _streams.end())
+            {
+                logD_(_func_, "it->first = ", it->first.c_str());
+                it++;
+            }
+            logD_(_func_, "end");
+        }
+
         MemManagerStreams::iterator it;
         it = _streams.find(fileName);
         if(it != _streams.end())
         {
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+            time_t curTime = tv.tv_sec;
+
             it->second.first.second = size / 1024; // from Bytes to KB
+            it->second.second.second = curTime; // update time
         }
         else
         {

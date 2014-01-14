@@ -22,6 +22,7 @@
 #include <moment/libmoment.h>
 #include <moment/rtmp_push_protocol.h>
 #include <moment/rtmp_fetch_protocol.h>
+#include <moment/moment_request_handler.h>
 
 
 #define MOMENT_RTMP__FLOW_CONTROL
@@ -44,13 +45,8 @@ public:
 
   // __________________________________ Admin __________________________________
 
-    static HttpService::HttpHandler const admin_http_handler;
 
-    static Result adminHttpRequest (HttpRequest   * mt_nonnull req,
-                                    Sender        * mt_nonnull conn_sender,
-                                    Memory const  &msg_body,
-                                    void         ** mt_nonnull ret_msg_data,
-                                    void          *_self);
+    static bool adminHttpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
   // ___________________________________________________________________________
 
@@ -1213,52 +1209,41 @@ static MomentServer::Events const server_events = {
 
 // ___________________________________ Admin ___________________________________
 
-HttpService::HttpHandler const MomentRtmpModule::admin_http_handler = {
-    adminHttpRequest,
-    NULL /* httpMessageBody */
-};
 
-Result
-MomentRtmpModule::adminHttpRequest (HttpRequest   * const mt_nonnull req,
-                                    Sender        * const mt_nonnull conn_sender,
-                                    Memory const  & /* msg_body */,
-                                    void         ** const mt_nonnull /* ret_msg_data */,
-                                    void          * const _self)
+bool
+MomentRtmpModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
 {
     MomentRtmpModule * const self = static_cast <MomentRtmpModule*> (_self);
 
     logD_ (_func_);
 
-    MOMENT_SERVER__HEADERS_DATE;
+    URI uri(req.getURI());
+    std::vector < std::string > segments;
+    uri.getPathSegments(segments);
 
-    if (req->getNumPathElems() >= 2
-	&& equal (req->getPath (1), "stat"))
+    if (segments.size() >= 2 && segments[1].compare("stat") == 0)
     {
+        std::string strResponse = "";
+
         Time const cur_unixtime = getUnixtime();
 
-        PagePool::PageListHead page_list;
-
-        page_pool->printToPages (
-                &page_list,
-                "<html>"
-                "<body>"
-                "<p>mod_rtmp stats</p>");
+        strResponse += "<html>";
+        strResponse += "<body>";
+        strResponse += "<p>mod_rtmp stats</p>";
 
         {
-            page_pool->printToPages (
-                    &page_list,
-                    "<table>");
+            strResponse += "<table>";
 
             self->rtmp_service.rtmpServiceLock ();
 
             RtmpService::SessionsInfo sinfo_sum;
             RtmpService::SessionInfoIterator iter = self->rtmp_service.getClientSessionsInfo_unlocked (&sinfo_sum);
 
-            page_pool->printToPages (
-                    &page_list,
-                    "<tr><td>RtmpService: num_session_objects</td><td>", sinfo_sum.num_session_objects, "</td></tr>"
-                    "<tr><td>RtmpService: num_valid_sessions</td><td>",  sinfo_sum.num_valid_sessions,  "</td></tr>"
-                    "<tr><td>RtmpService sessions:</td></tr>");
+            StRef<String> strStats = st_makeString("<tr><td>RtmpService: num_session_objects</td><td>", sinfo_sum.num_session_objects, "</td></tr>"
+                                                   "<tr><td>RtmpService: num_valid_sessions</td><td>",  sinfo_sum.num_valid_sessions,  "</td></tr>"
+                                                   "<tr><td>RtmpService sessions:</td></tr>");
+
+            strResponse += std::string(strStats->cstr());
 
             while (!iter.done()) {
                 RtmpService::ClientSessionInfo * const sinfo = iter.next ();
@@ -1266,23 +1251,20 @@ MomentRtmpModule::adminHttpRequest (HttpRequest   * const mt_nonnull req,
                 Byte time_buf [unixtimeToString_BufSize];
                 Size const time_len = unixtimeToString (Memory::forObject (time_buf), sinfo->creation_unixtime);
 
-                page_pool->printToPages (
-                        &page_list,
-                        "<tr>"
-                        "<td>", sinfo->client_addr, "</td>"
-                        "<td>", ConstMemory (time_buf, time_len), "</td>"
-                        "<td>", sinfo->last_send_unixtime, "</td>"
-                        "<td>", sinfo->last_recv_unixtime, "</td>"
-                        "<td>", sinfo->last_play_stream, "</td>"
-                        "<td>", sinfo->last_publish_stream, "</td>"
-                        "</tr>");
+                StRef<String> strClientSessionInfo = st_makeString("<tr>"
+                                                       "<td>", sinfo->client_addr, "</td>"
+                                                       "<td>", ConstMemory (time_buf, time_len), "</td>"
+                                                       "<td>", sinfo->last_send_unixtime, "</td>"
+                                                       "<td>", sinfo->last_recv_unixtime, "</td>"
+                                                       "<td>", sinfo->last_play_stream, "</td>"
+                                                       "<td>", sinfo->last_publish_stream, "</td>"
+                                                       "</tr>");
+                strResponse += std::string(strClientSessionInfo->cstr());
             }
 
             self->rtmp_service.rtmpServiceUnlock ();
 
-            page_pool->printToPages (
-                    &page_list,
-                    "</table>");
+            strResponse += "</table>";
         }
 
         {
@@ -1294,17 +1276,17 @@ MomentRtmpModule::adminHttpRequest (HttpRequest   * const mt_nonnull req,
             RtmptService::RtmptConnectionsInfo cinfo_sum;
             RtmptService::RtmptConnectionInfoIterator cinfo_iter = self->rtmpt_service.getRtmptConnectionsInfo_unlocked (&cinfo_sum);
 
-            page_pool->printToPages (
-                    &page_list,
-                    "<h1>RTMPT stats</h1>"
-                    "<table>"
-                    "<tr><td>RtmptService: num_session_objects</td><td>",    sinfo_sum.num_session_objects,    "</td></tr>"
-                    "<tr><td>RtmptService: num_valid_sessions</td><td>",     sinfo_sum.num_valid_sessions,     "</td></tr>"
-                    "<tr><td>RtmptService: num_connection_objects</td><td>", cinfo_sum.num_connection_objects, "</td></tr>"
-                    "<tr><td>RtmptService: num_valid_connections</td><td>",  cinfo_sum.num_valid_connections,  "</td></tr>"
-                    "</table>"
-                    "<h2>RTMPT sessions</h2>"
-                    "<table>");
+            StRef<String> strStats = st_makeString("<h1>RTMPT stats</h1>"
+                                                   "<table>"
+                                                   "<tr><td>RtmptService: num_session_objects</td><td>",    sinfo_sum.num_session_objects,    "</td></tr>"
+                                                   "<tr><td>RtmptService: num_valid_sessions</td><td>",     sinfo_sum.num_valid_sessions,     "</td></tr>"
+                                                   "<tr><td>RtmptService: num_connection_objects</td><td>", cinfo_sum.num_connection_objects, "</td></tr>"
+                                                   "<tr><td>RtmptService: num_valid_connections</td><td>",  cinfo_sum.num_valid_connections,  "</td></tr>"
+                                                   "</table>"
+                                                   "<h2>RTMPT sessions</h2>"
+                                                   "<table>");
+            strResponse += std::string(strStats->cstr());
+
 
             while (!sinfo_iter.done()) {
                 RtmptService::RtmptSessionInfo * const sinfo = sinfo_iter.next ();
@@ -1316,20 +1298,18 @@ MomentRtmpModule::adminHttpRequest (HttpRequest   * const mt_nonnull req,
                 if (sinfo->last_req_unixtime > cur_unixtime)
                     idle_time = 0;
 
-                page_pool->printToPages (
-                        &page_list,
-                        "<tr>"
-                        "<td>", sinfo->last_client_addr, "</td>"
-                        "<td>", ConstMemory (time_buf, time_len), "</td>"
-                        "<td>", idle_time, "</td>"
-                        "</tr>");
+                StRef<String> strSessionInfo = st_makeString("<tr>"
+                                                       "<td>", sinfo->last_client_addr, "</td>"
+                                                       "<td>", ConstMemory (time_buf, time_len), "</td>"
+                                                       "<td>", idle_time, "</td>"
+                                                       "</tr>");
+                strResponse += std::string(strSessionInfo->cstr());
             }
 
-            page_pool->printToPages (
-                    &page_list,
-                    "</table>"
-                    "<h2>RTMPT connections</h2>"
-                    "<table>");
+            StRef<String> strStatsRtmpt = st_makeString("</table>"
+                                                         "<h2>RTMPT connections</h2>"
+                                                         "<table>");
+            strResponse += std::string(strStatsRtmpt->cstr());
 
             while (!cinfo_iter.done()) {
                 RtmptService::RtmptConnectionInfo * const cinfo = cinfo_iter.next ();
@@ -1341,52 +1321,41 @@ MomentRtmpModule::adminHttpRequest (HttpRequest   * const mt_nonnull req,
                 if (cinfo->last_req_unixtime > cur_unixtime)
                     idle_time = 0;
 
-                page_pool->printToPages (
-                        &page_list,
-                        "<tr>"
-                        "<td>", cinfo->client_addr, "</td>"
-                        "<td>", ConstMemory (time_buf, time_len), "</td>"
-                        "<td>", idle_time, "</td>"
-                        "</tr>");
+                StRef<String> strRtmptConnectionInfo = st_makeString("<tr>"
+                                                            "<td>", cinfo->client_addr, "</td>"
+                                                            "<td>", ConstMemory (time_buf, time_len), "</td>"
+                                                            "<td>", idle_time, "</td>"
+                                                            "</tr>");
+                strResponse += std::string(strRtmptConnectionInfo->cstr());
             }
 
-            page_pool->printToPages (
-                    &page_list,
-                    "</table>");
+            strResponse += "</table>";
 
             self->rtmpt_service.rtmptServiceUnlock ();
         }
 
-        page_pool->printToPages (
-                &page_list,
-                "</body>"
-                "</html>");
+        strResponse += "</body>";
+        strResponse += "</html>";
 
-        Size const data_len = PagePool::countPageListDataLen (page_list.first, 0 /* msg_offset */);
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << strResponse;
+        out.flush();
 
-        conn_sender->send (
-                page_pool,
-                false /* do_flush */,
-                MOMENT_SERVER__OK_HEADERS ("text/html", data_len),
-                "\r\n");
-        conn_sender->sendPages (page_pool, page_list.first, true /* do_flush */);
-
-        logA_ ("file 200 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else {
-	logE_ (_func, "Unknown admin HTTP request: ", req->getFullPath());
-
-	ConstMemory const reply_body = "mod_rtmp: unknown command";
-	conn_sender->send (page_pool,
-			   true /* do_flush */,
-			   MOMENT_SERVER__404_HEADERS (reply_body.len()),
-			   "\r\n",
-			   reply_body);
-
-	logA_ ("mod_rtmp__admin 404 ", req->getClientAddress(), " ", req->getRequestLine());
+        logA_ ("file 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
     }
+    else
+    {
+        logE_ (_func, "Unknown admin HTTP request: ", req.getURI().c_str());
 
-    if (!req->getKeepalive())
-        conn_sender->closeAfterFlush();
+        resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+        std::ostream& out = resp.send();
+        out << "404 mod_rtmp: unknown command";
+        out.flush();
+
+        logA_ ("mod_rtmp__admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+    }
 
     return Result::Success;
 }
@@ -1729,13 +1698,13 @@ static Result momentRtmpInit ()
     }
 
     {
-	ConstMemory const opt_name = "mod_rtmp/rtmpt_from_http";
-	MConfig::BooleanValue const opt_val = config->getBoolean (opt_name);
-	if (opt_val == MConfig::Boolean_Invalid)
-	    logE_ (_func, "Invalid value for config option ", opt_name);
-	else
-	if (opt_val != MConfig::Boolean_False)
-	    rtmp_module->rtmpt_service.attachToHttpService (moment->getHttpService());
+//	ConstMemory const opt_name = "mod_rtmp/rtmpt_from_http";
+//	MConfig::BooleanValue const opt_val = config->getBoolean (opt_name);
+//	if (opt_val == MConfig::Boolean_Invalid)
+//	    logE_ (_func, "Invalid value for config option ", opt_name);
+//	else
+//	if (opt_val != MConfig::Boolean_False)
+//	    rtmp_module->rtmpt_service.attachToHttpService (moment->getHttpService());
     }
 
     {
@@ -1790,9 +1759,7 @@ static Result momentRtmpInit ()
 	    }
 	} while (0);
 
-        moment->getAdminHttpService()->addHttpHandler (
-                CbDesc<HttpService::HttpHandler> (&MomentRtmpModule::admin_http_handler, rtmp_module, rtmp_module),
-                "mod_rtmp");
+        AdminHttpReqHandler::addHandler(std::string("mod_rtmp"), MomentRtmpModule::adminHttpRequest, rtmp_module);
     }
 
     {

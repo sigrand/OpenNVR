@@ -80,10 +80,6 @@ private:
     PagePool page_pool;
 
     ServerApp server_app;
-    HttpService http_service;
-
-    HttpService separate_admin_http_service;
-    HttpService *admin_http_service_ptr;
 
     FixedThreadPool recorder_thread_pool;
     FixedThreadPool reader_thread_pool;
@@ -116,17 +112,9 @@ private:
   mt_iface_end
 #endif
 
-  mt_iface (HttpService::HttpHandler)
-    static HttpService::HttpHandler const ctl_http_handler;
+    bool initServer(MConfig::Config *config);
 
-    static Result ctlHttpRequest (HttpRequest   * mt_nonnull req,
-                                  Sender        * mt_nonnull conn_sender,
-                                  Memory const  & /* msg_body */,
-                                  void         ** mt_nonnull /* ret_msg_data */,
-                                  void          *_self);
-  mt_iface_end
-
-    static bool _ctlHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+    static bool ctlHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
   mt_iface (MomentServer::Events)
     static MomentServer::Events const moment_server_events;
@@ -183,9 +171,6 @@ public:
     MomentInstance ()
         : page_pool    (this /* coderef_container */, 4096 /* page_size */, default__page_pool__min_pages),
           server_app   (this /* coderef_container */),
-          http_service (this /* coderef_container */),
-          separate_admin_http_service (this /* coderef_container */),
-          admin_http_service_ptr (&separate_admin_http_service),
           recorder_thread_pool (this /* coderef_container */),
           reader_thread_pool   (this /* coderef_container */),
           storage (this /* coderef_container */)
@@ -459,64 +444,9 @@ void MomentInstance::ctl_line (ConstMemory   const line,
 }
 #endif
 
-HttpService::HttpHandler const MomentInstance::ctl_http_handler = {
-    ctlHttpRequest,
-    NULL /* httpMessageBody */
-};
-
-Result
-MomentInstance::ctlHttpRequest (HttpRequest   * const mt_nonnull req,
-                                Sender        * const mt_nonnull conn_sender,
-                                Memory const  & /* msg_body */,
-                                void         ** const mt_nonnull /* ret_msg_data */,
-                                void          * const _self)
-{
-    MomentInstance * const self = static_cast <MomentInstance*> (_self);
-
-    logD_ (_func_);
-
-    MOMENT_SERVER__HEADERS_DATE;
-
-    if (req->getNumPathElems() >= 2
-        && equal (req->getPath (1), "config_reload"))
-    {
-        ConstMemory reply;
-        if (self->initiateConfigReload ()) {
-            reply = "OK";
-        } else {
-            logE_ (_func, "Could not reload config");
-            reply = "ERROR";
-        }
-
-        conn_sender->send (
-                &self->page_pool,
-                true /* do_flush */,
-                MOMENT_SERVER__OK_HEADERS ("text/html", reply.len() /* content_length */),
-                "\r\n",
-                reply);
-
-        logA_ ("moment_ctl 200 ", req->getClientAddress(), " ", req->getRequestLine());
-    } else {
-	logE_ (_func, "Unknown admin HTTP request: ", req->getFullPath());
-
-	ConstMemory const reply_body = "Unknown command";
-	conn_sender->send (&self->page_pool,
-			   true /* do_flush */,
-			   MOMENT_SERVER__404_HEADERS (reply_body.len()),
-			   "\r\n",
-			   reply_body);
-
-	logA_ ("moment_ctl 404 ", req->getClientAddress(), " ", req->getRequestLine());
-    }
-
-    if (!req->getKeepalive())
-        conn_sender->closeAfterFlush();
-
-    return Result::Success;
-}
 
 bool
-MomentInstance::_ctlHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
+MomentInstance::ctlHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
 {
     MomentInstance * const self = static_cast <MomentInstance*> (_self);
 
@@ -776,12 +706,6 @@ void MomentInstance::applyConfigParams (MConfig::Config * const new_config)
         configWarnNoEffect (opt_name__http_admin_bind);
     }
 
-    http_service.setConfigParams (params->http_keepalive_timeout * 1000000 /* microseconds */,
-                                  params->no_keepalive_conns);
-    if (admin_http_service_ptr != &http_service) {
-        admin_http_service_ptr->setConfigParams (params->http_keepalive_timeout * 1000000 /* microseconds */,
-                                                 params->no_keepalive_conns);
-    }
 }
 
 // _____________________________________________________________________________
@@ -814,6 +738,31 @@ void * server_thread_func(void * arg)
     char * chNull = "";
     app.run(1, &chNull);
     return NULL;
+}
+
+bool
+MomentInstance::initServer(MConfig::Config *config)
+{
+    struct strPorts ports;
+    ConstMemory const admin_bind = config->getString_default (ConstMemory("http/admin_bind"), ":8092");
+    ConstMemory const http_bind = config->getString_default (ConstMemory("http/http_bind"), ":8090");
+
+    std::string s_admin_bind = st_makeString(admin_bind)->cstr();
+    std::string s_http_bind = st_makeString(http_bind)->cstr();
+
+    Int32 admin_http_port;
+    Int32 http_port;
+
+    strToInt32_safe(s_admin_bind.substr(1).c_str(), &admin_http_port, 10);
+    strToInt32_safe(s_http_bind.substr(1).c_str(), &http_port, 10);
+
+    ports.admin_http_port = admin_http_port;
+    ports.http_port = http_port;
+
+    pthread_t server_thread;
+    pthread_create( &server_thread, NULL, server_thread_func, (void*)&ports);
+
+    return true;
 }
 
 int
@@ -883,68 +832,6 @@ MomentInstance::run ()
     recorder_thread_pool.setNumThreads (params->num_file_threads);
     reader_thread_pool.setNumThreads (params->num_file_threads /* TODO Separate config parameter? */);
 
-    if (params->http_bind_valid) {
-	if (!http_service.init (server_app.getServerContext()->getMainThreadContext()->getPollGroup(),
-				server_app.getServerContext()->getMainThreadContext()->getTimers(),
-                                server_app.getServerContext()->getMainThreadContext()->getDeferredProcessor(),
-				&page_pool,
-				params->http_keepalive_timeout * 1000000 /* microseconds */,
-				params->no_keepalive_conns))
-	{
-	    logE_ (_func, "http_service.init() failed: ", exc->toString());
-	    return EXIT_FAILURE;
-	}
-
-        IpAddress ip_dumb;
-        ip_dumb.ip_addr = params->http_bind_addr.ip_addr;
-        ip_dumb.port = 65000;
-
-        if (!http_service.bind (/*params->http_bind_addr*/ ip_dumb)) {
-            logE_ (_func, "http_service.bind() failed (http): ", exc->toString());
-            return EXIT_FAILURE;
-        }
-
-        if (!http_service.start ()) {
-            logE_ (_func, "http_service.start() failed (http): ", exc->toString());
-            return EXIT_FAILURE;
-        }
-    }
-
-    if (params->http_admin_bind_valid) {
-        if (params->http_admin_bind_addr == params->http_bind_addr) {
-            admin_http_service_ptr = &http_service;
-        } else {
-            if (!separate_admin_http_service.init (server_app.getServerContext()->getMainThreadContext()->getPollGroup(),
-                                                   server_app.getServerContext()->getMainThreadContext()->getTimers(),
-                                                   server_app.getServerContext()->getMainThreadContext()->getDeferredProcessor(),
-                                                   &page_pool,
-                                                   params->http_keepalive_timeout * 1000000 /* microseconds */,
-                                                   params->no_keepalive_conns))
-            {
-                logE_ (_func, "admin_http_service.init() failed: ", exc->toString());
-                return EXIT_FAILURE;
-            }
-
-            IpAddress ip_dumb;
-            ip_dumb.ip_addr = params->http_bind_addr.ip_addr;
-            ip_dumb.port = 65002;
-
-            if (!separate_admin_http_service.bind (/*params->http_admin_bind_addr*/ ip_dumb)) {
-                logE_ (_func, "http_service.bind() failed (admin): ", exc->toString());
-                return EXIT_FAILURE;
-            }
-
-            if (!separate_admin_http_service.start ()) {
-                logE_ (_func, "http_service.start() failed (admin): ", exc->toString());
-                return EXIT_FAILURE;
-            }
-        }
-    }
-
-    admin_http_service_ptr->addHttpHandler (
-	    CbDesc<HttpService::HttpHandler> (&ctl_http_handler, this, this),
-	    "ctl");
-
     recorder_thread_pool.setMainThreadContext (server_app.getServerContext()->getMainThreadContext());
     if (!recorder_thread_pool.spawn ()) {
 	logE_ (_func, "recorder_thread_pool.spawn() failed");
@@ -957,35 +844,16 @@ MomentInstance::run ()
         return EXIT_FAILURE;
     }
 
-    //=================================== POCO HTTP SERVER START ======================================
-    struct strPorts ports;
-    ConstMemory const admin_bind = config->getString_default (ConstMemory("http/admin_bind"), ":8092");
-    ConstMemory const http_bind = config->getString_default (ConstMemory("http/http_bind"), ":8090");
+    // init server
 
-    std::string s_admin_bind = st_makeString(admin_bind)->cstr();
-    std::string s_http_bind = st_makeString(http_bind)->cstr();
+    initServer(config);
 
-    Int32 admin_http_port;
-    Int32 http_port;
-
-    strToInt32_safe(s_admin_bind.substr(1).c_str(), &admin_http_port, 10);
-    strToInt32_safe(s_http_bind.substr(1).c_str(), &http_port, 10);
-
-    ports.admin_http_port = admin_http_port;
-    ports.http_port = http_port;
-
-    pthread_t server_thread;
-    pthread_create( &server_thread, NULL, server_thread_func, (void*)&ports);
-    //=================================================================================================
-
-    AdminHttpReqHandler::addHandler(std::string("ctl"), _ctlHttpRequest, this);
+    AdminHttpReqHandler::addHandler(std::string("ctl"), ctlHttpRequest, this);
 
 
     Ref<ChannelManager> const channel_manager = grab (new (std::nothrow) ChannelManager);
     if (!moment_server.init (&server_app,
 			     &page_pool,
-			     &http_service,
-			     admin_http_service_ptr,
 			     config,
 			     &recorder_thread_pool,
                              &reader_thread_pool,

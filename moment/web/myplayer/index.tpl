@@ -488,8 +488,8 @@
             <param name="salign" value="lt"/>
             <param name="bgcolor" value="#000000"/>
             <param name="allowFullScreen" value="true"/>
-            <param name="FlashVars" value="autoplay=0&playlist=1&buffer=2.0"/>
-            <embed FlashVars="autoplay=0&playlist=1&buffer=2.0"
+            <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
+            <embed FlashVars="autoplay=0&playlist=1&buffer=0.3"
               src="MyPlayer.swf"
               bgcolor="#000000"
               width="100%"

@@ -175,31 +175,18 @@ private:
                     Time         start_unixtime_sec,
                     Time         end_unixtime_sec);
 
+    StRef<String> _doGetFile (ConstMemory  stream_name,
+                    Time         start_unixtime_sec,
+                    Time         end_unixtime_sec);
+
     static Result httpGetChannelsStat (HttpRequest  * mt_nonnull req,
 				       Sender       * mt_nonnull conn_sender,
 				       void         *_self);
 
-    mt_iface (HttpService::Frontend)
-      static HttpService::HttpHandler admin_http_handler;
 
-      static Result adminHttpRequest (HttpRequest  * mt_nonnull req,
-				      Sender       * mt_nonnull conn_sender,
-				      Memory const &msg_body,
-				      void        ** mt_nonnull ret_msg_data,
-				      void         *_self);
+    static bool adminHttpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
-      static HttpService::HttpHandler http_handler;
-
-      static Result httpRequest (HttpRequest  * mt_nonnull req,
-				 Sender       * mt_nonnull conn_sender,
-				 Memory const &msg_body,
-				 void        ** mt_nonnull ret_msg_data,
-				 void         *_self);
-    mt_iface_end
-
-    static bool _adminHttpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
-
-    static bool _httpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+    static bool httpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
     void createPlaylistChannel (ConstMemory     playlist_filename,
                                 bool            is_dir,

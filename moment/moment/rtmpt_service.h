@@ -297,8 +297,6 @@ private:
 
 public:
     // mostly mt_const
-    void attachToHttpService (HttpService *http_service,
-			      ConstMemory  path = ConstMemory());
 
     mt_throws Result bind (IpAddress addr);
 

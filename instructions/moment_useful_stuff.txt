@@ -20,21 +20,23 @@ F = Failure,
 N = None
 
 =====================================================================================
-to capture rtsp stream and broadcast rtmp and others
+to set source with name "sony" to nvrserver
 
-in moment.conf in mod_gst.streams add:
-
-name = sony
-title = "Sony"
-uri = "rtsp://192.168.10.21:8092/test1.sdp"
-
-run moment
-after that run "vlc rtmp://127.0.0.1:1935/sony", 
-	where 1935 - port of RTMP server, 
-	sony - name of stream (in mod_gst.streams)
+in {nvrserver_dir}/conf.d
+add "sony" (without any extention)
+in this file add:
+title = "Sony Camera"
+uri = "rtsp://192.168.10.102/H264"
 
 =====================================================================================
-to enable RTMPT:
+to capture rtmp from nvrserver
+
+run "vlc rtmp://127.0.0.1:1935/sony", 
+        where 1935 - port of RTMP server, 
+        sony - name of stream (in mod_gst.streams)
+
+=====================================================================================
+to enable RTMPT: (may be not working now)
 
 input "#define RTMPT 8081" (in fact, port can be arbitrary)
 
@@ -48,7 +50,7 @@ after that run rtmpt-player (not vlc, it can't capture RTMPT! there is .swf-play
 	sony - name of stream (in mod_gst.streams)
 
 =====================================================================================
-to enable NVR
+to enable NVR writing
 
 add in moment.conf:
 
@@ -93,6 +95,8 @@ http://127.0.0.1:8080/mod_nvr/file?stream=sony&start=1368828300&end=1368828400
     sony - name of stream
     start — unixtime of begin in sec;
     end — unixtime of end in sec;
+
+http://192.168.10.21:8080/mod_nvr/unixtime - get unixtime from server
     
 =====================================================================================
 to manage sources via http-requests

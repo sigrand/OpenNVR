@@ -98,27 +98,9 @@ private:
 
     mt_mutex (mutex) Ref<ChannelOptions> default_channel_opts;
 
-  mt_iface (MomentServer::HttpRequestHandler)
-      static MomentServer::HttpRequestHandler admin_http_handler;
+    static bool adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
-      static MomentServer::HttpRequestResult adminHttpRequest (HttpRequest * mt_nonnull req,
-                                                               Sender      * mt_nonnull conn_sender,
-                                                               Memory       msg_body,
-                                                               void        *cb_data);
-  mt_iface_end
-
-  mt_iface (MomentServer::HttpRequestHandler)
-      static MomentServer::HttpRequestHandler server_http_handler;
-
-      static MomentServer::HttpRequestResult serverHttpRequest (HttpRequest * mt_nonnull req,
-                                                                Sender      * mt_nonnull conn_sender,
-                                                                Memory       msg_body,
-                                                                void        *cb_data);
-  mt_iface_end
-
-      static bool _adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
-
-      static bool _serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+    static bool serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
 
   // _____________________ Channel creation notification ______________________

@@ -223,25 +223,10 @@ public:
   // __________________________ HTTP request handlers __________________________
 
 private:
-    static HttpService::HttpHandler const admin_http_handler;
 
-    static Result adminHttpRequest (HttpRequest   * mt_nonnull req,
-                                    Sender        * mt_nonnull conn_sender,
-                                    Memory const  &msg_body,
-                                    void         ** mt_nonnull ret_msg_data,
-                                    void          *_self);
+    static bool adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
-    static HttpService::HttpHandler const server_http_handler;
-
-    static Result serverHttpRequest (HttpRequest   * mt_nonnull req,
-                                     Sender        * mt_nonnull conn_sender,
-                                     Memory const  &msg_body,
-                                     void         ** mt_nonnull ret_msg_data,
-                                     void          *_self);
-
-    static bool _adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
-
-    static bool _serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+    static bool serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
 public:
     struct HttpRequestResult {
@@ -280,8 +265,6 @@ private:
     HttpHandlerEntryList server_http_handlers;
 
 public:
-    void  addAdminRequestHandler (CbDesc<HttpRequestHandler> const &cb);
-    void addServerRequestHandler (CbDesc<HttpRequestHandler> const &cb);
 
 
   // __________________________ Video stream handlers __________________________
@@ -592,8 +575,6 @@ public:
 private:
     mt_const ServerApp        *server_app;
     mt_const PagePool         *page_pool;
-    mt_const HttpService      *http_service;
-    mt_const HttpService      *admin_http_service;
     mt_const ServerThreadPool *recorder_thread_pool;
     mt_const ServerThreadPool *reader_thread_pool;
     mt_const Storage          *storage;
@@ -650,8 +631,6 @@ public:
 
     ServerApp*        getServerApp ();
     PagePool*         getPagePool ();
-    HttpService*      getHttpService ();
-    HttpService*      getAdminHttpService ();
     ServerThreadPool* getRecorderThreadPool ();
     ServerThreadPool* getReaderThreadPool ();
     Storage*          getStorage ();
@@ -926,8 +905,6 @@ public:
 
     Result init (ServerApp        * mt_nonnull server_app,
 		 PagePool         * mt_nonnull page_pool,
-		 HttpService      * mt_nonnull http_service,
-		 HttpService      * mt_nonnull admin_http_service,
 		 MConfig::Config  * mt_nonnull config,
 		 ServerThreadPool * mt_nonnull recorder_thread_pool,
                  ServerThreadPool * mt_nonnull reader_thread_pool,
