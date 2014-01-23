@@ -27,6 +27,7 @@
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/nvr_cleaner.h>
 #include <moment-ffmpeg/stat_measurer.h>
+#include <moment-ffmpeg/time_checker.h>
 
 extern "C" {
 #ifndef INT64_C
@@ -119,11 +120,14 @@ private /*variables*/:
     bool m_bRecordingState;     // true - do record, false - do not
     bool m_bRecordingEnable;    // the same thing, value gets from config (mod_nvr.enable)
     bool m_bGotFirstFrame;
-    bool m_bCheckAudioMode;
     std::vector<int64_t> m_vecPts; // correction values for packets
     std::vector<int64_t> m_vecDts; // correction value for packets
 
     nvrData m_nvrData;
+
+    AVBitStreamFilterContext * m_absf_ctx; // filter for malformed aac
+
+    TimeChecker m_tcFFTimeout; // timer for timeout in ffmpeg blocking operations such as av_read_frame
 };
 
 class FFmpegStream : public MediaSource

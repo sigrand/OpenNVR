@@ -103,6 +103,8 @@ cd ../moment-ffmpeg
 autogen "$AUTOGEN"
 cd ../moment-nvr
 autogen "$AUTOGEN"
+cd ../moment-hls
+autogen "$AUTOGEN"
 cd ../moment-onvif
 autogen "$AUTOGEN"
 
@@ -250,6 +252,24 @@ export THIS_LIBS+=" -Wl,--whole-archive \
 
 makeclean "$CLEAN"
 
+./configure --prefix="${OUTDIR}"
+make
+make install
+
+
+cd ../moment-hls
+export THIS_CFLAGS="${I_GLIB} ${I_XML} -I../../poco/poco_build/include\
+	-I${OUTDIR}/include/moment-1.0 \
+	-I${OUTDIR}/include/libmary-1.0 \
+	-I${OUTDIR}/include/mconfig-1.0 \
+	-I${OUTDIR}/include/pargen-1.0"
+export THIS_LIBS="${L_GLIB} ${L_XML}\
+	-L${OUTDIR}/lib -lmoment-1.0 \
+	-L${OUTDIR}/lib -lmary-1.0 \
+	-L${OUTDIR}/lib -lmconfig-1.0 \
+	-L${OUTDIR}/lib -lpargen-1.0"
+
+makeclean "$CLEAN"
 ./configure --prefix="${OUTDIR}"
 make
 make install

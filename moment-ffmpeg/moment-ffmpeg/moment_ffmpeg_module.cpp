@@ -19,7 +19,9 @@
 
 #include <libmary/types.h>
 #include <cctype>
-//#include <gst/gst.h>
+#include <mntent.h>
+#include <sys/statvfs.h>
+#include <json/json.h>
 
 #include <moment/libmoment.h>
 
@@ -493,6 +495,105 @@ MomentFFmpegModule::statisticsToJson (
                           "}\n");
 }
 
+#ifdef __linux__
+int
+MomentFFmpegModule::getDiskInfoLinux(std::map<std::string, std::vector<int> > & diskInfo)
+{
+    struct mntent *mnt;
+    char const *table = "/etc/mtab";
+    FILE *fp;
+
+    fp = setmntent (table, "r");
+    if (fp == NULL)
+    {
+        logE_(_func_, "fail to get disk info from ", table);
+        return 1;
+    }
+
+    while ((mnt = getmntent (fp)))
+    {
+        struct statvfs info;
+        if(statvfs (mnt->mnt_dir, &info))
+        {
+            logE_(_func_, "fail statvfs for ", mnt->mnt_dir);
+            return 2;
+        }
+
+        if(info.f_frsize > 0 && info.f_blocks > 0)
+        {
+            unsigned long allSize = (info.f_frsize * info.f_blocks) / 1024; // in KBytes
+            unsigned long freeSize = (info.f_frsize * info.f_bavail) / 1024; // in KBytes
+            unsigned long usedSize = allSize - (info.f_frsize * info.f_bfree) / 1024; // in KBytes
+
+            std::vector<int> sizeInfo;
+            sizeInfo.push_back(allSize);
+            sizeInfo.push_back(freeSize);
+            sizeInfo.push_back(usedSize);
+            diskInfo[std::string(mnt->mnt_dir)] = sizeInfo;
+        }
+    }
+
+    if (endmntent (fp) == 0)
+    {
+        logE_(_func_, "fail to close ", table);
+        return 3;
+    }
+
+    return 0;
+}
+#endif
+
+bool
+MomentFFmpegModule::getDiskInfo (std::string & json_respond)
+{
+    int nRes = -1;
+    std::map<std::string, std::vector<int> > diskInfo; // [diskName, [allSize, freeSize, usedSize]]
+
+#ifdef __linux__
+    nRes = getDiskInfoLinux(diskInfo);
+#endif
+
+    if(nRes < 0)
+    {
+        logD_(_func_, "getDiskInfo isn't supported for current platform");
+    }
+    else if(nRes > 0)
+    {
+        return false;
+    }
+
+    // writing to json
+
+    Json::Value json_value_disks;
+
+    Json::FastWriter json_writer_fast;
+    Json::StyledWriter json_writer_styled;
+
+    std::map<std::string, std::vector<int> >::iterator it = diskInfo.begin();
+
+    for(it; it != diskInfo.end(); ++it)
+    {
+        Json::Value json_value_disk;
+        Json::Value json_value_diskInfo;
+
+        json_value_disk["disk name"] = it->first;
+
+        json_value_diskInfo["all size"] = it->second[0];
+        json_value_diskInfo["free size"] = it->second[1];
+        json_value_diskInfo["used size"] = it->second[2];
+
+        json_value_disk["disk info"] = json_value_diskInfo;
+
+        logD_ (_func_, "playlist.json line: ", json_writer_fast.write(json_value_disk).c_str());
+
+        json_value_disks.append(json_value_disk);
+    }
+
+    json_respond = json_writer_styled.write(json_value_disks);
+
+    return true;
+}
+
 bool
 MomentFFmpegModule::removeVideoFiles(StRef<String> const dir_name, StRef<String> const channel_name,
                                  Time const startTime, Time const endTime)
@@ -693,6 +794,30 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         std::ostream& out = resp.send();
         out << reply_body->cstr();
         out.flush();
+    }
+    else if(segments.size() >= 2 && (segments[1].compare("disk_info") == 0))
+    {
+        std::string jsonRespond;
+
+        bool bRes = self->getDiskInfo(jsonRespond);
+
+        if(bRes)
+        {
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            resp.setContentType("text/html");
+            std::ostream& out = resp.send();
+            out << jsonRespond;
+            out.flush();
+        }
+        else
+        {
+            logD_ (_func, "reply: 500 Internal server error");
+            resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+            std::ostream& out = resp.send();
+            out << "500 Internal Server Error: fail to get disk info";
+            out.flush();
+        }
+
     }
     else if(segments.size() >= 2 && (segments[1].compare("remove_video") == 0))
     {

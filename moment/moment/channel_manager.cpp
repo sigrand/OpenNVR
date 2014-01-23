@@ -150,7 +150,8 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
 
                             logD_(_func_, "uriSrc = ", uriSrc.c_str());
 
-                            if(uriSrc.compare(item_uri) == 0)
+                            if(uriSrc.compare(item_uri) == 0 &&
+                                    item_name.compare(std::string(entry_name->cstr())) != 0)
                             {
                                 logD_(_func_, "uriSrc is already used");
                                 urlIsUsed = true;

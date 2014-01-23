@@ -4,6 +4,8 @@ http://momentvideo.org/doc_config.ru.html
 http://momentvideo.org/nvr.ru.html
 http://momentvideo.org/doc_channels.ru.html
 
+Let server ip is "192.168.10.21"
+
 =====================================================================================
 to write debug-level log in ./l.txt 
 ./moment --log ./l.txt --level-log D
@@ -31,7 +33,7 @@ uri = "rtsp://192.168.10.102/H264"
 =====================================================================================
 to capture rtmp from nvrserver
 
-run "vlc rtmp://127.0.0.1:1935/sony", 
+run "vlc rtmp://192.168.10.21:1935/sony", 
         where 1935 - port of RTMP server, 
         sony - name of stream (in mod_gst.streams)
 
@@ -45,7 +47,7 @@ in moment.conf in mod_rtmpt add "rtmpt_bind = :RTMPT"
 
 run moment
 after that run rtmpt-player (not vlc, it can't capture RTMPT! there is .swf-player in repo) 
-	use "rtmpt://127.0.0.1:8081/sony"
+	use "rtmpt://192.168.10.21:8081/sony"
 	where 8081 - port of RTMPT server, 
 	sony - name of stream (in mod_gst.streams)
 
@@ -57,8 +59,8 @@ add in moment.conf:
 mod_nvr {
   enable = y
   record_dir = "/opt/moment/records"
-  file_duration = 3600
-  max_age = 44640
+  file_duration = 3600 // in seconds
+  max_age = 44640 // in minutes
 }
 
 do "mkdir /opt/moment/records"
@@ -72,26 +74,28 @@ uri = "rtsp://192.168.10.21:8092/test1.sdp"
 
 then just run moment. nvr will automatically write stream in /opt/moment/records/sony/curyear/curmonth/curday/
 
-http://127.0.0.1:8082/mod_nvr_admin/rec_on?stream=sony&seq=1 - turn on record
-http://127.0.0.1:8082/mod_nvr_admin/rec_off?stream=sony&seq=1 - turn off record
+http://192.168.10.21:8082/mod_nvr_admin/rec_on?stream=sony&seq=1 - turn on record
+http://192.168.10.21:8082/mod_nvr_admin/rec_off?stream=sony&seq=1 - turn off record
 
-http://127.0.0.1:8082/mod_nvr_admin/files_existence?stream=sony - get all recorded files
+http://192.168.10.21:8082/mod_nvr_admin/files_existence?stream=sony - get all recorded files
 
-http://127.0.0.1:8082/mod_nvr_admin/statistics - get statistics
+http://192.168.10.21:8082/mod_nvr_admin/statistics - get statistics
 
-http://127.0.0.1:8082/mod_nvr_admin/remove_video?conf_file=cam0&start=1368828300&end=1368828400 - remove recorded video from to (unixtime)
+http://192.168.10.21:8082/mod_rtmp/stat - get statistics about rtmp sessions
 
-http://127.0.0.1:8080/mod_nvr/channel_state?stream=test&seq=1 - get state info (turned on or off)
+http://192.168.10.21:8082/mod_nvr_admin/remove_video?conf_file=cam0&start=1368828300&end=1368828400 - remove recorded video from to (unixtime)
+
+http://192.168.10.21:8080/mod_nvr/channel_state?stream=test&seq=1 - get state info (turned on or off)
 
 =====================================================================================
 to get video from NVR
 
 example:
-rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
+rtmp://192.168.10.21:1935/nvr/sony?start=1368828341
 	where start — unixtime of begin playing position from 00:00 1 Jan 1970 in UTC
 	sony - name of stream
 
-http://127.0.0.1:8080/mod_nvr/file?stream=sony&start=1368828300&end=1368828400
+http://192.168.10.21:8080/mod_nvr/file?stream=sony&start=1368828300&end=1368828400
     sony - name of stream
     start — unixtime of begin in sec;
     end — unixtime of end in sec;
@@ -125,4 +129,20 @@ mod_onvif
 
 Then ONVIF server starts on the specified port; if port wasn't set - 80 is default;
 
+=====================================================================================
+To enable hls (http://momentvideo.org/hls.ru.html)
 
+in moment.conf:
+
+mod_hls
+{
+    enable = y
+}
+
+to get stream:
+vlc http://192.168.10.21:8080/hls/stream_name.m3u8
+
+=====================================================================================
+to get info about disk available for nvrserver
+
+http://192.168.10.21:8082/mod_nvr_admin/disk_info

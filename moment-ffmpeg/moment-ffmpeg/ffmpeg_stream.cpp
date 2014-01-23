@@ -18,7 +18,6 @@
 
 
 #include <moment-ffmpeg/ffmpeg_stream.h>
-#include <moment-ffmpeg/time_checker.h>
 #include <moment-ffmpeg/nvr_file_iterator.h>
 #include <moment-ffmpeg/media_reader.h>
 #include <moment-ffmpeg/memory_dispatcher.h>
@@ -156,6 +155,20 @@ extern "C"
     }
 }   // extern "C" ]
 
+static Time ff_blocking_timeout = 30000000; // in microsec
+static int interrupt_cb(void* arg)
+{
+    TimeChecker * tc = static_cast<TimeChecker*>(arg);
+    Time t;
+    tc->Stop(&t);
+
+    if (t > ff_blocking_timeout)
+    {
+        return 1;
+    }
+
+    return 0;
+}
 
 static int ff_lockmgr(void **mutex, enum AVLockOp op)
 {
@@ -212,11 +225,11 @@ ffmpegStreamData::ffmpegStreamData(void)
     RegisterFFMpeg();
 
     format_ctx = NULL;
+    m_absf_ctx = NULL;
 
     m_bRecordingState = false;
     m_bRecordingEnable = false;
     m_bGotFirstFrame = false;
-    m_bCheckAudioMode = true;
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
@@ -260,10 +273,15 @@ void ffmpegStreamData::Deinit()
         format_ctx = NULL;
     }
 
+    if (m_absf_ctx)
+    {
+        av_bitstream_filter_close(m_absf_ctx);
+        m_absf_ctx = NULL;
+    }
+
     m_bRecordingState = false;
     m_bRecordingEnable = false;
     m_bGotFirstFrame = false;
-    m_bCheckAudioMode = true;
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
@@ -283,12 +301,20 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     logD_(_func_, "uri: ", uri);
     Result res = Result::Success;
 
+    format_ctx = avformat_alloc_context();
+
+    format_ctx->interrupt_callback.callback = interrupt_cb;
+    format_ctx->interrupt_callback.opaque = &m_tcFFTimeout;
+
+    m_tcFFTimeout.Start();
     if(avformat_open_input(&format_ctx, uri, NULL, NULL) == 0)
     {
         logD_(_func_, "avformat_open_input, success");
         // Retrieve stream information
 
         g_mutexFFmpeg.lock();
+
+        m_tcFFTimeout.Start();
         if(avformat_find_stream_info(format_ctx, NULL) >= 0)
         {
             logD_(_func_,"avformat_find_stream_info, success");
@@ -337,6 +363,15 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     {
         m_vecPts.resize(format_ctx->nb_streams, Int64_Min);
         m_vecDts.resize(format_ctx->nb_streams, Int64_Min);
+    }
+
+    if(m_absf_ctx == NULL)
+    {
+        m_absf_ctx = av_bitstream_filter_init("aac_adtstoasc");
+        if (!m_absf_ctx)
+        {
+            logE_(_func_, "No available 'aac_adtstoasc' bitstream filter");
+        }
     }
 
     // reading configs
@@ -469,6 +504,8 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
 
         TimeChecker tc;tc.Start();
         int res = 0;
+
+        m_tcFFTimeout.Start();
         if((res = av_read_frame(format_ctx, &packet)) < 0)
         {
             logD_(_func_, "av_read_frame failed, res = [", res, "]");
@@ -546,6 +583,65 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
                             ",size=", packet.size,
                             ",flags=", packet.flags);
 
+
+        int nSkipAudioIndex = -1; // default no skip audio
+        // if aac is malformed then process it by bitstream aac filter
+        if(packet.stream_index == audio_stream_idx &&
+                format_ctx->streams[packet.stream_index]->codec->codec_id == AV_CODEC_ID_AAC &&
+                packet.size > 2 && (AV_RB16(packet.data) & 0xfff0) == 0xfff0)
+        {
+            if(m_absf_ctx)
+            {
+                logD_(_func_, "filtering aac packet");
+                AVPacket new_inpkt = packet;
+                int ret = av_bitstream_filter_filter(m_absf_ctx,
+                                           format_ctx->streams[audio_stream_idx]->codec,
+                                           NULL,
+                                           &new_inpkt.data, &new_inpkt.size,
+                                           packet.data, packet.size,
+                                           packet.flags & AV_PKT_FLAG_KEY);
+                // create a padded packet
+                if (ret == 0 && new_inpkt.data != packet.data && new_inpkt.destruct)
+                {
+                    // the new buffer should be a subset of the old so cannot overflow
+                    uint8_t *t = (uint8_t *)av_malloc(new_inpkt.size + FF_INPUT_BUFFER_PADDING_SIZE);
+                    if (!t)
+                    {
+                        logE_(_func_, "fail to allocate memory");
+                        nSkipAudioIndex = audio_stream_idx;
+                    }
+                    else
+                    {
+                        memcpy(t, new_inpkt.data, new_inpkt.size);
+                        memset(t + new_inpkt.size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
+                        new_inpkt.data = t;
+                        new_inpkt.buf = NULL;
+                        ret = 1;
+                    }
+                }
+
+                if (ret > 0)
+                {
+                    new_inpkt.buf = av_buffer_create(new_inpkt.data, new_inpkt.size,
+                                          av_buffer_default_free, NULL, 0);
+                    if (!new_inpkt.buf)
+                    {
+                        logE_(_func_, "fail to av_buffer_create");
+                        nSkipAudioIndex = audio_stream_idx;
+                    }
+                    else
+                    {
+                        av_free_packet(&packet);
+                        packet = new_inpkt;
+                    }
+                }
+            }
+            else
+            {
+                nSkipAudioIndex = audio_stream_idx;
+            }
+        }
+
         // Is this a packet from the video or audio stream?
         if(packet.stream_index == video_stream_idx || packet.stream_index == audio_stream_idx)
         {
@@ -570,46 +666,15 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
         if(m_bRecordingState && m_bRecordingEnable)
         {
             // prepare to write in file
-            if(m_bCheckAudioMode)
+            if(!m_nvrData.IsInit())
             {
-                int nSkipAudioIndex = -1; // no skip audio
-
-                if(packet.stream_index == audio_stream_idx)
-                {
-                    // validation of audio
-                    if ((format_ctx->streams[packet.stream_index]->codec->codec_id == AV_CODEC_ID_AAC && packet.size > 2 && (AV_RB16(packet.data) & 0xfff0) == 0xfff0)
-                            || (format_ctx->streams[packet.stream_index]->codec->codec_id != AV_CODEC_ID_AAC))
-                    {
-//                        if (!format_ctx->streams[packet.stream_index]->nb_frames)
-//                        {
-//                            logE_(_func_, "Malformed AAC bitstream detected: use audio bitstream filter 'aac_adtstoasc' to fix it ('-bsf:a aac_adtstoasc' option with ffmpeg)");
-//                        }
-                        logE_(_func_, "aac bitstream error");
-                        nSkipAudioIndex = audio_stream_idx;
-                    }
-                    m_bCheckAudioMode = false;
-                }
-                else if(packet.stream_index == video_stream_idx)
-                {
-                    int time_base_den = format_ctx->streams[packet.stream_index]->time_base.den;
-                    Uint64 timestamp = packet.pts / (double)time_base_den * 1000000;
-                    if(timestamp > 1000000)
-                    {
-                        nSkipAudioIndex = audio_stream_idx;
-                        m_bCheckAudioMode = false;
-                    }
-                }
-
-                if(!m_bCheckAudioMode && !m_nvrData.IsInit())
-                {
-                    StRef<String> filepath = st_makeString (m_recordDir, "/", m_channelName, ".flv");
-                    Result nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec, nSkipAudioIndex);
-                    logD_(_func_, "m_nvrData.Init = ", (nvrResult == Result::Success) ? "Success" : "Failed");
-                }
+                StRef<String> filepath = st_makeString (m_recordDir, "/", m_channelName, ".flv");
+                Result nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec, nSkipAudioIndex);
+                logD_(_func_, "m_nvrData.Init = ", (nvrResult == Result::Success) ? "Success" : "Failed");
             }
 
             // write in file
-            if(!m_bCheckAudioMode)
+            if(m_nvrData.IsInit())
             {
                 TimeChecker tc;tc.Start();
 

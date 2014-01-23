@@ -214,6 +214,12 @@ private:
 				ConstMemory channel_name,
 				ConstMemory filename_prefix);
 
+    // get disk info
+#ifdef __linux__
+    static int getDiskInfoLinux(std::map<std::string, std::vector<int> > & diskInfo);
+#endif
+    static bool getDiskInfo (std::string & json_respond);
+
 public:
   mt_iface (MediaSourceProvider)
     Ref<MediaSource> createMediaSource (CbDesc<MediaSource::Frontend> const &frontend,
