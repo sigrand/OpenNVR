@@ -1,0 +1,1381 @@
+2013/12/23 20:22:33 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in D:\Openserv\OpenServer\domains\framework\web\CController.php:336
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#3 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#7 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('profile')
+#9 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('users/profile')
+#10 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#11 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/users/profile
+HTTP_REFERER=http://camshot.tuy/index.php/users/profile
+---
+2013/12/23 20:22:39 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in D:\Openserv\OpenServer\domains\framework\web\CController.php:336
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#3 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#7 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('profile')
+#9 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('users/profile')
+#10 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#11 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/users/profile
+HTTP_REFERER=http://camshot.tuy/index.php/users/profile
+---
+2013/12/23 20:23:40 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in D:\Openserv\OpenServer\domains\framework\web\CController.php:336
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#3 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#7 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('profile')
+#9 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('users/profile')
+#10 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#11 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/users/profile
+HTTP_REFERER=http://camshot.tuy/index.php/users/profile
+---
+2013/12/23 20:30:30 [error] [exception.CException] exception 'CException' with message 'Property "ProfileForm.newPass" is not defined.' in D:\Openserv\OpenServer\domains\framework\base\CComponent.php:130
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\camshot.tuy\protected\models\ProfileForm.php(35): CComponent->__get('newPass')
+#1 D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\UsersController.php(42): ProfileForm->change()
+#2 [internal function]: UsersController->actionProfile('pass')
+#3 D:\Openserv\OpenServer\domains\framework\web\actions\CAction.php(108): ReflectionMethod->invokeArgs(Object(UsersController), Array)
+#4 D:\Openserv\OpenServer\domains\framework\web\actions\CInlineAction.php(47): CAction->runWithParamsInternal(Object(UsersController), Object(ReflectionMethod), Array)
+#5 D:\Openserv\OpenServer\domains\framework\web\CController.php(308): CInlineAction->runWithParams(Array)
+#6 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#7 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#8 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#9 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#10 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#11 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#12 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#13 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('profile')
+#14 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('users/profile/i...')
+#15 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#16 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#17 {main}
+REQUEST_URI=/index.php/users/profile/id/pass
+HTTP_REFERER=http://camshot.tuy/index.php/users/profile/id/any
+---
+2013/12/23 20:33:28 [error] [exception.CException] exception 'CException' with message 'Property "Cams.prevUrl" is not defined.' in D:\Openserv\OpenServer\domains\framework\base\CComponent.php:130
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\db\ar\CActiveRecord.php(143): CComponent->__get('prevUrl')
+#1 D:\Openserv\OpenServer\domains\framework\web\helpers\CHtml.php(2255): CActiveRecord->__get('prevUrl')
+#2 D:\Openserv\OpenServer\domains\framework\web\helpers\CHtml.php(1980): CHtml::resolveValue(Object(Cams), 'prevUrl')
+#3 D:\Openserv\OpenServer\domains\framework\web\helpers\CHtml.php(1257): CHtml::activeInputField('text', Object(Cams), 'prevUrl', Array)
+#4 D:\Openserv\OpenServer\domains\framework\web\widgets\CActiveForm.php(657): CHtml::activeTextField(Object(Cams), 'prevUrl', Array)
+#5 D:\Openserv\OpenServer\domains\camshot.tuy\protected\views\cams\edit.php(48): CActiveForm->textField(Object(Cams), 'prevUrl', Array)
+#6 D:\Openserv\OpenServer\domains\framework\web\CBaseController.php(126): require('D:\Openserv\Ope...')
+#7 D:\Openserv\OpenServer\domains\framework\web\CBaseController.php(95): CBaseController->renderInternal('D:\Openserv\Ope...', Array, true)
+#8 D:\Openserv\OpenServer\domains\framework\web\CController.php(869): CBaseController->renderFile('D:\Openserv\Ope...', Array, true)
+#9 D:\Openserv\OpenServer\domains\framework\web\CController.php(782): CController->renderPartial('edit', Array, true)
+#10 D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\CamsController.php(93): CController->render('edit', Array)
+#11 D:\Openserv\OpenServer\domains\framework\web\actions\CInlineAction.php(49): CamsController->actionAdd()
+#12 D:\Openserv\OpenServer\domains\framework\web\CController.php(308): CInlineAction->runWithParams(Array)
+#13 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#14 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#15 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#16 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#17 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#18 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#19 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#20 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('add')
+#21 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/add')
+#22 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#23 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#24 {main}
+REQUEST_URI=/index.php/cams/add
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 16:19:09 [error] [exception.CException] exception 'CException' with message 'Property "Cams.prevUrl" is not defined.' in D:\Openserv\OpenServer\domains\framework\base\CComponent.php:130
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\db\ar\CActiveRecord.php(143): CComponent->__get('prevUrl')
+#1 D:\Openserv\OpenServer\domains\framework\web\helpers\CHtml.php(2255): CActiveRecord->__get('prevUrl')
+#2 D:\Openserv\OpenServer\domains\framework\web\helpers\CHtml.php(1980): CHtml::resolveValue(Object(Cams), 'prevUrl')
+#3 D:\Openserv\OpenServer\domains\framework\web\helpers\CHtml.php(1257): CHtml::activeInputField('text', Object(Cams), 'prevUrl', Array)
+#4 D:\Openserv\OpenServer\domains\framework\web\widgets\CActiveForm.php(657): CHtml::activeTextField(Object(Cams), 'prevUrl', Array)
+#5 D:\Openserv\OpenServer\domains\camshot.tuy\protected\views\cams\edit.php(48): CActiveForm->textField(Object(Cams), 'prevUrl', Array)
+#6 D:\Openserv\OpenServer\domains\framework\web\CBaseController.php(126): require('D:\Openserv\Ope...')
+#7 D:\Openserv\OpenServer\domains\framework\web\CBaseController.php(95): CBaseController->renderInternal('D:\Openserv\Ope...', Array, true)
+#8 D:\Openserv\OpenServer\domains\framework\web\CController.php(869): CBaseController->renderFile('D:\Openserv\Ope...', Array, true)
+#9 D:\Openserv\OpenServer\domains\framework\web\CController.php(782): CController->renderPartial('edit', Array, true)
+#10 D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\CamsController.php(93): CController->render('edit', Array)
+#11 D:\Openserv\OpenServer\domains\framework\web\actions\CInlineAction.php(49): CamsController->actionAdd()
+#12 D:\Openserv\OpenServer\domains\framework\web\CController.php(308): CInlineAction->runWithParams(Array)
+#13 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#14 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#15 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#16 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#17 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#18 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#19 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#20 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('add')
+#21 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/add')
+#22 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#23 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#24 {main}
+REQUEST_URI=/index.php/cams/add
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 17:12:39 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'Unable to resolve the request "images/add_icon.png".' in D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php:286
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('images/add_icon...')
+#1 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#2 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#3 {main}
+REQUEST_URI=/index.php/images/add_icon.png
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 17:12:39 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'Unable to resolve the request "images/add_icon.png".' in D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php:286
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('images/add_icon...')
+#1 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#2 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#3 {main}
+REQUEST_URI=/index.php/images/add_icon.png
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 17:13:36 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'The system is unable to find the requested action "images".' in D:\Openserv\OpenServer\domains\framework\web\CController.php:483
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(270): CController->missingAction('images')
+#1 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('images')
+#2 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/images/add...')
+#3 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#4 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#5 {main}
+REQUEST_URI=/index.php/cams/images/add_icon.png
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 17:13:37 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'The system is unable to find the requested action "images".' in D:\Openserv\OpenServer\domains\framework\web\CController.php:483
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(270): CController->missingAction('images')
+#1 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('images')
+#2 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/images/add...')
+#3 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#4 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#5 {main}
+REQUEST_URI=/index.php/cams/images/add_icon.png
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 17:13:39 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'The system is unable to find the requested action "images".' in D:\Openserv\OpenServer\domains\framework\web\CController.php:483
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(270): CController->missingAction('images')
+#1 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('images')
+#2 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/images/add...')
+#3 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#4 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#5 {main}
+REQUEST_URI=/index.php/cams/images/add_icon.png
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 17:13:39 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'The system is unable to find the requested action "images".' in D:\Openserv\OpenServer\domains\framework\web\CController.php:483
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(270): CController->missingAction('images')
+#1 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('images')
+#2 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/images/add...')
+#3 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#4 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#5 {main}
+REQUEST_URI=/index.php/cams/images/add_icon.png
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 17:13:46 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'The system is unable to find the requested action "images".' in D:\Openserv\OpenServer\domains\framework\web\CController.php:483
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(270): CController->missingAction('images')
+#1 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('images')
+#2 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/images/add...')
+#3 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#4 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#5 {main}
+REQUEST_URI=/index.php/cams/images/add_icon.png
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/26 17:17:37 [error] [exception.CException] exception 'CException' with message 'Property "ProfileForm.options" is not defined.' in D:\Openserv\OpenServer\domains\framework\base\CComponent.php:130
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\helpers\CHtml.php(2255): CComponent->__get('options')
+#1 D:\Openserv\OpenServer\domains\framework\web\helpers\CHtml.php(1716): CHtml::resolveValue(Object(ProfileForm), 'options')
+#2 D:\Openserv\OpenServer\domains\framework\web\widgets\CActiveForm.php(811): CHtml::activeRadioButtonList(Object(ProfileForm), 'options', Array, Array)
+#3 D:\Openserv\OpenServer\domains\camshot.tuy\protected\views\users\profile.php(32): CActiveForm->radioButtonList(Object(ProfileForm), 'options', Array, Array)
+#4 D:\Openserv\OpenServer\domains\framework\web\CBaseController.php(126): require('D:\Openserv\Ope...')
+#5 D:\Openserv\OpenServer\domains\framework\web\CBaseController.php(95): CBaseController->renderInternal('D:\Openserv\Ope...', Array, true)
+#6 D:\Openserv\OpenServer\domains\framework\web\CController.php(869): CBaseController->renderFile('D:\Openserv\Ope...', Array, true)
+#7 D:\Openserv\OpenServer\domains\framework\web\CController.php(782): CController->renderPartial('profile', Array, true)
+#8 D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\UsersController.php(52): CController->render('profile', Array)
+#9 [internal function]: UsersController->actionProfile('any')
+#10 D:\Openserv\OpenServer\domains\framework\web\actions\CAction.php(108): ReflectionMethod->invokeArgs(Object(UsersController), Array)
+#11 D:\Openserv\OpenServer\domains\framework\web\actions\CInlineAction.php(47): CAction->runWithParamsInternal(Object(UsersController), Object(ReflectionMethod), Array)
+#12 D:\Openserv\OpenServer\domains\framework\web\CController.php(308): CInlineAction->runWithParams(Array)
+#13 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#14 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#15 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#16 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#17 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#18 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#19 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#20 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('profile')
+#21 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('users/profile/i...')
+#22 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#23 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#24 {main}
+REQUEST_URI=/index.php/users/profile/id/any
+HTTP_REFERER=http://camshot.tuy/index.php/cams/manage
+---
+2013/12/30 23:19:20 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'You are not authorized to perform this action.' in D:\Openserv\OpenServer\domains\framework\web\auth\CAccessControlFilter.php:179
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\auth\CAccessControlFilter.php(142): CAccessControlFilter->accessDenied(Object(CWebUser), 'You are not aut...')
+#1 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(38): CAccessControlFilter->preFilter(Object(CFilterChain))
+#2 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#3 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#4 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#5 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#6 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#7 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('playlist')
+#8 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/playlist')
+#9 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#10 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#11 {main}
+REQUEST_URI=/index.php/cams/playlist?_=1388431160030
+HTTP_REFERER=http://camshot.tuy/index.php/cams/fullscreen/id/30
+---
+2013/12/30 23:19:47 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'You are not authorized to perform this action.' in D:\Openserv\OpenServer\domains\framework\web\auth\CAccessControlFilter.php:179
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\auth\CAccessControlFilter.php(142): CAccessControlFilter->accessDenied(Object(CWebUser), 'You are not aut...')
+#1 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(38): CAccessControlFilter->preFilter(Object(CFilterChain))
+#2 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#3 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#4 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#5 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#6 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#7 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('playlist')
+#8 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/playlist')
+#9 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#10 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#11 {main}
+REQUEST_URI=/index.php/cams/playlist?_=1388431160030
+---
+2013/12/30 23:26:46 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'The system is unable to find the requested action "existence".' in D:\Openserv\OpenServer\domains\framework\web\CController.php:483
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(270): CController->missingAction('existence')
+#1 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('existence')
+#2 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#3 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#4 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#5 {main}
+REQUEST_URI=/index.php/cams/existence/stream30?_=1388431606600
+HTTP_REFERER=http://camshot.tuy/index.php/cams/fullscreen/id/30
+---
+2013/12/30 23:27:12 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'The system is unable to find the requested action "existence".' in D:\Openserv\OpenServer\domains\framework\web\CController.php:483
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(270): CController->missingAction('existence')
+#1 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('existence')
+#2 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#3 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#4 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#5 {main}
+REQUEST_URI=/index.php/cams/existence/stream/30?_=1388431632075
+HTTP_REFERER=http://camshot.tuy/index.php/cams/fullscreen/id/30
+---
+2013/12/30 23:27:44 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'The system is unable to find the requested action "existence".' in D:\Openserv\OpenServer\domains\framework\web\CController.php:483
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\framework\web\CController.php(270): CController->missingAction('existence')
+#1 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('existence')
+#2 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#3 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#4 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#5 {main}
+REQUEST_URI=/index.php/cams/existence/stream/30?_=1388431632075
+---
+2013/12/31 00:01:32 [error] [exception.UnexpectedValueException] exception 'UnexpectedValueException' with message 'creating archive "habr.phar" disabled by the php.ini setting phar.readonly' in D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\CamsController.php:31
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\CamsController.php(31): Phar->__construct('habr.phar')
+#1 D:\Openserv\OpenServer\domains\framework\web\actions\CInlineAction.php(49): CamsController->actionTest()
+#2 D:\Openserv\OpenServer\domains\framework\web\CController.php(308): CInlineAction->runWithParams(Array)
+#3 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#4 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#5 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#6 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#7 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#8 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#9 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#10 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('test')
+#11 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/test')
+#12 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#13 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#14 {main}
+REQUEST_URI=/index.php/cams/test
+---
+2013/12/31 00:03:49 [error] [exception.UnexpectedValueException] exception 'UnexpectedValueException' with message 'creating archive "habr.phar" disabled by the php.ini setting phar.readonly' in D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\CamsController.php:32
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\CamsController.php(32): Phar->__construct('habr.phar')
+#1 D:\Openserv\OpenServer\domains\framework\web\actions\CInlineAction.php(49): CamsController->actionTest()
+#2 D:\Openserv\OpenServer\domains\framework\web\CController.php(308): CInlineAction->runWithParams(Array)
+#3 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#4 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#5 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#6 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#7 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#8 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#9 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#10 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('test')
+#11 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/test')
+#12 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#13 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#14 {main}
+REQUEST_URI=/index.php/cams/test
+---
+2013/12/31 00:03:53 [error] [exception.UnexpectedValueException] exception 'UnexpectedValueException' with message 'creating archive "habr.phar" disabled by the php.ini setting phar.readonly' in D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\CamsController.php:32
+Stack trace:
+#0 D:\Openserv\OpenServer\domains\camshot.tuy\protected\controllers\CamsController.php(32): Phar->__construct('habr.phar')
+#1 D:\Openserv\OpenServer\domains\framework\web\actions\CInlineAction.php(49): CamsController->actionTest()
+#2 D:\Openserv\OpenServer\domains\framework\web\CController.php(308): CInlineAction->runWithParams(Array)
+#3 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#4 D:\Openserv\OpenServer\domains\framework\web\filters\CFilter.php(40): CFilterChain->run()
+#5 D:\Openserv\OpenServer\domains\framework\web\CController.php(1145): CFilter->filter(Object(CFilterChain))
+#6 D:\Openserv\OpenServer\domains\framework\web\filters\CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#7 D:\Openserv\OpenServer\domains\framework\web\filters\CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#8 D:\Openserv\OpenServer\domains\framework\web\CController.php(291): CFilterChain->run()
+#9 D:\Openserv\OpenServer\domains\framework\web\CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#10 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(282): CController->run('test')
+#11 D:\Openserv\OpenServer\domains\framework\web\CWebApplication.php(141): CWebApplication->runController('cams/test')
+#12 D:\Openserv\OpenServer\domains\framework\base\CApplication.php(169): CWebApplication->processRequest()
+#13 D:\Openserv\OpenServer\domains\camshot.tuy\index.php(13): CApplication->run()
+#14 {main}
+REQUEST_URI=/index.php/cams/test
+---
+2013/12/31 03:31:04 [error] [exception.CDbException] exception 'CDbException' with message 'CDbConnection failed to open the DB connection: SQLSTATE[28000] [1045] Access denied for user 'root'@'localhost' (using password: NO)' in /var/www/fw/db/CDbConnection.php:381
+Stack trace:
+#0 /var/www/fw/db/CDbConnection.php(330): CDbConnection->open()
+#1 /var/www/fw/db/CDbConnection.php(308): CDbConnection->setActive(true)
+#2 /var/www/fw/base/CModule.php(387): CDbConnection->init()
+#3 /var/www/fw/base/CApplication.php(438): CModule->getComponent('db')
+#4 /var/www/fw/db/ar/CActiveRecord.php(623): CApplication->getDb()
+#5 /var/www/fw/db/ar/CActiveRecord.php(2309): CActiveRecord->getDbConnection()
+#6 /var/www/fw/db/ar/CActiveRecord.php(387): CActiveRecordMetaData->__construct(Object(Cams))
+#7 /var/www/fw/db/ar/CActiveRecord.php(402): CActiveRecord::model('Cams')
+#8 /var/www/fw/db/ar/CActiveRecord.php(77): CActiveRecord->getMetaData()
+#9 /var/www/protected/controllers/CamsController.php(100): CActiveRecord->__construct()
+#10 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionAdd()
+#11 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#12 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#13 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#14 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#15 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#16 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#17 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#18 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#19 /var/www/fw/web/CWebApplication.php(282): CController->run('add')
+#20 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/add')
+#21 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#22 /var/www/index.php(13): CApplication->run()
+#23 {main}
+REQUEST_URI=/index.php/cams/add
+HTTP_REFERER=http://213.183.117.158/index.php/cams/manage
+---
+2013/12/31 03:31:45 [error] [exception.CDbException] exception 'CDbException' with message 'CDbConnection failed to open the DB connection: SQLSTATE[28000] [1045] Access denied for user 'root'@'localhost' (using password: NO)' in /var/www/fw/db/CDbConnection.php:381
+Stack trace:
+#0 /var/www/fw/db/CDbConnection.php(330): CDbConnection->open()
+#1 /var/www/fw/db/CDbConnection.php(308): CDbConnection->setActive(true)
+#2 /var/www/fw/base/CModule.php(387): CDbConnection->init()
+#3 /var/www/fw/base/CApplication.php(438): CModule->getComponent('db')
+#4 /var/www/fw/db/ar/CActiveRecord.php(623): CApplication->getDb()
+#5 /var/www/fw/db/ar/CActiveRecord.php(2309): CActiveRecord->getDbConnection()
+#6 /var/www/fw/db/ar/CActiveRecord.php(387): CActiveRecordMetaData->__construct(Object(Cams))
+#7 /var/www/fw/db/ar/CActiveRecord.php(402): CActiveRecord::model('Cams')
+#8 /var/www/fw/db/ar/CActiveRecord.php(77): CActiveRecord->getMetaData()
+#9 /var/www/protected/controllers/CamsController.php(100): CActiveRecord->__construct()
+#10 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionAdd()
+#11 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#12 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#13 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#14 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#15 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#16 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#17 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#18 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#19 /var/www/fw/web/CWebApplication.php(282): CController->run('add')
+#20 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/add')
+#21 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#22 /var/www/index.php(13): CApplication->run()
+#23 {main}
+REQUEST_URI=/index.php/cams/add
+HTTP_REFERER=http://213.183.117.158/index.php/cams/manage
+---
+2013/12/31 03:31:55 [error] [exception.CDbException] exception 'CDbException' with message 'CDbConnection failed to open the DB connection: SQLSTATE[28000] [1045] Access denied for user 'root'@'localhost' (using password: NO)' in /var/www/fw/db/CDbConnection.php:381
+Stack trace:
+#0 /var/www/fw/db/CDbConnection.php(330): CDbConnection->open()
+#1 /var/www/fw/db/CDbConnection.php(308): CDbConnection->setActive(true)
+#2 /var/www/fw/base/CModule.php(387): CDbConnection->init()
+#3 /var/www/fw/base/CApplication.php(438): CModule->getComponent('db')
+#4 /var/www/fw/db/ar/CActiveRecord.php(623): CApplication->getDb()
+#5 /var/www/fw/db/ar/CActiveRecord.php(2309): CActiveRecord->getDbConnection()
+#6 /var/www/fw/db/ar/CActiveRecord.php(387): CActiveRecordMetaData->__construct(Object(Cams))
+#7 /var/www/protected/models/Cams.php(26): CActiveRecord::model('Cams')
+#8 /var/www/protected/controllers/CamsController.php(55): Cams::model()
+#9 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionIndex()
+#10 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#11 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#12 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#13 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#14 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#15 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#16 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#17 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#18 /var/www/fw/web/CWebApplication.php(282): CController->run('index')
+#19 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/index')
+#20 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#21 /var/www/index.php(13): CApplication->run()
+#22 {main}
+REQUEST_URI=/
+---
+2013/12/31 03:31:57 [error] [exception.CDbException] exception 'CDbException' with message 'CDbConnection failed to open the DB connection: SQLSTATE[28000] [1045] Access denied for user 'root'@'localhost' (using password: NO)' in /var/www/fw/db/CDbConnection.php:381
+Stack trace:
+#0 /var/www/fw/db/CDbConnection.php(330): CDbConnection->open()
+#1 /var/www/fw/db/CDbConnection.php(308): CDbConnection->setActive(true)
+#2 /var/www/fw/base/CModule.php(387): CDbConnection->init()
+#3 /var/www/fw/base/CApplication.php(438): CModule->getComponent('db')
+#4 /var/www/fw/db/ar/CActiveRecord.php(623): CApplication->getDb()
+#5 /var/www/fw/db/ar/CActiveRecord.php(2309): CActiveRecord->getDbConnection()
+#6 /var/www/fw/db/ar/CActiveRecord.php(387): CActiveRecordMetaData->__construct(Object(Cams))
+#7 /var/www/protected/models/Cams.php(26): CActiveRecord::model('Cams')
+#8 /var/www/protected/controllers/CamsController.php(55): Cams::model()
+#9 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionIndex()
+#10 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#11 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#12 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#13 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#14 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#15 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#16 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#17 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#18 /var/www/fw/web/CWebApplication.php(282): CController->run('index')
+#19 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/index')
+#20 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#21 /var/www/index.php(13): CApplication->run()
+#22 {main}
+REQUEST_URI=/
+---
+2013/12/31 03:32:40 [error] [exception.CException] exception 'CException' with message 'Property "Cams.prev_url" is not defined.' in /var/www/fw/base/CComponent.php:130
+Stack trace:
+#0 /var/www/fw/db/ar/CActiveRecord.php(143): CComponent->__get('prev_url')
+#1 /var/www/fw/web/helpers/CHtml.php(2255): CActiveRecord->__get('prev_url')
+#2 /var/www/fw/web/helpers/CHtml.php(1980): CHtml::resolveValue(Object(Cams), 'prev_url')
+#3 /var/www/fw/web/helpers/CHtml.php(1257): CHtml::activeInputField('text', Object(Cams), 'prev_url', Array)
+#4 /var/www/fw/web/widgets/CActiveForm.php(657): CHtml::activeTextField(Object(Cams), 'prev_url', Array)
+#5 /var/www/protected/views/cams/edit.php(48): CActiveForm->textField(Object(Cams), 'prev_url', Array)
+#6 /var/www/fw/web/CBaseController.php(126): require('/var/www/protec...')
+#7 /var/www/fw/web/CBaseController.php(95): CBaseController->renderInternal('/var/www/protec...', Array, true)
+#8 /var/www/fw/web/CController.php(869): CBaseController->renderFile('/var/www/protec...', Array, true)
+#9 /var/www/fw/web/CController.php(782): CController->renderPartial('edit', Array, true)
+#10 /var/www/protected/controllers/CamsController.php(116): CController->render('edit', Array)
+#11 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionAdd()
+#12 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#13 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#14 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#15 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#16 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#17 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#18 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#19 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#20 /var/www/fw/web/CWebApplication.php(282): CController->run('add')
+#21 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/add')
+#22 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#23 /var/www/index.php(13): CApplication->run()
+#24 {main}
+REQUEST_URI=/index.php/cams/add
+HTTP_REFERER=http://213.183.117.158/index.php/cams/manage
+---
+2013/12/31 03:32:42 [error] [exception.CException] exception 'CException' with message 'Property "Cams.prev_url" is not defined.' in /var/www/fw/base/CComponent.php:130
+Stack trace:
+#0 /var/www/fw/db/ar/CActiveRecord.php(143): CComponent->__get('prev_url')
+#1 /var/www/fw/web/helpers/CHtml.php(2255): CActiveRecord->__get('prev_url')
+#2 /var/www/fw/web/helpers/CHtml.php(1980): CHtml::resolveValue(Object(Cams), 'prev_url')
+#3 /var/www/fw/web/helpers/CHtml.php(1257): CHtml::activeInputField('text', Object(Cams), 'prev_url', Array)
+#4 /var/www/fw/web/widgets/CActiveForm.php(657): CHtml::activeTextField(Object(Cams), 'prev_url', Array)
+#5 /var/www/protected/views/cams/edit.php(48): CActiveForm->textField(Object(Cams), 'prev_url', Array)
+#6 /var/www/fw/web/CBaseController.php(126): require('/var/www/protec...')
+#7 /var/www/fw/web/CBaseController.php(95): CBaseController->renderInternal('/var/www/protec...', Array, true)
+#8 /var/www/fw/web/CController.php(869): CBaseController->renderFile('/var/www/protec...', Array, true)
+#9 /var/www/fw/web/CController.php(782): CController->renderPartial('edit', Array, true)
+#10 /var/www/protected/controllers/CamsController.php(116): CController->render('edit', Array)
+#11 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionAdd()
+#12 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#13 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#14 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#15 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#16 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#17 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#18 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#19 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#20 /var/www/fw/web/CWebApplication.php(282): CController->run('add')
+#21 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/add')
+#22 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#23 /var/www/index.php(13): CApplication->run()
+#24 {main}
+REQUEST_URI=/index.php/cams/add
+HTTP_REFERER=http://213.183.117.158/index.php/cams/manage
+---
+2013/12/31 03:33:56 [error] [exception.CException] exception 'CException' with message 'Property "Cams.time_offset" is not defined.' in /var/www/fw/base/CComponent.php:130
+Stack trace:
+#0 /var/www/fw/db/ar/CActiveRecord.php(143): CComponent->__get('time_offset')
+#1 /var/www/fw/web/helpers/CHtml.php(2255): CActiveRecord->__get('time_offset')
+#2 /var/www/fw/web/helpers/CHtml.php(1980): CHtml::resolveValue(Object(Cams), 'time_offset')
+#3 /var/www/fw/web/helpers/CHtml.php(1257): CHtml::activeInputField('text', Object(Cams), 'time_offset', Array)
+#4 /var/www/fw/web/widgets/CActiveForm.php(657): CHtml::activeTextField(Object(Cams), 'time_offset', Array)
+#5 /var/www/protected/views/cams/edit.php(57): CActiveForm->textField(Object(Cams), 'time_offset', Array)
+#6 /var/www/fw/web/CBaseController.php(126): require('/var/www/protec...')
+#7 /var/www/fw/web/CBaseController.php(95): CBaseController->renderInternal('/var/www/protec...', Array, true)
+#8 /var/www/fw/web/CController.php(869): CBaseController->renderFile('/var/www/protec...', Array, true)
+#9 /var/www/fw/web/CController.php(782): CController->renderPartial('edit', Array, true)
+#10 /var/www/protected/controllers/CamsController.php(116): CController->render('edit', Array)
+#11 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionAdd()
+#12 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#13 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#14 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#15 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#16 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#17 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#18 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#19 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#20 /var/www/fw/web/CWebApplication.php(282): CController->run('add')
+#21 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/add')
+#22 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#23 /var/www/index.php(13): CApplication->run()
+#24 {main}
+REQUEST_URI=/index.php/cams/add
+HTTP_REFERER=http://213.183.117.158/index.php/cams/manage
+---
+2014/01/08 01:40:11 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'Unable to resolve the request "mx0.mail2000.com.tw:25".' in /var/www/fw/web/CWebApplication.php:286
+Stack trace:
+#0 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('mx0.mail2000.co...')
+#1 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#2 /var/www/index.php(13): CApplication->run()
+#3 {main}
+REQUEST_URI=mx0.mail2000.com.tw:25
+---
+2014/01/08 19:10:33 [error] [exception.CException] exception 'CException' with message 'Property "Notifications.time" is not defined.' in /var/www/fw/base/CComponent.php:130
+Stack trace:
+#0 /var/www/fw/db/ar/CActiveRecord.php(143): CComponent->__get('time')
+#1 /var/www/protected/views/admin/logs/index.php(51): CActiveRecord->__get('time')
+#2 /var/www/fw/web/CBaseController.php(126): require('/var/www/protec...')
+#3 /var/www/fw/web/CBaseController.php(95): CBaseController->renderInternal('/var/www/protec...', Array, true)
+#4 /var/www/fw/web/CController.php(869): CBaseController->renderFile('/var/www/protec...', Array, true)
+#5 /var/www/fw/web/CController.php(782): CController->renderPartial('logs/index', Array, true)
+#6 /var/www/protected/controllers/AdminController.php(149): CController->render('logs/index', Array)
+#7 [internal function]: AdminController->actionLogs('user')
+#8 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(AdminController), Array)
+#9 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(AdminController), Object(ReflectionMethod), Array)
+#10 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#11 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#12 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#13 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#14 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#15 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#16 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#17 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#18 /var/www/fw/web/CWebApplication.php(282): CController->run('logs')
+#19 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('admin/logs/type...')
+#20 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#21 /var/www/index.php(13): CApplication->run()
+#22 {main}
+REQUEST_URI=/index.php/admin/logs/type/user
+HTTP_REFERER=http://213.183.117.158/index.php/admin/logs/type/system
+---
+2014/01/12 02:36:10 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'The CSRF token could not be verified.' in /var/www/fw/web/CHttpRequest.php:1042
+Stack trace:
+#0 /var/www/fw/base/CComponent.php(558): CHttpRequest->validateCsrfToken(Object(CEvent))
+#1 /var/www/fw/base/CApplication.php(196): CComponent->raiseEvent('onBeginRequest', Object(CEvent))
+#2 /var/www/fw/base/CApplication.php(167): CApplication->onBeginRequest(Object(CEvent))
+#3 /var/www/index.php(13): CApplication->run()
+#4 {main}
+REQUEST_URI=/?%2D%64+%61%6C%6C%6F%77%5F%75%72%6C%5F%69%6E%63%6C%75%64%65%3D%6F%6E+%2D%64+%73%61%66%65%5F%6D%6F%64%65%3D%6F%66%66+%2D%64+%73%75%68%6F%73%69%6E%2E%73%69%6D%75%6C%61%74%69%6F%6E%3D%6F%6E+%2D%64+%64%69%73%61%62%6C%65%5F%66%75%6E%63%74%69%6F%6E%73%3D%22%22+%2D%64+%6F%70%65%6E%5F%62%61%73%65%64%69%72%3D%6E%6F%6E%65+%2D%64+%61%75%74%6F%5F%70%72%65%70%65%6E%64%5F%66%69%6C%65%3D%70%68%70%3A%2F%2F%69%6E%70%75%74+%2D%64+%63%67%69%2E%66%6F%72%63%65%5F%72%65%64%69%72%65%63%74%3D%30+%2D%64+%63%67%69%2E%72%65%64%69%72%65%63%74%5F%73%74%61%74%75%73%5F%65%6E%76%3D%30+%2D%64+%61%75%74%6F%5F%70%72%65%70%65%6E%64%5F%66%69%6C%65%3D%70%68%70%3A%2F%2F%69%6E%70%75%74+%2D%6E
+---
+2014/01/17 07:05:35 [error] [system.db.CDbCommand] CDbCommand::fetchAll() failed: SQLSTATE[HY000]: General error: 1030 Got error 28 from storage engine. The SQL statement executed was: SHOW FULL COLUMNS FROM `cams`.
+in /var/www/protected/models/Cams.php (27)
+in /var/www/protected/controllers/CamsController.php (68)
+in /var/www/index.php (13)
+2014/01/17 07:05:35 [error] [exception.CDbException] exception 'CDbException' with message 'The table "cams" for active record class "Cams" cannot be found in the database.' in /var/www/fw/db/ar/CActiveRecord.php:2310
+Stack trace:
+#0 /var/www/fw/db/ar/CActiveRecord.php(387): CActiveRecordMetaData->__construct(Object(Cams))
+#1 /var/www/protected/models/Cams.php(27): CActiveRecord::model('Cams')
+#2 /var/www/protected/controllers/CamsController.php(68): Cams::model()
+#3 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionIndex()
+#4 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#5 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#6 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#9 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#10 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#11 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#12 /var/www/fw/web/CWebApplication.php(282): CController->run('index')
+#13 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/index')
+#14 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#15 /var/www/index.php(13): CApplication->run()
+#16 {main}
+REQUEST_URI=/
+---
+2014/01/17 09:01:02 [error] [system.db.CDbCommand] CDbCommand::fetchAll() failed: SQLSTATE[HY000]: General error: 1030 Got error 28 from storage engine. The SQL statement executed was: SHOW FULL COLUMNS FROM `cams`.
+in /var/www/protected/models/Cams.php (27)
+in /var/www/protected/controllers/CamsController.php (68)
+in /var/www/index.php (13)
+2014/01/17 09:01:02 [error] [exception.CDbException] exception 'CDbException' with message 'The table "cams" for active record class "Cams" cannot be found in the database.' in /var/www/fw/db/ar/CActiveRecord.php:2310
+Stack trace:
+#0 /var/www/fw/db/ar/CActiveRecord.php(387): CActiveRecordMetaData->__construct(Object(Cams))
+#1 /var/www/protected/models/Cams.php(27): CActiveRecord::model('Cams')
+#2 /var/www/protected/controllers/CamsController.php(68): Cams::model()
+#3 /var/www/fw/web/actions/CInlineAction.php(49): CamsController->actionIndex()
+#4 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#5 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#6 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#9 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#10 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#11 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#12 /var/www/fw/web/CWebApplication.php(282): CController->run('index')
+#13 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/index')
+#14 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#15 /var/www/index.php(13): CApplication->run()
+#16 {main}
+REQUEST_URI=/
+---
+2014/01/17 09:48:32 [error] [system.db.CDb2014/01/21 19:07:22 [error] [exception.CHttpException.404] exception 'CHttpException' with message 'Unable to resolve the request "mx0.mail2000.com.tw:25".' in /var/www/fw/web/CWebApplication.php:286
+Stack trace:
+#0 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('mx0.mail2000.co...')
+#1 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#2 /var/www/index.php(13): CApplication->run()
+#3 {main}
+REQUEST_URI=mx0.mail2000.com.tw:25
+---
+2014/01/24 14:13:59 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390547634767
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 14:13:59 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390547634720
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 14:14:21 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390550531674
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 14:14:21 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390550531668
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 14:16:55 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390550686173
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 14:16:55 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390550686336
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 17:04:37 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('20', 0)
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/20
+HTTP_REFERER=http://213.183.117.158/index.php
+---
+2014/01/24 17:06:22 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390560852453
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 17:06:22 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390560852460
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 17:09:11 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390561020997
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 17:09:11 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390561021008
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 17:13:06 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390561255634
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 17:13:06 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390561255860
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 17:14:03 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390561313448
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 17:14:03 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390561313437
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 17:14:21 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390561330910
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 17:14:21 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390561330883
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 17:15:20 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390558518041
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 17:15:21 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390558518053
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 18:08:04 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390564553585
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 18:08:04 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390564553592
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 19:08:43 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390568192149
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:08:43 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390568192157
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 19:09:51 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390568259236
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 19:09:51 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390568259246
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:09:51 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390568259253
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 19:12:24 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/20_low?_=1390568412546
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:12:24 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390568412840
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 19:12:24 [error] [exception.CHttpException.400] exception 'CHttpException' with message 'Your request is invalid.' in /var/www/fw/web/CController.php:336
+Stack trace:
+#0 /var/www/fw/web/CController.php(309): CController->invalidActionParams(Object(CInlineAction))
+#1 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#2 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#3 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#4 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#5 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#6 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#7 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#8 /var/www/fw/web/CWebApplication.php(282): CController->run('existence')
+#9 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/existence/...')
+#10 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#11 /var/www/index.php(13): CApplication->run()
+#12 {main}
+REQUEST_URI=/index.php/cams/existence/19_low?_=1390568412553
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('19', 'buffering.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/19/preview/buffering.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('20', 'splash.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/20/preview/splash.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('20', 'playlist.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/20/preview/playlist.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('19', 'error.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/19/preview/error.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/19/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('20', 'buffering.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/20/preview/buffering.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('20', 'horizontal.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/20/preview/horizontal.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('20', 'error.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/20/preview/error.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('20', 'fullscreen.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/20/preview/fullscreen.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
+2014/01/24 19:13:10 [error] [exception.CHttpException.403] exception 'CHttpException' with message 'Доступ запрещен' in /var/www/protected/controllers/CamsController.php:99
+Stack trace:
+#0 [internal function]: CamsController->actionFullscreen('20', 'connecting.png')
+#1 /var/www/fw/web/actions/CAction.php(108): ReflectionMethod->invokeArgs(Object(CamsController), Array)
+#2 /var/www/fw/web/actions/CInlineAction.php(47): CAction->runWithParamsInternal(Object(CamsController), Object(ReflectionMethod), Array)
+#3 /var/www/fw/web/CController.php(308): CInlineAction->runWithParams(Array)
+#4 /var/www/fw/web/filters/CFilterChain.php(133): CController->runAction(Object(CInlineAction))
+#5 /var/www/fw/web/filters/CFilter.php(40): CFilterChain->run()
+#6 /var/www/fw/web/CController.php(1145): CFilter->filter(Object(CFilterChain))
+#7 /var/www/fw/web/filters/CInlineFilter.php(58): CController->filterAccessControl(Object(CFilterChain))
+#8 /var/www/fw/web/filters/CFilterChain.php(130): CInlineFilter->filter(Object(CFilterChain))
+#9 /var/www/fw/web/CController.php(291): CFilterChain->run()
+#10 /var/www/fw/web/CController.php(265): CController->runActionWithFilters(Object(CInlineAction), Array)
+#11 /var/www/fw/web/CWebApplication.php(282): CController->run('fullscreen')
+#12 /var/www/fw/web/CWebApplication.php(141): CWebApplication->runController('cams/fullscreen...')
+#13 /var/www/fw/base/CApplication.php(169): CWebApplication->processRequest()
+#14 /var/www/index.php(13): CApplication->run()
+#15 {main}
+REQUEST_URI=/index.php/cams/fullscreen/id/20/preview/connecting.png
+HTTP_REFERER=http://213.183.117.158/index.php/cams/fullscreen/id/20/preview/1
+---
