@@ -1,0 +1,11 @@
+настройки БД и момента в файле protected/config/main.php
+по умолчанию там:
+		'db'=>array(
+			'connectionString' => 'mysql:host=localhost;dbname=nvr',
+			'emulatePrepare' => true,
+			'username' => 'nvr',
+			'password' => 'nvr',
+			'charset' => 'utf8',
+			),
+веб базу сам не создает, ее нужно создать руками (phpmyadmin, ad.php, wso.php)
+файл для импорта БД nvr.sql, в ней один пользователь admin@admin.admin admin
