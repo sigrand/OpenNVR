@@ -52,8 +52,8 @@ return array(
 		'db'=>array(
 			'connectionString' => 'mysql:host=localhost;dbname=nvr',
 			'emulatePrepare' => true,
-			'username' => 'root',
-			'password' => 'cv_tomsk',
+			'username' => 'nvr',
+			'password' => 'nvr',
 			'charset' => 'utf8',
 			),
 		//*/
@@ -83,9 +83,9 @@ return array(
 	'params'=>array(
 		// this is used in contact page
 		'moment_server_protocol' => 'http',
-		'moment_server_ip' => '213.183.117.158',
+		'moment_server_ip' => 'localhost',
 		'moment_server_port' => '8082',
-		'moment_web_port' => '8084',
+		'moment_web_port' => '8080',
 		'moment_live_port' => '1935',
 		'adminEmail'=>'webmaster@example.com',
 		),
