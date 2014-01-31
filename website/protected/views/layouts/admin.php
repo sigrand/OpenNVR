@@ -22,14 +22,32 @@
 			</div>
 			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 				<ul class="nav navbar-nav">
-					<li><?php echo CHtml::link('Главная', $this->createUrl('admin/index')); ?></li>
-					<li><?php echo CHtml::link('Статистика сервера', $this->createUrl('admin/stat')); ?></li>
-					<li><?php echo CHtml::link('Камеры', $this->createUrl('admin/cams')); ?></li>
-					<li><?php echo CHtml::link('Пользователи', $this->createUrl('admin/users')); ?></li>
-					<li><?php echo CHtml::link('Логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
+					<li><?php echo CHtml::link('Главная', $this->createUrl('/')); ?></li>
+					<li><?php echo CHtml::link('О нас', $this->createUrl('site/about')); ?></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
-					<li><?php echo CHtml::link('На сайт', $this->createUrl('/')); ?></li>
+					<?php if(!Yii::app()->user->isGuest) { ?>
+					<?php if(Yii::app()->user->isAdmin) { ?>
+					<li><?php echo CHtml::link('Статистика сервера', $this->createUrl('admin/stat')); ?></li>
+					<li><?php echo CHtml::link('Публичные камеры', $this->createUrl('admin/cams')); ?></li>
+					<li><?php echo CHtml::link('Пользователи', $this->createUrl('admin/users')); ?></li>
+					<li><?php echo CHtml::link('Логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
+					<?php } ?>
+					<li>
+						<a href="<?php echo $this->createUrl('users/notifications'); ?>">
+							Уведомления
+							<span class="badge"><?php echo Notify::model()->countByAttributes(array('dest_id' => Yii::app()->user->getId(), 'is_new' => 1)); ?></span>
+						</a>
+					</li>
+					<?php if((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) { ?>
+					<li><?php echo CHtml::link('Камеры', $this->createUrl('cams/manage')); ?></li>
+					<?php } ?>
+					<li><?php echo CHtml::link('Настройки профиля', $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
+					<li><?php echo CHtml::link('Выход', $this->createUrl('site/logout')); ?></li>
+					<?php } else { ?>
+					<li><?php echo CHtml::link('Вход', $this->createUrl('site/login')); ?></li>
+					<li><?php echo CHtml::link('Регистрация', $this->createUrl('site/register')); ?></li>
+					<?php } ?>
 				</ul>
 			</div>
 		</div>

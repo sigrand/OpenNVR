@@ -28,7 +28,10 @@
 				<ul class="nav navbar-nav navbar-right">
 					<?php if(!Yii::app()->user->isGuest) { ?>
 					<?php if(Yii::app()->user->isAdmin) { ?>
-					<li><?php echo CHtml::link('Админка', $this->createUrl('admin/index')); ?></li>
+					<li><?php echo CHtml::link('Статистика сервера', $this->createUrl('admin/stat')); ?></li>
+					<li><?php echo CHtml::link('Публичные камеры', $this->createUrl('admin/cams')); ?></li>
+					<li><?php echo CHtml::link('Пользователи', $this->createUrl('admin/users')); ?></li>
+					<li><?php echo CHtml::link('Логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
 					<?php } ?>
 					<li>
 						<a href="<?php echo $this->createUrl('users/notifications'); ?>">
