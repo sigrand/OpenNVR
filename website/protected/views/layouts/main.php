@@ -36,7 +36,9 @@
 							<span class="badge"><?php echo Notify::model()->countByAttributes(array('dest_id' => Yii::app()->user->getId(), 'is_new' => 1)); ?></span>
 						</a>
 					</li>
-					<li><?php echo CHtml::link('Личный кабинет', $this->createUrl('cams/manage')); ?></li>
+					<?php if((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) { ?>
+					<li><?php echo CHtml::link('Камеры', $this->createUrl('cams/manage')); ?></li>
+					<?php } ?>
 					<li><?php echo CHtml::link('Настройки профиля', $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
 					<li><?php echo CHtml::link('Выход', $this->createUrl('site/logout')); ?></li>
 					<?php } else { ?>

@@ -2,6 +2,7 @@
 
 class UserIdentity extends CUserIdentity {
 	private $_id;
+	public $permissions; // 0 - inactive; 1 - viewer; 2 - operator; 3 - admin; 4 - banned;
 	public $isAdmin;
 	public function authenticate() {
 		$nick = strtolower($this->username);
@@ -13,13 +14,15 @@ class UserIdentity extends CUserIdentity {
 		} elseif($user->status == 0) {
 			$this->errorCode = self::ERROR_PASSWORD_INVALID;
 			return 2;
-		} elseif($user->status == 2) {
+		} elseif($user->status == 4) {
+			// user is banned
 			$this->errorCode = self::ERROR_PASSWORD_INVALID;
 			return 3;
 		} else {
 			$this->_id = $user->id;
 			$this->username = $user->email;
 			$this->setState('isAdmin', $user->status == 3);
+			$this->setState('permissions', $user->status);
 			$this->errorCode = self::ERROR_NONE;
 		}
 		return $this->errorCode == self::ERROR_NONE;

@@ -20,12 +20,14 @@ class CamsController extends Controller {
 	public function accessRules() {
 		return array(
 			array('allow',
-				'actions'=>array('index', 'fullscreen'),
+				'actions'=>array('index', 'fullscreen', 'playlist'),
 				'users'=>array('*'),
 				),
 			array('allow',
-				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'playlist', 'existence', 'unixtime'),
+				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime'),
 				'users'=>array('@'),
+				// разрешаем достут только операторам и админам
+				'expression' => '(Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)',
 				),
 			array('deny',
 				'users'=>array('*'),

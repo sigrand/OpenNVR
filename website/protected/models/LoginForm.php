@@ -30,6 +30,8 @@ class LoginForm extends CFormModel {
 				$this->addError('pass', 'Неправильный email или пароль.');
 			} elseif($authResult === 2) {
 				$this->addError('pass', 'Вы не активировали учетную запись, проверьте email.');
+			} elseif($authResult === 3) {
+				$this->addError('pass', 'Вас забанили.');
 			}
 		}
 	}

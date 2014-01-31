@@ -56,6 +56,101 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
+				<h3 class="panel-title">Операторы</h3>
+			</div>
+			<div class="panel-body">
+				<?php
+				if(!empty($operators)) {
+					?>
+					<table class="table table-striped">
+						<thead>
+							<th><?php echo CHtml::activeCheckBox($form, "checkAllZ", array ("class" => "checkAllZ")); ?></th>
+							<th>#</th>
+							<th>Ник</th>
+							<th>Почта</th>
+						</thead>
+						<tbody>
+							<?php
+							echo CHtml::beginForm($this->createUrl('admin/users'), "post");
+							foreach ($operators as $key => $user) {
+								echo '<tr>
+								<td>'.CHtml::activeCheckBox($form, 'zuser_'.$user->id).'</td>
+								<td>'.($key+1).'</td>
+								<td>'.CHtml::encode($user->nick).'</td>
+								<td>'.CHtml::encode($user->email).'</td>
+								</tr>';
+							}
+							?>
+							<tr>
+								<td colspan="1"></td>
+								<td><?php echo CHtml::submitButton('Повысить', array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton('Понизить', array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton('Забанить', array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
+							</tr>
+							<?php echo CHtml::endForm(); ?>
+						</tbody>
+					</table>
+					<?php
+				} else {
+					?>
+					Список операторов пуст.
+					<br/>
+					<?php
+				}
+				?>
+			</div>
+		</div>
+	</div>
+	<div class="col-sm-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h3 class="panel-title">Наблюдатели</h3>
+			</div>
+			<div class="panel-body">
+				<?php
+				if(!empty($viewers)) {
+					?>
+					<table class="table table-striped">
+						<thead>
+							<th><?php echo CHtml::activeCheckBox($form, "checkAllZ", array ("class" => "checkAllZ")); ?></th>
+							<th>#</th>
+							<th>Ник</th>
+							<th>Почта</th>
+						</thead>
+						<tbody>
+							<?php
+							echo CHtml::beginForm($this->createUrl('admin/users'), "post");
+							foreach ($viewers as $key => $user) {
+								echo '<tr>
+								<td>'.CHtml::activeCheckBox($form, 'zuser_'.$user->id).'</td>
+								<td>'.($key+1).'</td>
+								<td>'.CHtml::encode($user->nick).'</td>
+								<td>'.CHtml::encode($user->email).'</td>
+								</tr>';
+							}
+							?>
+							<tr>
+								<td colspan="2"></td>
+								<td><?php echo CHtml::submitButton('Повысить', array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton('Забанить', array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
+							</tr>
+							<?php echo CHtml::endForm(); ?>
+						</tbody>
+					</table>
+					<?php
+				} else {
+					?>
+					Список наблюдателей пуст.
+					<br/>
+					<?php
+				}
+				?>
+			</div>
+		</div>
+	</div>
+	<div class="col-sm-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
 				<h3 class="panel-title">Забаненные</h3>
 			</div>
 			<div class="panel-body">
@@ -82,9 +177,10 @@
 							}
 							?>
 							<tr>
-								<td colspan="2"></td>
+								<td colspan="1"></td>
 								<td><?php echo CHtml::submitButton('Повысить', array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
-								<td><?php echo CHtml::submitButton('разбанить', array('name' => 'unban', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton('Понизить', array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton('Разбанить', array('name' => 'unban', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
@@ -126,7 +222,7 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($user->nick).'</td>
 								<td>'.CHtml::encode($user->email).'</td>
-								<td>'.($user->status == 1 ? 'Активный' : 'Неактивированный').'</td>
+								<td>'.($user->status >= 1 ? 'Активный' : 'Неактивированный').'</td>
 								</tr>';
 							}
 							?>

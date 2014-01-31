@@ -3,7 +3,7 @@
 class AdminController extends Controller {
 	var $layout = 'admincolumn';
 	var $userActions = array(
-		'ban' => array(2, 'забанен'),
+		'ban' => array(4, 'забанен'),
 		'unban' => array(1, 'разбанен'),
 		'levelup' => array(3, 'Повышен'),
 		'active' => array(1, 'активирован'),
@@ -107,10 +107,14 @@ class AdminController extends Controller {
 			}
 		}
 		$admins = Users::model()->findAllByAttributes(array('status' => 3));
-		$banned = Users::model()->findAllByAttributes(array('status' => 2));
+		$operators = Users::model()->findAllByAttributes(array('status' => 2));
+		$viewers = Users::model()->findAllByAttributes(array('status' => 1));
+		$banned = Users::model()->findAllByAttributes(array('status' => 4));
 		$criteria = new CDbCriteria();
 		$criteria->addNotInCondition('id', CHtml::listData($admins, 'id', 'id'));
 		$criteria->addNotInCondition('id', CHtml::listData($banned, 'id', 'id'));
+		$criteria->addNotInCondition('id', CHtml::listData($operators, 'id', 'id'));
+		$criteria->addNotInCondition('id', CHtml::listData($viewers, 'id', 'id'));
 		$count = Users::model()->count($criteria);
 		$pages = new CPagination($count);
 		$pages->pageSize = 10;
@@ -121,6 +125,8 @@ class AdminController extends Controller {
 			array(
 				'form' => new UsersForm,
 				'admins' => $admins,
+				'operators' => $operators,
+				'viewers' => $viewers,
 				'banned' => $banned,
 				'all' => $all,
 				'pages' => $pages
@@ -131,7 +137,13 @@ class AdminController extends Controller {
 	private function userAction($actions, $user) {
 		foreach ($this->userActions as $key => $value) {
 			if(isset($actions[$key])) {
-				$user->status = $value[0];
+				if ($key === 'levelup') {
+					$user->status = $user->status + 1;
+				} elseif ($key === 'dismiss') {
+					$user->status = $user->status - 1;
+				} else {
+					$user->status = $value[0];
+				}
 				if($user->save()) {
 					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Пользователь(и) '.$value[1]));
 					return;
