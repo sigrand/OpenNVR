@@ -28,10 +28,15 @@
 				<ul class="nav navbar-nav navbar-right">
 					<?php if(!Yii::app()->user->isGuest) { ?>
 					<?php if(Yii::app()->user->isAdmin) { ?>
-					<li><?php echo CHtml::link('Статистика сервера', $this->createUrl('admin/stat')); ?></li>
-					<li><?php echo CHtml::link('Публичные камеры', $this->createUrl('admin/cams')); ?></li>
-					<li><?php echo CHtml::link('Пользователи', $this->createUrl('admin/users')); ?></li>
-					<li><?php echo CHtml::link('Логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
+					<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Админка <b class="caret"></b></a>
+					<ul class="dropdown-menu">
+						<li><?php echo CHtml::link('Статистика сервера', $this->createUrl('admin/stat')); ?></li>
+						<li><?php echo CHtml::link('Публичные камеры', $this->createUrl('admin/cams')); ?></li>
+						<li><?php echo CHtml::link('Пользователи', $this->createUrl('admin/users')); ?></li>
+						<li><?php echo CHtml::link('Логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
+					</ul>
+					</li>
 					<?php } ?>
 					<li>
 						<a href="<?php echo $this->createUrl('users/notifications'); ?>">
@@ -42,6 +47,7 @@
 					<?php if((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) { ?>
 					<li><?php echo CHtml::link('Камеры', $this->createUrl('cams/manage')); ?></li>
 					<?php } ?>
+					<li><?php echo CHtml::link('Экраны', $this->createUrl('screens/manage')); ?></li>
 					<li><?php echo CHtml::link('Настройки профиля', $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
 					<li><?php echo CHtml::link('Выход', $this->createUrl('site/logout')); ?></li>
 					<?php } else { ?>
