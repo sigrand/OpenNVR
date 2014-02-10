@@ -1,5 +1,45 @@
 <?php
-	echo "<h2>$model->name</h2>";
+	if ($fullscreen == "true")
+		echo '<div class="col-sm-12" style="top:52px;bottom: 0px;left: 0px;width:100%;">';
+	else
+		echo '<div class="col-sm-12" style="position: absolute;top:52px;bottom: 0px;left: 0px;width:100%;">';
+?>
+<!--	<div class="panel panel-default" style="width:100%;">-->
+<?php
+?>
+		<div class="panel-body" style="width:100%;">
+			<div style="width:100%;">
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/player/js/jquery-1.10.2.js"></script>
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/player/js/flowplayer-3.2.13.min.js"></script>
+<script type="text/javascript">
+	$(function(){
+	for (i=1; i<=16; i++) {
+
+	flowplayer("player"+i, <?php echo "\"".Yii::app()->request->baseUrl.'/player/flowplayer-3.2.18.swf'."\""; ?>, {
+		wmode: 'opaque',
+		clip: {
+			provider: 'rtmp',
+			bufferLength: 1,
+			live : true
+		},
+		// streaming plugins are configured under the plugins node
+		plugins: {
+			// here is our rtpm plugin configuration
+			rtmp: {
+				url: <?php echo "\"".Yii::app()->request->baseUrl.'/player/flowplayer.rtmp-3.2.13.swf'."\""; ?>,
+				// netConnectionUrl defines where the streams are found
+				netConnectionUrl: <?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>
+			},
+			controls: null
+		}
+	});
+	}
+
+	x});
+</script>
+
+<?php
+
 	// max 16 cams on screen
 	$colors = array(
 		1 => "#FF0000",
@@ -27,11 +67,14 @@
 		eval("\$h=\$model->cam${i}_h;");
 		eval("\$descr=\$model->cam${i}_descr;");
 		if (($w > 0) && ($h > 0)) {
-			echo '<div class="cams" id="cam'.$i.'_div" style="background-color:'.$colors[$i].';';
+			echo '<div class="cams" id="player'.$i.'" href="'.$id.'" style="background-color:'.$colors[$i].';';
 			echo ' position:absolute;width:'.$w.'%;height:'.$h.'%;left:'.$x.'%;top:'.$y.'%;">';
-			echo "Камера:".$id."<br>";
-			echo "Описание:".$descr."<br>";
 			echo '</div>';
 		}
 	}
+
 ?>
+<!--		</div>-->
+		</div>
+	</div>
+</div>

@@ -10,7 +10,7 @@
 	<title><?php echo CHtml::encode($this->pageTitle); ?></title>
 </head>
 <body>
-	<nav class="navbar navbar-default navbar-inverse" role="navigation">
+	<nav class="navbar navbar-default navbar-inverse" role="navigation" style="z-index:1000">
 		<div class="container">
 			<div class="navbar-header">
 				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
@@ -47,7 +47,22 @@
 					<?php if((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) { ?>
 					<li><?php echo CHtml::link('Камеры', $this->createUrl('cams/manage')); ?></li>
 					<?php } ?>
-					<li><?php echo CHtml::link('Экраны', $this->createUrl('screens/manage')); ?></li>
+					<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Экраны <b class="caret"></b></a>
+						<ul class="dropdown-menu">
+							<li><?php echo CHtml::link('Редактировать', $this->createUrl('screens/manage')); ?></li>
+							<?php
+								if (Yii::app()->user->permissions == 3) {
+									$myscreens = Screens::model()->findAll();
+								} else {
+									$myscreens = Screens::model()->findAllByAttributes(array('owner_id' => Yii::app()->user->getId()));
+								}
+								foreach ($myscreens as $key => $value) {
+									echo "<li>".CHtml::link("$value->name", $this->createUrl("screens/view/id/$value->id"))."</li>";
+								}
+							?>
+						</ul>
+					</li>
 					<li><?php echo CHtml::link('Настройки профиля', $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
 					<li><?php echo CHtml::link('Выход', $this->createUrl('site/logout')); ?></li>
 					<?php } else { ?>
@@ -60,6 +75,8 @@
 	</nav>
 	<div class="container">
 		<?php echo $content; ?>
+	</div>
+	<div style="position:fixed;bottom:0;">
 	</div>
 </body>
 </html>

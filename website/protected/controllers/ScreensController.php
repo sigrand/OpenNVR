@@ -40,14 +40,17 @@ class ScreensController extends Controller
 	 * Displays a particular model.
 	 * @param integer $id the ID of the model to be displayed
 	 */
-	public function actionView($id)
+	public function actionView($id, $fullscreen=false)
 	{
-		$this->layout = 'emptycolumn';
+		if ($fullscreen == "true") {
+			$this->layout = 'emptycolumn';
+		}
 		$model=$this->loadModel($id);
-		$this->pageTitle = $model->name;
 		if ($model) {
+			$this->pageTitle = $model->name;
 			$this->render('view',array(
 				'model'=>$model,
+				'fullscreen'=>$fullscreen,
 			));
 		}
 	}

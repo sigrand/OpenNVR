@@ -1,13 +1,13 @@
 var cams = {};
 var cams_num = 0;
-var grid_size = 20; // grid size
+var grid_size = 5; // grid size
 $(document).ready(function() {
-	$("#screen").css("width", Math.round(parseInt($("#screen").width())/10)*10+2);
-	$("#screen").css("height", Math.round((parseInt($("#screen").css("width")) * screen.height / screen.width)/10)*10+2);
+	$("#screen").css("width", Math.round(parseInt($("#screen").width())/grid_size)*grid_size+2);
+	$("#screen").css("height", Math.round((parseInt($("#screen").css("width")) * screen.height / screen.width)/grid_size)*grid_size+2);
 	screen_width  = (parseInt($("#screen").css("width"))-2);
 	screen_height = (parseInt($("#screen").css("height"))-2);
-	x_grid = screen_width/10;
-	y_grid = screen_height/10;
+	x_grid = (screen_width/100)*grid_size;
+	y_grid = (screen_height/100)*grid_size;
 	$("#add_cam_a").click(function(){
 		if (cams_num >= 16) {
 			alert("Максимальное количество камер на экране 16!");
@@ -23,8 +23,8 @@ $(document).ready(function() {
 		}
 		$("#cam"+cam_num+"_div").show();
 		$("#cam"+cam_num+"_div").css("position", "absolute");
-		$("#cam"+cam_num+"_div").css("width", x_grid*2);
-		$("#cam"+cam_num+"_div").css("height",y_grid*2);
+		$("#cam"+cam_num+"_div").css("width", (screen_width/100)*10);
+		$("#cam"+cam_num+"_div").css("height", (screen_height/100)*10);
 		$("#Screens_cam"+cam_num+"_x").val(0);
 		$("#Screens_cam"+cam_num+"_y").val(0);
 		$("#Screens_cam"+cam_num+"_w").val(Math.round(parseInt(x_grid*2)*100/screen_width));
