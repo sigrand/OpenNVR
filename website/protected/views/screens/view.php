@@ -12,30 +12,13 @@
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/player/js/jquery-1.10.2.js"></script>
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/player/js/flowplayer-3.2.13.min.js"></script>
 <script type="text/javascript">
-	$(function(){
-	for (i=1; i<=16; i++) {
 
-	flowplayer("player"+i, <?php echo "\"".Yii::app()->request->baseUrl.'/player/flowplayer-3.2.18.swf'."\""; ?>, {
-		wmode: 'opaque',
-		clip: {
-			provider: 'rtmp',
-			bufferLength: 1,
-			live : true
-		},
-		// streaming plugins are configured under the plugins node
-		plugins: {
-			// here is our rtpm plugin configuration
-			rtmp: {
-				url: <?php echo "\"".Yii::app()->request->baseUrl.'/player/flowplayer.rtmp-3.2.13.swf'."\""; ?>,
-				// netConnectionUrl defines where the streams are found
-				netConnectionUrl: <?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>
-			},
-			controls: null
+	function flashInitialized() {
+		for (i=1; i<=16; i++) {
+			document["MyPlayer"+i].setSource(<?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>, document["MyPlayer"+i].attributes.cam_id.value+"_low", document["MyPlayer"+i].attributes.cam_id.value);
 		}
-	});
 	}
 
-	x});
 </script>
 
 <?php
@@ -69,6 +52,38 @@
 		if (($w > 0) && ($h > 0)) {
 			echo '<div class="cams" id="player'.$i.'" href="'.$id.'" style="background-color:'.$colors[$i].';';
 			echo ' position:absolute;width:'.$w.'%;height:'.$h.'%;left:'.$x.'%;top:'.$y.'%;">';
+?>
+                <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo "$i\""; ?>
+				cam_id=<?php echo "$id"; ?>
+                align="middle">
+                <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
+                <param name="allowScriptAccess" value="always"/>
+                <param name="quality" value="high"/>
+                <param name="scale" value="noscale"/>
+                <param name="salign" value="lt"/>
+                <param name="wmode" value="opaque"/>
+                <param name="bgcolor" value="#000000"/>
+                <param name="allowFullScreen" value="true"/>
+                <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
+                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3"
+                src="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"
+				cam_id=<?php echo "$id"; ?>
+                bgcolor="#000000"
+                width="100%"
+                height="100%"
+                name="MyPlayer<?php echo "$i\""; ?>
+                quality="high"
+                wmode="opaque"
+                align="middle"
+                scale="showall"
+                allowFullScreen="true"
+                allowScriptAccess="always"
+                type="application/x-shockwave-flash"
+                pluginspage="http://www.macromedia.com/go/getflashplayer"
+                />
+            </object>
+
+<?php
 			echo '</div>';
 		}
 	}
