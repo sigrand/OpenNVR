@@ -24,7 +24,7 @@ class CamsController extends Controller {
 				'users'=>array('*'),
 				),
 			array('allow',
-				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime'),
+				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime', 'map'),
 				'users'=>array('@'),
 				// разрешаем достут только операторам и админам
 				'expression' => '(Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)',
@@ -276,6 +276,15 @@ class CamsController extends Controller {
 				'myCams' => Cams::model()->findAllByAttributes(array('user_id' => $id)),
 				'mySharedCams' => $shared,
 				'myPublicCams' => $public
+				)
+			);
+	}
+
+	public function actionMap() {
+		$myCams = Cams::getAvailableCams();
+		$this->render('map',
+			array(
+				'myCams' => $myCams,
 				)
 			);
 	}
