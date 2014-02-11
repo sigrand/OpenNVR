@@ -225,8 +225,8 @@
     var state_seq = 0;
     function requestState () {
         state_seq = state_seq + 1;
-        $.get ("/mod_nvr/channel_state?stream=Sigrand_1C-131&seq=" + state_seq,
-            {}, processStateReply);
+        // $.get ("/mod_nvr/channel_state?stream=Sigrand_1C-131&seq=" + state_seq,
+        //     {}, processStateReply);
     }
 
     function doDownload (download) {
@@ -468,6 +468,11 @@
       });
     }
 
+    function toggleMute(mute_on_off) {
+      console.log("mute_on_off value - ", mute_on_off);
+      document["MyPlayer"].toggleMute(mute_on_off);
+    }
+
     function doResize () {
         //$("#mark-middle")[0].style.left = /*Math.floor ($(window).width() / 2)*/  0  + 'px';
         $("#mark-play")[0].style.left = Math.floor (last_time_delta)  + 'px';
@@ -488,8 +493,8 @@
             <param name="salign" value="lt"/>
             <param name="bgcolor" value="#000000"/>
             <param name="allowFullScreen" value="true"/>
-            <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
-            <embed FlashVars="autoplay=0&playlist=1&buffer=0.3"
+            <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3&volume=1.0"/>
+            <embed FlashVars="autoplay=0&playlist=1&buffer=0.3&volume=1.0"
               src="MyPlayer.swf"
               bgcolor="#000000"
               width="100%"

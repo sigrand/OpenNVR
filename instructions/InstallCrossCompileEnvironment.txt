@@ -1,0 +1,16 @@
+# Set up cross-compile environment
+
+1. sudo apt-get install mingw-w64
+2. sudo apt-get install g++-mingw-w64
+3. sudo apt-get install gfortran-mingw-w64
+4. sudo apt-get install nsis
+5. install yasm 1.2 from source (ubuntu repos contain too old version)
+6. sudo apt-get install realpath
+7. sudo apt-get install scons
+8. sudo apt-get install wine
+
+
+*. ( optional ) NSIS syntax in Sublime-text:
+    cd $HOME/.config/sublime-text-2/Packages (this directory could be found by "Preferences"->"Browse Packages" in Sublime GUI )
+    git clone https://github.com/SublimeText/NSIS "NSIS"
+    Pick "View"->"Syntax"->"NSIS" in Sublime GUI 

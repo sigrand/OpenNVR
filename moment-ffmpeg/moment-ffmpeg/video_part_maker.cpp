@@ -9,6 +9,7 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
+static LogGroup libMary_logGroup_vpm ("mod_ffmpeg.video_part_maker", LogLevel::E);
 
 VideoPartMaker::VideoPartMaker()
 {
@@ -27,13 +28,15 @@ VideoPartMaker::~VideoPartMaker()
 bool
 VideoPartMaker::tryOpenNextFile ()
 {
-    StRef<String> const filename = m_fileIter.getNext ();
-    if (!filename) {
-        logD_(_func_, "filename is null");
+    if (m_itr == m_channelFileDiskTimes.end())
+    {
+        logD(vpm, _func_, "end of files");
         return false;
     }
 
-    StRef<String> cur_filename = st_makeString(record_dir, "/", filename, ".flv");
+    StRef<String> cur_filename = st_makeString(m_itr->second.first.c_str(), "/", m_itr->first.c_str(), ".flv");
+
+    m_itr++;
 
     if(!m_fileReader.Init(cur_filename))
     {
@@ -71,17 +74,17 @@ VideoPartMaker::tryOpenNextFile ()
     return true;
 }
 
-bool VideoPartMaker::Init (Vfs         * const mt_nonnull vfs,
-                            ConstMemory   const stream_name,
-                            ConstMemory   const record_dir,
-                            ConstMemory   const res_file_path,
+static int g_fileNum = 0;
+bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes & channelFileDiskTimes,
+                           std::string & channel_name,
                             Time          const start_unixtime_sec,
-                            Time          const end_unixtime_sec)
+                            Time          const end_unixtime_sec,
+                            std::string & filePathOut)
 {
-    logD_(_func_);
+    logD(vpm, _func_);
     this->nStartTime = start_unixtime_sec;
     this->nEndTime = end_unixtime_sec;
-    this->record_dir = st_makeString(record_dir);
+    m_channelFileDiskTimes = channelFileDiskTimes;
 
     if(nStartTime >= nEndTime)
     {
@@ -89,7 +92,23 @@ bool VideoPartMaker::Init (Vfs         * const mt_nonnull vfs,
         return false;
     }
 
-    m_fileIter.init (vfs, stream_name, nStartTime);
+    bool bFileIsFound = false;
+    for(m_itr = m_channelFileDiskTimes.begin(); m_itr != m_channelFileDiskTimes.end(); m_itr++)
+    {
+        if(m_itr->second.second.first <= nStartTime && m_itr->second.second.second > nStartTime)
+        {
+            bFileIsFound = true;
+            m_filepath = st_makeString(m_itr->second.first.c_str(), "/", channel_name.c_str(),
+                                       "/", channel_name.c_str(), "_", g_fileNum++, ".mp4");
+            filePathOut = m_filepath->cstr();
+            break; // file is found
+        }
+    }
+    if(!bFileIsFound)
+    {
+        logD(vpm, _func_, "there is no files with such timestamps in storage");
+        return false;
+    }
 
     if (!m_fileReader.IsInit())
     {
@@ -100,18 +119,15 @@ bool VideoPartMaker::Init (Vfs         * const mt_nonnull vfs,
         }
     }
 
-    m_filepath = st_makeString(res_file_path);
-    StRef<String> channel_name = st_makeString (stream_name);
-
     if(!MemoryDispatcher::Instance().GetPermission(m_filepath->cstr(), end_unixtime_sec - start_unixtime_sec))
     {
         logE_(_func_, "no space for file");
         return false;
     }
 
-    bIsInit = m_nvrData.Init(m_fileReader.GetFormatContext(), channel_name->cstr(), m_filepath->cstr(), NULL, end_unixtime_sec - start_unixtime_sec);
+    int res = m_nvrData.Init(m_fileReader.GetFormatContext(), NULL, m_filepath->cstr(), NULL, end_unixtime_sec - start_unixtime_sec);
 
-    return bIsInit;
+    return (res == 0);
 }
 
 bool VideoPartMaker::IsInit()
@@ -140,10 +156,13 @@ VideoPartMaker::Process ()
     }
     int tb_den = fmtctx->streams[video_stream_idx]->time_base.den;
 
-    int ptsExtra = 0;
+    int ptsExtra = 0;   // to normalize packets in [0;file_duration_time]
     int dtsExtra = 0;
     int ptsExtraPrv = 0;
     int dtsExtraPrv = 0;
+    bool isFirstPacket = true;
+    int ptsShift = 0;
+    int dtsShift = 0;
     unsigned long fileSize = 0;
     // read packets from file
     while (1)
@@ -153,19 +172,29 @@ VideoPartMaker::Process ()
         if(m_fileReader.ReadFrame(frame))
         {
             AVPacket packet = frame.GetPacket();
+            // if first packet has some non-zero pts value, then we need substract it from packet pts to make pts zero
+            if(isFirstPacket)
+            {
+                if(packet.pts != 0)
+                {
+                    ptsShift = packet.pts;
+                    dtsShift = packet.dts;
+                }
+                isFirstPacket = false;
+            }
+            packet.pts -= ptsShift;
+            packet.dts -= dtsShift;
             Time nCurAbsPos = nCurFileStartTime + nCurFileShift + (packet.pts / (double)tb_den);
             if(nCurAbsPos > nEndTime)
             {
-                logD_(_func_, "done");
+                logD(vpm, _func_, "done");
                 m_fileReader.FreeFrame(frame);
                 break;
             }
             packet.pts += ptsExtra;
             packet.dts += dtsExtra;
 
-//            logD_(_func_, "====== before write");
             m_nvrData.WritePacket(m_fileReader.GetFormatContext(), packet);
-//            logD_(_func_, "====== after write");
 
             fileSize += packet.size;
 
@@ -180,14 +209,21 @@ VideoPartMaker::Process ()
         {
             if (!tryOpenNextFile ())
             {
-                logD_(_func_, "all files are over");
+                logD(vpm, _func_, "all files are over");
                 break;
             }
 
             ptsExtra = ptsExtraPrv;
             dtsExtra = dtsExtraPrv;
 
-            logD_(_func_, "next file");
+            if(ptsShift != 0)
+            {
+                ptsShift = 0;
+                dtsShift = 0;
+            }
+            isFirstPacket = true;
+
+            logD(vpm, _func_, "next file");
         }
     }
 

@@ -23,6 +23,10 @@
 
 #include <libmary/libmary.h>
 
+#ifdef LIBMARY_PERFORMANCE_TESTING
+#include <libmary/istat_measurer.h>
+#endif
+
 
 namespace Moment {
 
@@ -60,6 +64,10 @@ public:
 
     virtual void getTrafficStats (TrafficStats * mt_nonnull ret_traffic_stats) = 0;
     virtual void resetTrafficStats () = 0;
+#ifdef LIBMARY_PERFORMANCE_TESTING
+    virtual IStatMeasurer* getStatMeasurer() = 0;
+    virtual ITimeChecker* getTimeChecker() = 0;
+#endif
 };
 
 }

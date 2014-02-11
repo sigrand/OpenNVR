@@ -146,3 +146,51 @@ vlc http://192.168.10.21:8080/hls/stream_name.m3u8
 to get info about disk available for nvrserver
 
 http://192.168.10.21:8082/mod_nvr_admin/disk_info
+
+=====================================================================================
+nvrserver supports multiple directories for read/write.
+
+before start moment user must do:
+
+1) create "recpath.conf" file (f.e. /opt/nvr/recpath.conf)
+
+2) example of file:
+{
+        "configs": [
+          {
+            "path": "/disk1/records",
+          },
+          {
+            "path": "/disk9/archive",
+          },
+          {
+            "path": "/home/user1/video",
+          }
+        ]
+}
+
+All "path" directories must exist!
+
+3) in moment.conf add in mod_nvr section path to "recpath.conf"
+example:
+
+mod_nvr {
+  enable = y
+  file_duration = 600
+  max_age = 44640
+  recpath_conf = "/opt/nvr/recpath.conf"
+}
+
+also you can use relative paths
+
+If recpath.conf doesnt exist when nvrserver is starting, then there will be only restreaming
+To make writing and viewing records user must shutdown nvrserver, do all three steps above and run server again 
+
+-------------
+If you want to change records paths without rebooting nvrserver
+  
+1) do some changes in recpath.conf
+
+2) do http-request
+
+http://192.168.10.21:8082/mod_nvr_admin/reload_recpath

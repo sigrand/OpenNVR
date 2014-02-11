@@ -33,7 +33,9 @@
 #include <libmary/util_net.h>
 
 #include <libmary/tcp_connection.h>
-
+#ifdef LIBMARY_PERFORMANCE_TESTING
+#include <libmary/istat_measurer.h>
+#endif
 
 //#define LIBMARY_TEST_MWRITEV
 //#define LIBMARY_TEST_MWRITEV_SINGLE
@@ -49,6 +51,11 @@
 namespace M {
 
 static LogGroup libMary_logGroup_tcp_conn ("tcp_conn", LogLevel::I);
+
+#ifdef LIBMARY_PERFORMANCE_TESTING
+extern IStatMeasurer* measurer_;
+extern ITimeChecker* checker_;
+#endif
 
 #ifdef LIBMARY_TCP_CONNECTION_NUM_INSTANCES
 AtomicInt TcpConnection::num_instances;
@@ -373,8 +380,23 @@ TcpConnection::writev (struct iovec * const iovs,
     }
 
     if (ret_nwritten)
-	*ret_nwritten = (Size) res;
+		*ret_nwritten = (Size) res;
 
+    logD (tcp_conn, _func_, "we have written ", res, " bytes");
+#ifdef LIBMARY_PERFORMANCE_TESTING
+    if (!measurer_ || !checker_) {
+        logW_ (_func, "measurer_ or checker_ havent been set");
+    } else {
+        if( (res - checker_->GetPacketSize()) < 30) {
+            logD (tcp_conn, _func_, "check restream ending time. sizes match[",checker_->GetPacketSize(),";",res,"]");
+            Time t;
+            checker_->Stop(&t);
+            measurer_->AddTimeInOut(t);
+        } else {
+            logD (tcp_conn, _func_, "looks like sizes doesnt match origin:",checker_->GetPacketSize(), " written: ", res);
+        }
+    }
+#endif
     return AsyncIoResult::Normal;
 }
 

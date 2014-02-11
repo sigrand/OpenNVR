@@ -17,58 +17,26 @@
 */
 
 
-#include <libmary/types.h>
 #include <cctype>
+#include <json/json.h>
+#ifndef PLATFORM_WIN32
 #include <mntent.h>
 #include <sys/statvfs.h>
-#include <json/json.h>
+#endif
 
+#include <libmary/types.h>
 #include <moment/libmoment.h>
 
 #include <moment-ffmpeg/moment_ffmpeg_module.h>
 #include <moment-ffmpeg/video_part_maker.h>
 
 
-// TODO These header macros are the same as in rtmpt_server.cpp
-#define MOMENT_FFMPEG__HEADERS_DATE \
-	Byte date_buf [unixtimeToString_BufSize]; \
-	Size const date_len = unixtimeToString (Memory::forObject (date_buf), getUnixtime());
-
-#define MOMENT_FFMPEG__COMMON_HEADERS \
-	"Server: Moment/1.0\r\n" \
-	"Date: ", ConstMemory (date_buf, date_len), "\r\n" \
-	"Connection: Keep-Alive\r\n" \
-	"Cache-Control: no-cache\r\n"
-
-#define MOMENT_FFMPEG__OK_HEADERS(mime_type, content_length) \
-	"HTTP/1.1 200 OK\r\n" \
-	MOMENT_FFMPEG__COMMON_HEADERS \
-	"Content-Type: ", (mime_type), "\r\n" \
-	"Content-Length: ", (content_length), "\r\n"
-
-#define MOMENT_FFMPEG__404_HEADERS(content_length) \
-	"HTTP/1.1 404 Not Found\r\n" \
-	MOMENT_FFMPEG__COMMON_HEADERS \
-	"Content-Type: text/plain\r\n" \
-	"Content-Length: ", (content_length), "\r\n"
-
-#define MOMENT_FFMPEG__400_HEADERS(content_length) \
-	"HTTP/1.1 400 Bad Request\r\n" \
-	MOMENT_FFMPEG__COMMON_HEADERS \
-	"Content-Type: text/plain\r\n" \
-	"Content-Length: ", (content_length), "\r\n"
-
-#define MOMENT_FFMPEG__500_HEADERS(content_length) \
-	"HTTP/1.1 500 Internal Server Error\r\n" \
-	MOMENT_FFMPEG__COMMON_HEADERS \
-	"Content-Type: text/plain\r\n" \
-	"Content-Length: ", (content_length), "\r\n"
-
-
 using namespace M;
 using namespace Moment;
 
 namespace MomentFFmpeg {
+
+static LogGroup libMary_logGroup_ffmpeg_module ("mod_ffmpeg.ffmpeg_module", LogLevel::E);
 
 extern std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
 extern std::vector<std::string> split(const std::string &s, char delim);
@@ -82,7 +50,7 @@ MomentFFmpegModule::updatePlaylist (ConstMemory   const channel_name,
 				 bool          const keep_cur_item,
 				 Ref<String> * const mt_nonnull ret_err_msg)
 {
-    logD_ (_func, "channel_name: ", channel_name);
+    logD(ffmpeg_module, _func, "channel_name: ", channel_name);
 
     mutex.lock ();
 
@@ -407,22 +375,22 @@ MomentFFmpegModule::printChannelInfoJson (PagePool::PageListHead * const page_li
 
 StRef<String>
 MomentFFmpegModule::channelFilesExistenceToJson (
-        ChannelChecker::ChannelFileSummary * const mt_nonnull files_existence)
+        ChannelChecker::ChannelFileDiskTimes * const mt_nonnull chFileDiskTimes)
 {
      std::ostringstream s;
-     ChannelChecker::ChannelFileSummary::iterator it = files_existence->begin();
-     for(it; it != files_existence->end(); ++it)
+     ChannelChecker::ChannelFileDiskTimes::iterator it = chFileDiskTimes->begin();
+     for(it; it != chFileDiskTimes->end(); ++it)
      {
          s << "{\n\"path\":\"";
          s << (*it).first;
          s <<"\",\n\"start\":";
-         s << (*it).second.first;
+         s << (*it).second.second.first;
          s << ",\n\"end\":";
-         s << (*it).second.second;
+         s << (*it).second.second.second;
          s << "\n}";
-        ChannelChecker::ChannelFileSummary::iterator it1 = it;
+        ChannelChecker::ChannelFileDiskTimes::iterator it1 = it;
         it1++;
-         if(it1 != files_existence->end())
+         if(it1 != chFileDiskTimes->end())
              s << ",\n";
          else
              s << "\n";
@@ -495,9 +463,10 @@ MomentFFmpegModule::statisticsToJson (
                           "}\n");
 }
 
-#ifdef __linux__
+
+#ifndef PLATFORM_WIN32
 int
-MomentFFmpegModule::getDiskInfoLinux(std::map<std::string, std::vector<int> > & diskInfo)
+MomentFFmpegModule::getDiskInfo(std::map<std::string, std::vector<int> > & diskInfo)
 {
     struct mntent *mnt;
     char const *table = "/etc/mtab";
@@ -541,21 +510,26 @@ MomentFFmpegModule::getDiskInfoLinux(std::map<std::string, std::vector<int> > & 
 
     return 0;
 }
-#endif
+#else /*PLATFORM_WIN32*/
+int
+MomentFFmpegModule::getDiskInfo(std::map<std::string, std::vector<int> > & diskInfo)
+{
+    // TODO: IMPLEMENT
+    return -1;
+}
+#endif /*PLATFORM_WIN32*/
+
 
 bool
 MomentFFmpegModule::getDiskInfo (std::string & json_respond)
 {
     int nRes = -1;
     std::map<std::string, std::vector<int> > diskInfo; // [diskName, [allSize, freeSize, usedSize]]
-
-#ifdef __linux__
-    nRes = getDiskInfoLinux(diskInfo);
-#endif
+    nRes = getDiskInfo(diskInfo);
 
     if(nRes < 0)
     {
-        logD_(_func_, "getDiskInfo isn't supported for current platform");
+        logE_(_func_, "getDiskInfo isn't supported for current platform");
     }
     else if(nRes > 0)
     {
@@ -584,7 +558,7 @@ MomentFFmpegModule::getDiskInfo (std::string & json_respond)
 
         json_value_disk["disk info"] = json_value_diskInfo;
 
-        logD_ (_func_, "playlist.json line: ", json_writer_fast.write(json_value_disk).c_str());
+        logD(ffmpeg_module, _func_, "playlist.json line: ", json_writer_fast.write(json_value_disk).c_str());
 
         json_value_disks.append(json_value_disk);
     }
@@ -595,43 +569,43 @@ MomentFFmpegModule::getDiskInfo (std::string & json_respond)
 }
 
 bool
-MomentFFmpegModule::removeVideoFiles(StRef<String> const dir_name, StRef<String> const channel_name,
+MomentFFmpegModule::removeVideoFiles(StRef<String> const channel_name,
                                  Time const startTime, Time const endTime)
 {
-    Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (dir_name->mem());
-    ChannelChecker::ChannelFileSummary file_existence;
-
-    ChannelChecker().readIdx(file_existence, dir_name, channel_name);
-
-    NvrFileIterator file_iter;
-    file_iter.init (vfs, channel_name->mem(), startTime);
-
     bool bRes = false;
-    while (true)
-    {
-        StRef<String> const filename = file_iter.getNext ();
-        logD_(_func_, "========= next file: [", filename, "]");
-        if (!filename)
-            break;
 
-        Time file_unixtime_sec;
-        std::string stdStr(filename->cstr());
-        std::map<std::string, std::pair<int,int> >::iterator it = file_existence.find(stdStr);
-        if(it != file_existence.end())
+    std::map<std::string, Ref<ChannelChecker> >::iterator itChChecker = m_channel_checkers.find(std::string(channel_name->cstr()));
+    if(itChChecker == m_channel_checkers.end())
+    {
+        logE_(_func_, "there is no ", channel_name, " in m_channel_checkers");
+        return false;
+    }
+
+    ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = itChChecker->second->getChannelFileDiskTimes();
+    ChannelChecker::ChannelFileDiskTimes::iterator itr = chFileDiskTimes.begin();
+
+    for(itr; itr != chFileDiskTimes.end(); itr++)
+    {
+        if(itr->second.second.second > startTime && itr->second.second.first < endTime)
         {
-            if(it->second.second > startTime && it->second.first < endTime)
-            {
-                StRef<String> const filenameFull = st_makeString(filename, ".flv");
-                logD_(_func_, "remove by request: [", filenameFull, "]");
-                vfs->removeFile (filenameFull->mem());
-                vfs->removeSubdirsForFilename (filenameFull->mem());
-                bRes = true;
-            }
+            StRef<String> dir_name = st_makeString(itr->second.first.c_str());
+            Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (dir_name->mem());
+
+            StRef<String> const filenameFull = st_makeString(itr->first.c_str(), ".flv");
+
+            logD(ffmpeg_module, _func_, "remove by request: [", filenameFull, "]");
+
+            vfs->removeFile (filenameFull->mem());
+            vfs->removeSubdirsForFilename (filenameFull->mem());
+
+            itChChecker->second->DeleteFromCache(itr->second.first, itr->first);
+
+            bRes = true;
         }
     }
-    logD_(_func_, "========== end of story");
 
-    ChannelChecker().writeIdx(file_existence, dir_name, channel_name);
+    logD(ffmpeg_module,_func_, "end of removing");
+
 
     return bRes;
 }
@@ -642,7 +616,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 {
     MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
 
-    logD_ (_func_);
+    logD(ffmpeg_module, _func_);
 
     URI uri(req.getURI());
     std::vector < std::string > segments;
@@ -680,7 +654,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             out << "404 Channel Not Found (mod_nvr_admin)";
             out.flush();
 
-            logA_ ("mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            logA(ffmpeg_module, _func_, "mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
 
@@ -694,13 +668,13 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         std::string line;
         std::string allLines = "";
         std::ifstream channelPath (channelFullPath->cstr());
-        logD_(_func_, "channelFullPath = ", channelFullPath);
+        logD(ffmpeg_module, _func_, "channelFullPath = ", channelFullPath);
         if (channelPath.is_open())
         {
-            logD_(_func_, "opened");
+            logD(ffmpeg_module, _func_, "opened");
             while ( std::getline (channelPath, line) )
             {
-                logD_(_func_, "got line: [", line.c_str(), "]");
+                logD(ffmpeg_module, _func_, "got line: [", line.c_str(), "]");
                 if(line.compare("disable_record") == 0)
                     bDisableRecordFound = true;
                 else
@@ -711,12 +685,12 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         if(bDisableRecordFound && set_on)
         {
-            logD_(_func_, "bDisableRecordFound && set_on");
+            logD(ffmpeg_module, _func_, "bDisableRecordFound && set_on");
             std::ofstream fout;
             fout.open(channelFullPath->cstr());
             if (fout.is_open())
             {
-                logD_(_func_, "CHANGED");
+                logD(ffmpeg_module, _func_, "CHANGED");
                 fout << allLines;
                 fout.close();
             }
@@ -727,14 +701,14 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             fout.open(channelFullPath->cstr(),std::ios::app);
             if (fout.is_open())
             {
-                logD_(_func_, "!bDisableRecordFound && !set_on");
+                logD(ffmpeg_module, _func_, "!bDisableRecordFound && !set_on");
                 fout << "disable_record" << std::endl;
                 fout.close();
             }
         }
 
         StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq.c_str(), "\", \"recording\": ", channel_state, " }");
-        logD_ (_func, "reply: ", reply_body);
+        logD(ffmpeg_module, _func, "reply: ", reply_body);
 
         resp.setStatus(HTTPResponse::HTTP_OK);
         resp.setContentType("text/html");
@@ -742,7 +716,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         out << reply_body->cstr();
         out.flush();
 
-        logA_ ("mod_nvr_admin 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+        logA(ffmpeg_module, _func_, "mod_nvr_admin 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
     }
     else if(segments.size() >= 2 &&
             (segments[1].compare("files_existence") == 0))
@@ -752,18 +726,12 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
         std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
 
-        ChannelChecker::ChannelFileSummary * files_existence;
         StRef<String> st_channel_name = st_makeString(channel_name.c_str());
 
         self->mutex.lock();
 
         std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(st_channel_name->cstr());
-        if(it == self->m_channel_checkers.end() || it->second.isNull())
-            files_existence = NULL;
-        else
-            files_existence = it->second->getChannelFilesExistence ();
-
-        if (files_existence == NULL)
+        if (it == self->m_channel_checkers.end() || it->second.isNull())
         {
             self->mutex.unlock();
 
@@ -771,14 +739,16 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             std::ostream& out = resp.send();
             out << "404 Channel Not Found (mod_nvr_admin)";
             out.flush();
-            logA_ ("mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            logA(ffmpeg_module, _func_, "mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
 
+        ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = it->second->getChannelFileDiskTimes ();
+
         self->mutex.unlock();
 
-        StRef<String> const reply_body = channelFilesExistenceToJson (files_existence);
-        logD_ (_func, "reply: ", reply_body);
+        StRef<String> const reply_body = channelFilesExistenceToJson (&chFileDiskTimes);
+        logD(ffmpeg_module, _func, "reply: ", reply_body);
 
         resp.setStatus(HTTPResponse::HTTP_OK);
         resp.setContentType("text/html");
@@ -811,7 +781,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         }
         else
         {
-            logD_ (_func, "reply: 500 Internal server error");
+            logD(ffmpeg_module, _func, "reply: 500 Internal server error");
             resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
             std::ostream& out = resp.send();
             out << "500 Internal Server Error: fail to get disk info";
@@ -833,7 +803,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             std::ostream& out = resp.send();
             out << "400 Bad Request: no conf_file parameter";
             out.flush();
-            logA_ ("mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            logA(ffmpeg_module, _func_, "mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
         StRef<String> st_channel_name = st_makeString(channel_name.c_str());
@@ -849,7 +819,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             std::ostream& out = resp.send();
             out << "400 Bad \"start\" request parameter value";
             out.flush();
-            logA_ ("mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            logA(ffmpeg_module, _func_, "mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
 
@@ -863,7 +833,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             std::ostream& out = resp.send();
             out << "400 Bad \"end\" request parameter value";
             out.flush();
-            logA_ ("mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            logA(ffmpeg_module, _func_, "mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
 
@@ -874,15 +844,15 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             std::ostream& out = resp.send();
             out << "400 start_unixtime_sec >= end_unixtime_sec";
             out.flush();
-            logA_ ("mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            logA(ffmpeg_module, _func_, "mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
 
-        bool bRes = self->removeVideoFiles(self->record_dir, st_channel_name, start_unixtime_sec, end_unixtime_sec);
+        bool bRes = self->removeVideoFiles(st_channel_name, start_unixtime_sec, end_unixtime_sec);
 
         if(bRes)
         {
-            logD_ (_func, "reply: OK");
+            logD(ffmpeg_module, _func, "reply: OK");
             resp.setStatus(HTTPResponse::HTTP_OK);
             resp.setContentType("text/html");
             std::ostream& out = resp.send();
@@ -891,7 +861,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         }
         else
         {
-            logD_ (_func, "reply: 500 Internal server error");
+            logD(ffmpeg_module, _func, "reply: 500 Internal server error");
             resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
             std::ostream& out = resp.send();
             out << "500 Internal Server Error: fail to remove video files";
@@ -899,11 +869,33 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         }
 
     }
+    else if(segments.size() >= 2 && (segments[1].compare("reload_recpath") == 0))
+    {
+        bool bRes = self->m_recpath_config.LoadConfig(self->recpath_conf->cstr()); // @@@@@@
+
+        if(bRes)
+        {
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            resp.setContentType("text/html");
+            std::ostream& out = resp.send();
+            out << "recpath.conf is reloaded";
+            out << self->m_recpath_config.GetConfigJson();
+            out.flush();
+        }
+        else
+        {
+            logD(ffmpeg_module, _func_, "reply: 500 Internal server error");
+            resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
+            std::ostream& out = resp.send();
+            out << "500 Internal Server Error: fail to reload recpath.conf";
+            out.flush();
+        }
+    }
     else
     {
         logE_ (_func, "Unknown request: ", req.getURI().c_str());
 
-        logA_ ("mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+        logA(ffmpeg_module, _func_, "mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
 
         return false;
     }
@@ -939,16 +931,11 @@ MomentFFmpegModule::channelExistenceToJson(std::vector<std::pair<int,int>> * con
 void
 MomentFFmpegModule::clearEmptyChannels()
 {
-    //logD_(_func_, "OOOOO m_streams BEFORE CLEANING");
+    logD(ffmpeg_module, _func);
 
     mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator it1 = m_streams.begin();
-//    while(it1 != m_streams.end())
-//    {
-//        logD_(_func_, "OOOOO m_streams stream_name = ", it1->first.c_str());
-//        it1++;
-//    }
 
     std::vector<std::string> strNameToDelete;
     it1 = m_streams.begin();
@@ -956,7 +943,6 @@ MomentFFmpegModule::clearEmptyChannels()
     {
         if(!it1->second.getRef())
         {
-//            logD_(_func_, "OOOOO delete ", it1->first.c_str());
             strNameToDelete.push_back(std::string(it1->first.c_str()));
             m_streams.erase(it1++);
         }
@@ -964,40 +950,13 @@ MomentFFmpegModule::clearEmptyChannels()
             it1++;
     }
 
-//    logD_(_func_, "OOOOO m_streams AFTER CLEANING");
-
-//    it1 = m_streams.begin();
-//    while(it1 != m_streams.end())
-//    {
-//        logD_(_func_, "OOOOO m_streams stream_name = ", it1->first.c_str());
-//        it1++;
-//    }
-
-//////////////////////////////////////////////////////////////////////////////////
-
-//    logD_(_func_, "OOOOO m_channel_checkers BEFORE CLEANING");
-
     std::map<std::string, Ref<ChannelChecker> >::iterator it2 = m_channel_checkers.begin();
-//    while(it2 != m_channel_checkers.end())
-//    {
-//        logD_(_func_, "OOOOO m_channel_checkers stream_name = ", it2->first.c_str());
-//        it2++;
-//    }
 
     it2 = m_channel_checkers.begin();
     for(int i=0;i<strNameToDelete.size();++i)
     {
         m_channel_checkers.erase(strNameToDelete[i]);
     }
-
-//    logD_(_func_, "OOOOO m_channel_checkers AFTER CLEANING");
-
-//    it2 = m_channel_checkers.begin();
-//    while(it2 != m_channel_checkers.end())
-//    {
-//        logD_(_func_, "OOOOO m_channel_checkers stream_name = ", it2->first.c_str());
-//        it2++;
-//    }
 
     mutex.unlock();
 }
@@ -1007,7 +966,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
 {
     MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
 
-    logD_ (_func, req.getURI().c_str());
+    logD(ffmpeg_module, _func, req.getURI().c_str());
 
     URI uri(req.getURI());
     std::vector < std::string > segments;
@@ -1024,7 +983,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
         std::ostream& out = resp.send();
         out << unixtime_str->cstr();
         out.flush();
-        logA_ ("mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+        logA(ffmpeg_module, _func_, "mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
     }
     else if (segments.size() >= 2 && segments[1].compare("channel_state") == 0)
     {
@@ -1054,7 +1013,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
             std::ostream& out = resp.send();
             out << "404 Channel Not Found (mod_nvr)";
             out.flush();
-            logA_ ("mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            logA(ffmpeg_module, _func_, "mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
 
@@ -1068,7 +1027,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
         std::ostream& out = resp.send();
         out << reply_body->cstr();
         out.flush();
-        logA_ ("mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+        logA(ffmpeg_module, _func_, "mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
     }
     else if (segments.size() >= 2 && (segments[1].compare("file") == 0 || segments[1].rfind(".mp4") != std::string::npos))
     {
@@ -1099,33 +1058,11 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
             goto _bad_request;
         }
 
-        StRef<String> const pathToFile = self->_doGetFile (channel_name, start_unixtime_sec, end_unixtime_sec);
+        StRef<String> const pathToFile = self->doGetFile (channel_name, start_unixtime_sec, end_unixtime_sec);
 
         if(pathToFile != NULL) // is it correct?
         {
-            std::ifstream myfile (pathToFile->cstr());
-            std::string line;
-            if (myfile.is_open())
-            {
-                resp.setStatus(HTTPResponse::HTTP_OK);
-                resp.setContentType("application/octet-stream");
-                std::ostream& out = resp.send();
-
-                while ( std::getline (myfile,line) )
-                {
-                    out << line << "\n";
-                }
-                myfile.close();
-                out.flush();
-            }
-            else
-            {
-                logE_(_func_, "cannot open file = ", pathToFile);
-                resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
-                std::ostream& out = resp.send();
-                out << "500 Internal Server Error: download file is failed";
-                out.flush();
-            }
+            resp.sendFile(pathToFile->cstr(), "application/octet-stream");
         }
         else
         {
@@ -1143,43 +1080,41 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
         NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
         std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
 
-        logD_(_func_, "channel_name: [", channel_name.c_str(), "]");
-
-        std::vector<std::pair<int,int>> * channel_existence;
+        logD(ffmpeg_module, _func_, "channel_name: [", channel_name.c_str(), "]");
 
         self->mutex.lock();
 
         std::map<std::string, Ref<ChannelChecker> >::iterator it = self->m_channel_checkers.find(channel_name);
-        if(it == self->m_channel_checkers.end() || it->second.isNull())
-            channel_existence = NULL;
-        else
-            channel_existence = it->second->getChannelExistence ();
 
-        self->mutex.unlock();
-
-        if (channel_existence == NULL)
+        if (it == self->m_channel_checkers.end() || it->second.isNull())
         {
+            self->mutex.unlock();
             logE_ (_func, "Channel Not Found (mod_nvr): ", channel_name.c_str());
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
             std::ostream& out = resp.send();
             out << "404 Channel Not Found (mod_nvr)";
             out.flush();
-            logA_ ("mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            logA(ffmpeg_module, _func_, "mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
-        StRef<String> const reply_body = channelExistenceToJson (channel_existence);
+
+        ChannelChecker::ChannelFileTimes channel_existence = it->second->getChannelExistence ();
+
+        self->mutex.unlock();
+
+        StRef<String> const reply_body = channelExistenceToJson (&channel_existence);
         resp.setStatus(HTTPResponse::HTTP_OK);
         resp.setContentType("text/html");
         std::ostream& out = resp.send();
         out << reply_body->cstr();
         out.flush();
-        logA_ ("mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+        logA(ffmpeg_module, _func_, "mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
     }
     else
     {
         logE_ (_func, "Unknown request: ", req.getURI().c_str());
 
-        logA_ ("mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+        logA(ffmpeg_module, _func_, "mod_nvr 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
 
         return false;
     }
@@ -1192,89 +1127,28 @@ _bad_request:
         std::ostream& out = resp.send();
         out << "400 Bad Request (mod_nvr)";
         out.flush();
-        logA_ ("mod_nvr 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+        logA(ffmpeg_module, _func_, "mod_nvr 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
     }
 
 _return:
     return true;
 }
 
-GetFileSession::Frontend const MomentFFmpegModule::get_file_session_frontend = {
-    getFileSession_done
-};
-
-void
-MomentFFmpegModule::getFileSession_done (Result   const res,
-                                      void   * const _self)
-{
-    MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
-
-    logD_ (_func_);
-
-    // TODO Destroy GetFileSession.
-}
-
 StRef<String>
-MomentFFmpegModule::doGetFile (HttpRequest * const mt_nonnull req,
-                            Sender      * const mt_nonnull sender,
-                            ConstMemory   const channel_name,
+MomentFFmpegModule::doGetFile (ConstMemory   const channel_name,
                             Time          const start_unixtime_sec,
                             Time          const end_unixtime_sec)
 {
-    logD_ (_func, "channel: ", channel_name, ", "
+    logD(ffmpeg_module, _func, "channel: ", channel_name, ", "
            "start: ", start_unixtime_sec, ", "
            "end: ", end_unixtime_sec);
 
+    std::string filePathRes;
     VideoPartMaker vpm;
-    StRef<String> filePathRes = st_makeString(record_dir, "/", channel_name, "/", channel_name, ".mp4");
-
-    bool bRes = vpm.Init(vfs, channel_name, record_dir->mem(), filePathRes->mem(), start_unixtime_sec, end_unixtime_sec);
-    if(!bRes)
-        return st_makeString("fail to create file");
-    vpm.Process();
-
-    logD_(_func_, "mp4 is done: [", filePathRes, "]");
-
-    Ref<GetFileSession> const get_file_session = grab (new (std::nothrow) GetFileSession);
-    {
-        get_file_session->init (moment,
-                                req,
-                                sender,
-                                page_pool,
-                                vfs,
-                                channel_name,
-                                start_unixtime_sec,
-                                end_unixtime_sec,
-                                true,
-                                CbDesc<GetFileSession::Frontend> (&get_file_session_frontend, this, this),
-                                filePathRes/*record_dir*/);
-    }
-
-    mutex.lock ();
-#warning TODO GetFileSession lifetime
-    get_file_sessions.append (get_file_session);
-    mutex.unlock ();
-
-    get_file_session->start ();
-
-    return st_makeString(filePathRes);
-}
-
-StRef<String>
-MomentFFmpegModule::_doGetFile (ConstMemory   const channel_name,
-                            Time          const start_unixtime_sec,
-                            Time          const end_unixtime_sec)
-{
-    logD_ (_func, "channel: ", channel_name, ", "
-           "start: ", start_unixtime_sec, ", "
-           "end: ", end_unixtime_sec);
-
-    static int iii = 0;
-
-    VideoPartMaker vpm;
-    StRef<String> filePathRes = st_makeString(record_dir, "/", channel_name, "/", channel_name, "_", iii++, ".mp4");
-
-    bool bRes = vpm.Init(vfs, channel_name, record_dir->mem(), filePathRes->mem(), start_unixtime_sec, end_unixtime_sec);
+    StRef<String> str_ch_name = st_makeString(channel_name);
+    std::string ch_name = str_ch_name->cstr();
+    ChannelChecker::ChannelFileDiskTimes chlFileDiskTimes = m_channel_checkers[ch_name]->getChannelFileDiskTimes();
+    bool bRes = vpm.Init(chlFileDiskTimes, ch_name, start_unixtime_sec, end_unixtime_sec, filePathRes);
     if(!bRes)
     {
         logE_(_func_, "fail to create file");
@@ -1282,9 +1156,9 @@ MomentFFmpegModule::_doGetFile (ConstMemory   const channel_name,
     }
     vpm.Process();
 
-    logD_(_func_, "mp4 is done: [", filePathRes, "]");
+    logD(ffmpeg_module, _func_, "mp4 is done: [", filePathRes.c_str(), "]");
 
-    return st_makeString(filePathRes);
+    return st_makeString(filePathRes.c_str());
 }
 
 Ref<MediaSource>
@@ -1298,7 +1172,7 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
                                     ChannelOptions    * const channel_opts,
                                     PlaybackItem      * const playback_item)
 {
-    logD_(_func_, "new MediaSource: ", channel_opts->channel_name);
+    logD(ffmpeg_module, _func_, "new MediaSource: ", channel_opts->channel_name);
 
     Ref<MConfig::Config> const config = this->moment->getConfig ();
 
@@ -1313,12 +1187,13 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
                       initial_seek,
                       channel_opts,
                       playback_item,
-                      config);
+                      config,
+                      &m_recpath_config);
 
     m_streams[channel_opts->channel_name->cstr()] = ffmpeg_stream;
 
     Ref<ChannelChecker> channel_checker = grab (new (std::nothrow) ChannelChecker);
-    channel_checker->init (timers, vfs, record_dir, channel_opts->channel_name);
+    channel_checker->init (timers, &m_recpath_config, channel_opts->channel_name);
 
     m_channel_checkers[channel_opts->channel_name->cstr()] = channel_checker;
 
@@ -1473,7 +1348,7 @@ MomentFFmpegModule::DumpStatInFile()
     }
     else
     {
-        logD_(_func_, "fail to open statFile: ", STATFILE);
+        logD(ffmpeg_module, _func_, "fail to open statFile: ", STATFILE);
         return false;
     }
 
@@ -1623,26 +1498,26 @@ MomentFFmpegModule::init (MomentServer * const moment)
             // we can not write without output path
             return Result::Failure;
         }
-        logI_ (_func, opt_name, ": [", confd_dir, "]");
+        logD(ffmpeg_module, _func, opt_name, ": [", confd_dir, "]");
     }
     confd_dir = st_grab (new (std::nothrow) String (confd_dir_mem));
 
-    ConstMemory record_dir_mem;
+    ConstMemory recpath_conf_mem;
     {
-        ConstMemory const opt_name = "mod_nvr/record_dir";
-        bool record_dir_is_set = false;
-        record_dir_mem = config->getString (opt_name, &record_dir_is_set);
-        if (!record_dir_is_set) {
+        ConstMemory const opt_name = "mod_nvr/recpath_conf";
+        bool recpath_conf_is_set = false;
+        recpath_conf_mem = config->getString (opt_name, &recpath_conf_is_set);
+        if (!recpath_conf_is_set) {
             logE_ (_func, opt_name, " config option is not set, disabling mod_nvr [actually mod_ffmpeg]");
             return Result::Failure;
         }
-        logI_ (_func, opt_name, ": ", record_dir_mem);
+        logD(ffmpeg_module, _func, opt_name, ": ", recpath_conf_mem);
     }
-    record_dir = st_grab (new (std::nothrow) String (record_dir_mem));
-    vfs = Vfs::createDefaultLocalVfs (record_dir_mem);
+    recpath_conf = st_grab (new (std::nothrow) String (recpath_conf_mem));
+    this->m_recpath_config.LoadConfig(recpath_conf->cstr());
 
     media_viewer = grab (new (std::nothrow) MediaViewer);
-    media_viewer->init (moment, vfs, record_dir);
+    media_viewer->init (moment, &m_channel_checkers);
 
     moment->setMediaSourceProvider (this);
 

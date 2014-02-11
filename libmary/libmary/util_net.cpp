@@ -21,10 +21,12 @@
 
 #include <cstring>
 #ifndef LIBMARY_PLATFORM_WIN32
-#include <netdb.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+	#include <netdb.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <arpa/inet.h>
+#else
+	#include <winsock2.h> 
 #endif
 #include <errno.h>
 

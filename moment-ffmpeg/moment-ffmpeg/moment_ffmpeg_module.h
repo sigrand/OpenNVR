@@ -31,8 +31,8 @@
 #include <moment-ffmpeg/ffmpeg_stream.h>
 #include <moment-ffmpeg/channel_checker.h>
 #include <moment-ffmpeg/media_viewer.h>
-#include <moment-ffmpeg/get_file_session.h>
 #include <moment-ffmpeg/stat_measurer.h>
+#include <moment-ffmpeg/rec_path_config.h>
 #include <moment/moment_request_handler.h>
 
 
@@ -98,9 +98,9 @@ private:
     mt_const MomentServer *moment;
     mt_const Timers *timers;
     mt_const PagePool *page_pool;
-    mt_const StRef<String> record_dir;
     mt_const StRef<String> confd_dir;
-    Ref<Vfs> vfs;
+    mt_const StRef<String> recpath_conf;
+    RecpathConfig m_recpath_config;
 
     mt_const bool serve_playlist_json;
     mt_const StRef<String> playlist_json_protocol;
@@ -113,8 +113,6 @@ private:
     ChannelSet channel_set;
 
     std::map<std::string, WeakRef<FFmpegStream> > m_streams;
-
-    mt_mutex (mutex) List< Ref<GetFileSession> > get_file_sessions;
 
     std::map<std::string, Ref<ChannelChecker> > m_channel_checkers;
     mt_const Ref<MediaViewer>     media_viewer;
@@ -138,7 +136,7 @@ private:
     static void refreshTimerTickStat (void *_self);
     //
 
-    bool removeVideoFiles(StRef<String> const dir_name, StRef<String> const channel_name,
+    bool removeVideoFiles(StRef<String> const channel_name,
                                      Time const startTime, Time const endTime);
 
     Result updatePlaylist (ConstMemory  channel_name,
@@ -157,25 +155,12 @@ private:
             std::vector<std::pair<int,int>> * const mt_nonnull existence);
 
     static StRef<String>  channelFilesExistenceToJson (
-            ChannelChecker::ChannelFileSummary * const mt_nonnull files_existence);
+            ChannelChecker::ChannelFileDiskTimes * const mt_nonnull chFileDiskTimes);
 
     static StRef<String>  statisticsToJson (
             std::map<time_t, StatMeasure> * const mt_nonnull statPoints);
 
-    mt_iface (GetFileSession::Frontend)
-      static GetFileSession::Frontend const get_file_session_frontend;
-
-      static void getFileSession_done (Result  res,
-                                       void   *_self);
-    mt_iface_end
-
-    StRef<String> doGetFile (HttpRequest * mt_nonnull req,
-                    Sender      * mt_nonnull sender,
-                    ConstMemory  stream_name,
-                    Time         start_unixtime_sec,
-                    Time         end_unixtime_sec);
-
-    StRef<String> _doGetFile (ConstMemory  stream_name,
+    StRef<String> doGetFile (ConstMemory  stream_name,
                     Time         start_unixtime_sec,
                     Time         end_unixtime_sec);
 
@@ -214,10 +199,8 @@ private:
 				ConstMemory channel_name,
 				ConstMemory filename_prefix);
 
-    // get disk info
-#ifdef __linux__
-    static int getDiskInfoLinux(std::map<std::string, std::vector<int> > & diskInfo);
-#endif
+    static int getDiskInfo(std::map<std::string, std::vector<int> > & diskInfo);
+
     static bool getDiskInfo (std::string & json_respond);
 
 public:

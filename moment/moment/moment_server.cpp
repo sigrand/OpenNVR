@@ -538,38 +538,17 @@ MomentServer::loadModules ()
 
 #ifdef LIBMARY_PLATFORM_WIN32
     {
-        if (!loadModule ("../lib/bin/libmoment-stat-1.0-0.dll"))
-            logE_ (_func, "Could not load mod_stat (win32)");
-
-        if (!loadModule ("../lib/bin/libmoment-file-1.0-0.dll"))
+        if (!loadModule ("libmoment-file-1.0-0.dll"))
             logE_ (_func, "Could not load mod_file (win32)");
 
-        if (!loadModule ("../lib/bin/libmoment-hls-1.0-0.dll"))
-            logE_ (_func, "Could not load mod_hls (win32)");
-
-        if (!loadModule ("../lib/bin/libmoment-rtmp-1.0-0.dll"))
+        if (!loadModule ("libmoment-rtmp-1.0-0.dll"))
             logE_ (_func, "Could not load mod_rtmp (win32)");
 
-        if (!loadModule ("../lib/bin/libmoment-gst-1.0-0.dll"))
-            logE_ (_func, "Could not load mod_gst (win32)");
+        if (!loadModule ("libmoment-test-1.0-0.dll"))
+            logE_ (_func, "Could not load test module (win32)");
 
-        if (!loadModule ("../lib/bin/libmoment-transcoder-1.0-0.dll"))
-            logE_ (_func, "Could not load mod_transcoder (win32)");
-
-        if (!loadModule ("../lib/bin/libmoment-mychat-1.0-0.dll"))
-            logE_ (_func, "Could not load mychat module (win32)");
-
-        if (!loadModule ("../lib/bin/libmoment-test-1.0-0.dll"))
-            logE_ (_func, "Could not load mychat module (win32)");
-
-        if (!loadModule ("../lib/bin/libmoment-auth-1.0-0.dll"))
-            logE_ (_func, "Could not load mod_auth (win32)");
-
-        if (!loadModule ("../lib/bin/libmoment-nvr-1.0-0.dll"))
-            logE_ (_func, "Could not load mod_nvr (win32)");
-
-        if (!loadModule ("../lib/bin/libmoment-lectorium-1.0-0.dll"))
-            logE_ (_func, "Could not load lectorium (win32)");
+        if (!loadModule ("libmoment-ffmpeg-1.0-0.dll"))
+            logE_ (_func, "Could not load libmoment-ffmpeg (win32)");
     }
 #endif
 

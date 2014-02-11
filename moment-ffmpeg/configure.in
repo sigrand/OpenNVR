@@ -1,4 +1,6 @@
 AC_INIT([MomentFFmpeg], [0.1])
+AC_SUBST(THIS_CFLAGS)
+AC_SUBST(THIS_LIBS)
 
 AM_INIT_AUTOMAKE([1.7 gnu nostdinc])
 

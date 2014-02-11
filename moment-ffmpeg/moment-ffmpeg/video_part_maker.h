@@ -5,6 +5,7 @@
 #include <libmary/types.h>
 #include <moment-ffmpeg/media_reader.h>
 #include <moment-ffmpeg/ffmpeg_stream.h>
+#include <moment-ffmpeg/channel_checker.h>
 
 using namespace M;
 using namespace Moment;
@@ -18,12 +19,11 @@ public:
     VideoPartMaker();
     ~VideoPartMaker();
 
-    bool Init(Vfs         * const mt_nonnull vfs,
-              ConstMemory   const stream_name,
-              ConstMemory   const record_dir,
-              ConstMemory   const res_file_path,
+    bool Init(ChannelChecker::ChannelFileDiskTimes & channelFileDiskTimes,
+              std::string & channel_name,
               Time          const start_unixtime_sec,
-              Time          const end_unixtime_sec);
+              Time          const end_unixtime_sec,
+              std::string & filePathOut);
 
     bool IsInit();
 
@@ -35,10 +35,10 @@ private:
 
     FileReader      m_fileReader;
     nvrData         m_nvrData;
-    NvrFileIterator m_fileIter;
+    ChannelChecker::ChannelFileDiskTimes m_channelFileDiskTimes;
+    ChannelChecker::ChannelFileDiskTimes::iterator m_itr;
 
     bool bIsInit;
-    StRef<String>   record_dir;
     StRef<String>   m_filepath;
     Time nStartTime;
     Time nCurFileStartTime;

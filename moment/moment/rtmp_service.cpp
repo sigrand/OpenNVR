@@ -24,7 +24,7 @@ using namespace M;
 
 namespace Moment {
 
-static LogGroup libMary_logGroup_rtmp_service ("rtmp_service", LogLevel::E);
+static LogGroup libMary_logGroup_rtmp_service ("rtmp_service", LogLevel::I);
 
 RtmpConnection::Backend const RtmpService::rtmp_conn_backend = {
     closeRtmpConn

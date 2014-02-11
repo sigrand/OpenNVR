@@ -166,7 +166,7 @@ mary_private_headers += $(mary_mtsafe_headers)
 endif
 
 mary_linux_target_headers =     \
-	poll_poll_group.h       \
+	poll_poll_group.h       \        
         line_pipe.h
 
 if LIBMARY_ENABLE_EPOLL
@@ -205,8 +205,7 @@ libmary_1_0_la_SOURCES =		\
 	util_str.cpp			\
 	util_time.cpp			\
 	util_net.cpp			\
-	util_dev.cpp			\
-	util_posix.cpp			\
+        util_dev.cpp			\
         cmdline.cpp                     \
 					\
 	types.cpp			\
@@ -238,6 +237,7 @@ libmary_1_0_la_SOURCES =		\
 	vfs.cpp				\
 	vfs_posix.cpp                   \
 					\
+        async_input_stream.h		\
 	async_output_stream.cpp		\
 	file_connection.cpp		\
 	sender.cpp			\
@@ -265,7 +265,9 @@ libmary_1_0_la_SOURCES =		\
         md5/md5.c                       \
         libmary_md5.cpp                 \
                                         \
-	libmary.cpp
+        libmary.cpp                     \
+        poll_group.h			\
+        active_poll_group.h
 
 mary_extra_dist = libmary_config.h.in
 
@@ -279,16 +281,31 @@ else
 mary_extra_dist += $(mary_mtsafe_sources)
 endif
 
-mary_linux_sources =			\
-	posix.cpp			\
-	native_file.linux.cpp		\
-        native_async_file.linux.cpp     \
-	tcp_connection.linux.cpp	\
-	tcp_server.linux.cpp		\
-	select_poll_group.cpp		\
-	poll_poll_group.cpp             \
-        line_pipe.cpp			\
+mary_linux_sources =                    \
+    posix.cpp                           \
+    util_posix.linux.cpp                \
+	native_file.linux.cpp               \
+    native_async_file.linux.cpp         \
+	tcp_connection.linux.cpp            \
+	tcp_server.linux.cpp                \
+	select_poll_group.cpp               \
+	poll_poll_group.cpp                 \
+    line_pipe.cpp                       \
 	connection_receiver.generic.cpp
+
+mary_win_sources =                                  \
+    posix.cpp                                       \
+    ../../../win_libmary/util_posix.win.cpp         \
+    ../../../win_libmary/native_file.win.cpp		\
+    ../../../win_libmary/native_async_file.win.cpp  \
+    ../../../win_libmary/tcp_connection.win.cpp  	\
+    ../../../win_libmary/tcp_server.win.cpp         \
+    ../../../win_libmary/select_poll_group.win.cpp  \
+    ../../../win_libmary/wsa_poll_group.cpp         \    
+    line_pipe.cpp                                   \
+    connection_receiver.generic.cpp
+    
+
 
 if LIBMARY_ENABLE_EPOLL
     mary_linux_sources += epoll_poll_group.cpp
@@ -302,9 +319,13 @@ else
     mary_extra_dist += mwritev.cpp
 endif
 
-if !LIBMARY_INC
 mary_target_headers += $(mary_linux_target_headers)
+
+if !LIBMARY_INC
 mary_target_sources += $(mary_linux_sources)
+else
+mary_target_sources += $(mary_win_sources)
+endif
 
 connection_receiver.h: $(FORCE)
 	rm -f $@
@@ -330,7 +351,6 @@ tcp_server.h: $(FORCE)
 	rm -f $@
 	touch $(srcdir)/tcp_server.linux.h
 	ln -s $(srcdir)/tcp_server.linux.h tcp_server.h
-endif
 
 libmary_1_0_la_SOURCES += $(mary_target_sources)
 

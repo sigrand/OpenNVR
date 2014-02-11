@@ -693,8 +693,8 @@ matchIdentifier (UnicharStream *unichar_stream)
 	unichar_stream->setPosition (pmark);
 	digit_len = matchDigit (unichar_stream);
 
-	const unsigned long nnumbers = 2;
-	unsigned long number_set [nnumbers] = {
+    const Size nnumbers = 2;
+    Size number_set [nnumbers] = {
 	    nondigit_len,
 	    digit_len
 	};
@@ -987,8 +987,8 @@ matchEscapeSequence (UnicharStream *unichar_stream)
     unichar_stream->setPosition (pmark);
     unsigned long hex_es_len = matchHexadecimalEscapeSequence (unichar_stream);
 
-    const unsigned long nnumbers = 3;
-    const unsigned long number_set [nnumbers] = {
+    const Size nnumbers = 3;
+    const Size number_set [nnumbers] = {
 	simple_es_len,
 	octal_es_len,
 	hex_es_len
@@ -1062,8 +1062,8 @@ matchCChar (UnicharStream *unichar_stream)
 	unichar_stream->setPosition (pmark);
 	unsigned long ucn_len = matchUniversalCharacterName (unichar_stream);
 
-	const unsigned long nnumbers = 2;
-	const unsigned long number_set [nnumbers] = {
+    const Size nnumbers = 2;
+    const Size number_set [nnumbers] = {
 	    escape_sequence_len,
 	    ucn_len
 	};
@@ -1226,8 +1226,8 @@ matchSChar (UnicharStream *unichar_stream)
 	unichar_stream->setPosition (pmark);
 	unsigned long ucn_len = matchUniversalCharacterName (unichar_stream);
 
-	const unsigned long nnumbers = 2;
-	const unsigned long number_set [nnumbers] = {
+    const Size nnumbers = 2;
+    const Size number_set [nnumbers] = {
 	    escape_sequence_len,
 	    ucn_len
 	};
@@ -1697,8 +1697,8 @@ matchPreprocessingToken (UnicharStream *unichar_stream,
     unichar_stream->setPosition (pmark);
     unsigned long preprocessing_op_or_punc_len = matchPreprocessingOpOrPunc (unichar_stream);
 
-    const unsigned long nnumbers = 5;
-    unsigned long number_set [nnumbers] = {
+    const Size nnumbers = 5;
+    Size number_set [nnumbers] = {
 	identifier_len,
 	pp_number_len,
 	character_literal_len,
@@ -2015,7 +2015,7 @@ matchIntegerLiteral (UnicharStream *unichar_stream)
     Size hexadecimal_literal_len = matchHexadecimalLiteral (unichar_stream);
 
     const Size num_numbers = 3;
-    unsigned long number_set [num_numbers] = {
+    Size number_set [num_numbers] = {
 	decimal_literal_len,
 	octal_literal_len,
 	hexadecimal_literal_len
@@ -2283,7 +2283,7 @@ ppNumberToken_to_Token (PpToken *pp_number_token)
 	}
 
 	const Size num_numbers = 2;
-	unsigned long number_set [num_numbers] = {
+    Size number_set [num_numbers] = {
 	    integer_literal_len,
 	    floating_literal_len
 	};
