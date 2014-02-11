@@ -1,6 +1,9 @@
 <?php
 /* @var $this CamsController */
 ?>
+<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
+<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
@@ -61,6 +64,19 @@
 					</div>
 				</div>
 				<div class="form-group">
+					<?php echo $form->labelEx($model, 'coordinates', array('class' => 'col-sm-4 control-label')); ?>
+					<div class="col-sm-8">
+						<?php echo $form->textField($model, 'coordinates', array('class' => 'form-control')); ?>
+					</div>
+					<div class="col-sm-offset-4 col-sm-8">
+						<?php echo $form->error($model, 'coordinates'); ?>
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-sm-16" id="map" style="height:200px;">
+					</div>
+				</div>
+				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
 						<div class="checkbox">
 							<label>
@@ -96,3 +112,20 @@
 		<?php } ?>
 	</div>
 
+
+	<script>
+	$(document).ready(function(){
+		var map = L.map('map').setView([<?php if ($model->coordinates == "") echo "0,0"; else echo "$model->coordinates"; ?>], 15);
+		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+		}).addTo(map);
+		var popup = L.popup();
+		var marker = L.marker([<?php if ($model->coordinates == "") echo "0,0"; else echo "$model->coordinates"; ?>]).addTo(map);
+		function onMapClick(e) {
+			marker.setLatLng(e.latlng);
+			marker.update();
+			document.getElementById("Cams_coordinates").value = e.latlng.lat+", "+e.latlng.lng;
+		}
+		map.on('click', onMapClick);
+	});
+	</script>

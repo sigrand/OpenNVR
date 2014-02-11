@@ -13,6 +13,7 @@
  * @property integer $show
  * @property integer $public
  * @property string $time_offset
+ * @property string $coordinates
  * @property integer $record
  */
 class Cams extends CActiveRecord
@@ -47,6 +48,7 @@ class Cams extends CActiveRecord
 			array('user_id, show, public, record', 'numerical', 'integerOnly'=>true),
 			array('url, prev_url', 'length', 'max'=>2000),
 			array('time_offset', 'length', 'max'=>4),
+			array('coordinates', 'match', 'pattern'=>'/^-?[0-9]{1,3}.[0-9]+, -?[0-9]{1,3}.[0-9]+$/u', 'message'=>'Координаты должны быть в виде: "xxx.xxx, yyy.yyy"'),
 			array('desc', 'safe'),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
@@ -83,6 +85,7 @@ class Cams extends CActiveRecord
 			'show' => 'Показывать на главной?',
 			'public' => 'Public',
 			'time_offset' => 'Часовой пояс',
+			'coordinates' => 'Координаты',
 			'record' => 'Вести запись?'
 		);
 	}
@@ -112,5 +115,41 @@ class Cams extends CActiveRecord
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
 		));
+	}
+
+	public function getAvailableCams() {
+		$id = Yii::app()->user->getId();
+		$public = array();
+		$publicAll = Cams::model()->findAllByAttributes(array('public' => 1));
+		$shared = Shared::model()->findAllByAttributes(array('user_id' => $id, 'public' => 0));
+		foreach ($shared as $key => $value) {
+			if(!isset($value->cam->id)) {
+				$value->delete();
+				unset($shared[$key]);
+			}
+		}
+		$publicEdited = Shared::model()->findAllByAttributes(array('user_id' => $id, 'public' => 1), array('index' => 'cam_id'));
+		foreach ($publicAll as $cam) {
+			if(isset($publicEdited[$cam->id])) {
+				$public[] = $publicEdited[$cam->id];
+			} else {
+				$public[] = $cam;
+			}
+		}
+		$myCams = Cams::model()->findAllByAttributes(array('user_id' => $id));
+		$myPublicCams = $public;
+		$mySharedCams = $shared;
+		// генерим список камер для селектора id=>name
+		$select_options = array();
+		foreach ($myCams as $key => $cam) {
+			$allMyCams[$cam->id] = $cam;
+		}
+		foreach ($myPublicCams as $key => $cam) {
+			$allMyCams[$cam->id] = $cam;
+		}
+		foreach ($mySharedCams as $key => $cam) {
+			$allMyCams[$cam->cam_id] = $cam->cam;
+		}
+		return $allMyCams;
 	}
 }

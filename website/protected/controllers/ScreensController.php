@@ -56,41 +56,10 @@ class ScreensController extends Controller
 	}
 
 	private function getAvailableCams() {
-		$id = Yii::app()->user->getId();
-		$public = array();
-		$publicAll = Cams::model()->findAllByAttributes(array('public' => 1));
-		$shared = Shared::model()->findAllByAttributes(array('user_id' => $id, 'public' => 0));
-		foreach ($shared as $key => $value) {
-			if(!isset($value->cam->id)) {
-				$value->delete();
-				unset($shared[$key]);
-			}
-		}
-		$publicEdited = Shared::model()->findAllByAttributes(array('user_id' => $id, 'public' => 1), array('index' => 'cam_id'));
-		foreach ($publicAll as $cam) {
-			if(isset($publicEdited[$cam->id])) {
-				$public[] = $publicEdited[$cam->id];
-			} else {
-				$public[] = $cam;
-			}
-		}
-		$myCams = Cams::model()->findAllByAttributes(array('user_id' => $id));
-		$myPublicCams = $public;
-		$mySharedCams = $shared;
-		// генерим список камер для селектора id=>name
-		$select_options = array();
+		$myCams = Cams::getAvailableCams();
 		foreach ($myCams as $key => $cam) {
 			$select_options[$cam->id] = $cam->name;
 		}
-		foreach ($myPublicCams as $key => $cam) {
-			$select_options[$cam->id] = $cam->name;
-		}
-//		print_r($mySharedCams[0]);
-//		return;
-		foreach ($mySharedCams as $key => $cam) {
-			$select_options[$cam->cam_id] = $cam->cam->name;
-		}
-//		print_r($select_options);
 		return $select_options;
 	}
 
