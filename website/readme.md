@@ -1,1 +1,0 @@
-## Laravel 4 tutorial site

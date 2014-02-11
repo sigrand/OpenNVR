@@ -1,7 +1,0 @@
-/bootstrap/compiled.php
-/vendor
-/public/uploads
-composer.phar
-composer.lock
-.DS_Store
-_article
