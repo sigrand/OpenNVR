@@ -1,9 +1,18 @@
 #ifndef MOMENT__FFMPEG_STAT_MEASURER__H__
 #define MOMENT__FFMPEG_STAT_MEASURER__H__
 
+#ifndef PLATFORM_WIN32
+#include <sys/time.h>
+#else
+#include <time.h>
+#include "windows_helper_funcs.h"
+#endif
+
 #include <moment/libmoment.h>
 #include <libmary/types.h>
-#include <sys/time.h>
+#ifdef LIBMARY_PERFORMANCE_TESTING
+#include <libmary/istat_measurer.h>
+#endif
 
 using namespace M;
 using namespace Moment;
@@ -60,6 +69,9 @@ struct StatMeasure
 };
 
 class StatMeasurer: public Object
+#ifdef LIBMARY_PERFORMANCE_TESTING
+, public M::IStatMeasurer
+#endif
 {
 public:
 
@@ -67,7 +79,7 @@ public:
 	~StatMeasurer();
 
 	void AddTimeInNvr(Time t);
-	void AddTimeInOut(Time t);
+    virtual void AddTimeInOut(Time t);
 
     bool CheckCPU();
     bool CheckRAM();
@@ -107,6 +119,12 @@ private:
 
     Time m_user_time_prev;
     Time m_all_proc_time_prev;
+
+#ifdef PLATFORM_WIN32
+    BYTE* m_pPerfDataHead;
+    RAW_DATA m_pPrevSample;
+    RAW_DATA m_pCurrSample;
+#endif
 
     double m_user_util_min;
     double m_user_util_max;

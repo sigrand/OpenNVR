@@ -71,11 +71,11 @@ ConstMemory _libMary_stripFuncFilePath (char const *str);
 #define _func2_(line, ...) _func3_(line __VA_ARGS__)
 
 #define _func       _func2 (__LINE__)
-#define _this_func  _func2 (__LINE__, , , fmt_hex, "0x", (unsigned long) this, fmt_def, " ")
-#define _self_func  _func2 (__LINE__, , , fmt_hex, "0x", (unsigned long) self, fmt_def, " ")
+#define _this_func  _func2 (__LINE__, , , fmt_hex, "0x", (ptrdiff_t) this, fmt_def, " ")
+#define _self_func  _func2 (__LINE__, , , fmt_hex, "0x", (ptrdiff_t) self, fmt_def, " ")
 #define _func_      _func2_(__LINE__)
-#define _this_func_ _func2_(__LINE__, , , fmt_hex, " 0x", (unsigned long) this, fmt_def, " ")
-#define _self_func_ _func2_(__LINE__, , , fmt_hex, " 0x", (unsigned long) self, fmt_def, " ")
+#define _this_func_ _func2_(__LINE__, , , fmt_hex, " 0x", (ptrdiff_t) this, fmt_def, " ")
+#define _self_func_ _func2_(__LINE__, , , fmt_hex, " 0x", (ptrdiff_t) self, fmt_def, " ")
 
 class Result
 {

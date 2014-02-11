@@ -34,6 +34,7 @@ namespace M {
 void libMary_platformInit ()
 {
     {
+        #ifndef LIBMARY_PLATFORM_WIN32
       // Blocking SIGPIPE for write()/writev().
         struct sigaction act;
         memset (&act, 0, sizeof (act));
@@ -44,6 +45,7 @@ void libMary_platformInit ()
         sigaddset (&act.sa_mask, SIGPIPE);
         if (sigaction (SIGPIPE, &act, NULL) == -1)
             fprintf (stderr, "sigaction() failed: %s", errnoString (errno));
+        #endif
     }
 
     // Calling tzset() for localtime_r() to behave correctly.

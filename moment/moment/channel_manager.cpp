@@ -17,6 +17,7 @@
 */
 
 #include <stdio.h>
+#include <fstream>
 
 #include <libmary/types.h>
 #include <cctype>
@@ -133,39 +134,34 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
                     StRef<String> fullname = st_makeString(self->confd_dirname, "/", entry_name->cstr());
                     logD_(_func_, "fullname = ", fullname);
 
-                    if (FILE *file = fopen(fullname->cstr(), "r"))
-                    {
-                        char * line = NULL;
-                        size_t len = 0;
-                        ssize_t read;
-                        while ((read = getline(&line, &len, file)) != -1)
-                        {
-                            std::string strContent(line);
-                            size_t uriSrc_beg = strContent.find("uri = \"");
-                            if(uriSrc_beg == std::string::npos)
-                                continue;
-                            uriSrc_beg += strlen("uri = \"");
-                            size_t uriSrc_end = strContent.rfind("\"");
-                            std::string uriSrc = strContent.substr(uriSrc_beg, uriSrc_end - uriSrc_beg);
-
-                            logD_(_func_, "uriSrc = ", uriSrc.c_str());
-
-                            if(uriSrc.compare(item_uri) == 0 &&
-                                    item_name.compare(std::string(entry_name->cstr())) != 0)
-                            {
-                                logD_(_func_, "uriSrc is already used");
-                                urlIsUsed = true;
-                            }
-                        }
-                        if (line)
-                            free(line);
-
-                        fclose(file);
-                    }
-                    else
+                    std::ifstream file (fullname->cstr());
+                    if (!file.is_open())
                     {
                         logE_(_func_, "fail to open file = ", fullname);
+                        continue;
                     }
+
+                    std::string line;
+                    while ( std::getline(file, line) )
+                    {
+                        size_t uriSrc_beg = line.find("uri = \"");
+                        if(uriSrc_beg == std::string::npos)
+                            continue;
+                        uriSrc_beg += strlen("uri = \"");
+                        size_t uriSrc_end = line.rfind("\"");
+                        std::string uriSrc = line.substr(uriSrc_beg, uriSrc_end - uriSrc_beg);
+
+                        logD_(_func_, "uriSrc = ", uriSrc.c_str());
+
+                        if(uriSrc.compare(item_uri) == 0 && 
+                            item_name.compare(std::string(entry_name->cstr())) != 0)
+                        {
+                            logD_(_func_, "uriSrc is already used");
+                            urlIsUsed = true;
+                        }
+                    }
+
+                    file.close();
                 }
                 else
                 {
@@ -377,31 +373,26 @@ ChannelManager::serverHttpRequest (HTTPServerRequest &req, HTTPServerResponse &r
                 else
                     json_value_source["uri"] = st_makeString(ConstMemory("rtmp://"), this_rtmp_server_addr->mem(), ConstMemory("/live/"), item->channel_name->mem())->cstr();
 
-
-
                 ConstMemory const dir_name = self->confd_dirname->mem();
                 StRef<String> const path = st_makeString (dir_name, "/", item->channel_name->cstr());
 
-                if (FILE *file = fopen(path->cstr(), "r")) {
+                std::ifstream file(path->cstr());
+                if (file.is_open()) 
+                {
                     logD_ (_func, "PATH_NAME: ", path->cstr());
-                    char * line = NULL;
-                    size_t len = 0;
-                    ssize_t read;
-                    while ((read = getline(&line, &len, file)) != -1)
+                    std::string line;
+                    while ( std::getline(file,line) )
                     {
-                        std::string strContent(line);
-                        size_t uriSrc_beg = strContent.find("uri = \"");
+                        size_t uriSrc_beg = line.find("uri = \"");
                         if(uriSrc_beg == std::string::npos)
                             continue;
                         uriSrc_beg += strlen("uri = \"");
-                        size_t uriSrc_end = strContent.rfind("\"");
-                        std::string uriSrc = strContent.substr(uriSrc_beg, uriSrc_end - uriSrc_beg);
+                        size_t uriSrc_end = line.rfind("\"");
+                        std::string uriSrc = line.substr(uriSrc_beg, uriSrc_end - uriSrc_beg);
                         json_value_source["uriSrc"] = uriSrc.c_str();
                     }
-                    if (line)
-                        free(line);
 
-                    fclose(file);
+                    file.close();
                 }
 
                 // Add just created Json value to Json source list

@@ -51,15 +51,15 @@ unsigned long matchStrings (const char     *str,
 			    const char    **strs,
 			    unsigned long   num_strs);
 
-bool numbersAreZero (const unsigned long *number_set,
-		     unsigned long        nnumbers);
+bool numbersAreZero (const Size *number_set,
+		     Size        nnumbers);
 
-bool numberIsMaxOf (unsigned long        number,
-		    const unsigned long *number_set,
+bool numberIsMaxOf (Size        number,
+		    const Size *number_set,
 		    unsigned long        nnumbers);
 
-unsigned long maxNumberOf (const unsigned long *number_set,
-			   unsigned long        nnumbers);
+Size maxNumberOf (const Size *number_set,
+			   Size        nnumbers);
 
 }
 

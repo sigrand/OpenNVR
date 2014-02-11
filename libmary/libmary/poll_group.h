@@ -76,7 +76,7 @@ public:
 #endif
 
 #ifdef LIBMARY_PLATFORM_WIN32
-	SOCKET (*getFd) (void *cb_data);
+	int (*getFd) (void *cb_data); // HACK. just for a while (replace SOCKET with int)
 #else
 	int (*getFd) (void *cb_data);
 #endif

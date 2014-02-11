@@ -68,10 +68,10 @@
 using namespace M;
 using namespace Moment;
 
-static LogGroup libMary_logGroup_hls        ("mod_hls",        LogLevel::D);
-static LogGroup libMary_logGroup_hls_seg    ("mod_hls.seg",    LogLevel::D);
-static LogGroup libMary_logGroup_hls_msg    ("mod_hls.msg",    LogLevel::I);
-static LogGroup libMary_logGroup_hls_timers ("mod_hls.timers", LogLevel::I);
+static LogGroup libMary_logGroup_hls        ("mod_hls",        LogLevel::E);
+static LogGroup libMary_logGroup_hls_seg    ("mod_hls.seg",    LogLevel::E);
+static LogGroup libMary_logGroup_hls_msg    ("mod_hls.msg",    LogLevel::E);
+static LogGroup libMary_logGroup_hls_timers ("mod_hls.timers", LogLevel::E);
 
 static ConstMemory const m3u8_mime_type   = "application/vnd.apple.mpegurl";
 static ConstMemory const mpegts_mime_type = "video/mp2t";
@@ -636,6 +636,8 @@ private:
                          size_t * out_len,
                          Size           const first_page_offs = 0);
 
+    static Time localGetTimeMilliseconds();
+
 public:
     mt_const void init (MomentServer  * mt_nonnull moment,
                         StreamOptions * mt_nonnull opts,
@@ -655,6 +657,14 @@ public:
 
 static HlsServer glob_hls_server;
 
+Time
+HlsServer::localGetTimeMilliseconds()
+{
+    struct timespec ts;
+    int const res = clock_gettime (CLOCK_MONOTONIC, &ts);
+    Time const new_microseconds = (Uint64) ts.tv_sec * 1000000 + (Uint64) ts.tv_nsec / 1000;
+    return new_microseconds / 1000;
+}
 
 bool
 HlsServer::PagesToBuf(PagePool::PageListHead * const mt_nonnull page_list,
@@ -889,7 +899,10 @@ HlsServer::watchedStreamsTimerTick (void * const _self)
 
     while (!self->watched_stream_sessions.isEmpty()) {
         StreamSession * const stream_session = self->watched_stream_sessions.getFirst();
-
+        logD (hls_timers, _func_, "last_request_time_millisec=",stream_session->last_request_time_millisec);
+        logD (hls_timers, _func_, "cur_time_millisec=",cur_time_millisec);
+        logD (hls_timers, _func_, "last_request_time_millisec=",stream_session->last_request_time_millisec);
+        logD (hls_timers, _func_, "watcher_timeout_millisec=",self->watcher_timeout_millisec);
         if (stream_session->last_request_time_millisec > cur_time_millisec
             || cur_time_millisec - stream_session->last_request_time_millisec < self->watcher_timeout_millisec)
         {
@@ -906,6 +919,7 @@ HlsServer::watchedStreamsTimerTick (void * const _self)
         Ref<VideoStream> const video_stream = stream_session->hls_stream->weak_video_stream.getRef();
         if (video_stream) {
             self->mutex.unlock ();
+            logD (hls, _func_, "video_stream->minusOneWatcher");
             video_stream->minusOneWatcher ();
             self->mutex.lock ();
         }
@@ -1694,7 +1708,7 @@ mt_mutex (mutex) void
 HlsServer::StreamSession::finishSegment (PagePool::Page ** const first_new_page,
                                          Size            * const new_page_offs)
 {
-    logD_(_func_, "begin");
+    logD(hls_seg, _func_, "begin");
 
     {
         SegmentSessionList::iter iter (forming_seg_sessions);
@@ -1748,13 +1762,13 @@ HlsServer::StreamSession::finishSegment (PagePool::Page ** const first_new_page,
             forming_seg_sessions.remove (seg_session);
             seg_session->unref ();
 
-            logD_(_func_, "segment sent: ", forming_segment->seg_len, " bytes, ",
+            logD(hls_seg, _func_, "segment sent: ", forming_segment->seg_len, " bytes, ",
                   seg_session->client_address, " ", seg_session->request_line);
         }
         assert (forming_seg_sessions.isEmpty());
     }
 
-    logD_(_func_, "appending segment ", forming_seg_no);
+    logD(hls_seg, _func_, "appending segment ", forming_seg_no);
     segment_list.append (forming_segment);
     forming_segment->ref ();
     ++num_active_segments;
@@ -1800,7 +1814,7 @@ HlsServer::StreamSession::finishSegment (PagePool::Page ** const first_new_page,
             }
         }
     }
-    logD_(_func_, "end");
+    logD(hls_seg, _func_, "end");
 }
 
 mt_mutex (mutex) gboolean
@@ -1822,18 +1836,18 @@ HlsServer::StreamSession::newFrameAdded_unlocked (HlsFrame * const mt_nonnull fr
                                                   bool       const force_finish_segment)
 {
     if (!started) {
-        logD_(_func_, "not started");
+        logD(hls_seg, _func_, "not started");
         return;
     }
 
     if (!frame->is_video_frame) {
         if (!audio_ts) {
-            logD_(_func_, "dropping audio frame");
+            logD(hls_seg, _func_, "dropping audio frame");
             return;
         }
     } else {
         if (!video_ts) {
-            logD_(_func_, "dropping video frame");
+            logD(hls_seg, _func_, "dropping video frame");
             return;
         }
     }
@@ -1955,7 +1969,7 @@ HlsServer::StreamSession::newFrameAdded_unlocked (HlsFrame * const mt_nonnull fr
         if (!opts.realtime_mode
             && forming_segment->seg_len >= opts.max_segment_len)
         {
-            logD_(_func_, "segment_finished = true 1");
+            logD(hls_seg, _func_, "segment_finished = true 1");
             segment_finished = true;
         }
 
@@ -1970,14 +1984,14 @@ HlsServer::StreamSession::newFrameAdded_unlocked (HlsFrame * const mt_nonnull fr
                 if (timestamp > forming_segment->first_timestamp
                     && timestamp - forming_segment->first_timestamp >= opts.segment_duration_millisec * 1000000)
                 {
-                    logD_(_func_, "segment_finished = true 2");
+                    logD(hls_seg, _func_, "segment_finished = true 2");
                     segment_finished = true;
                 }
             }
         }
 
-        if (force_finish_segment || segment_finished){logD_(_func_, "finishSegment calling");
-            finishSegment (&first_new_page, &new_page_offs);}
+        if (force_finish_segment || segment_finished)
+            finishSegment (&first_new_page, &new_page_offs);
     }
 
     if (opts.realtime_mode
@@ -1986,7 +2000,7 @@ HlsServer::StreamSession::newFrameAdded_unlocked (HlsFrame * const mt_nonnull fr
         SegmentSessionList::iter iter (forming_seg_sessions);
         while (!forming_seg_sessions.iter_done (iter)) {
             SegmentSession * const seg_session = forming_seg_sessions.iter_next (iter);
-            logD_(_func_, "new_page_offs: ", new_page_offs, ", "
+            logD(hls_seg, _func_, "new_page_offs: ", new_page_offs, ", "
                   "first_new_page->data_len: ", first_new_page->data_len);
 
             {
@@ -2023,7 +2037,6 @@ HlsServer::StreamSession::newFrameAdded (HlsFrame * const mt_nonnull frame,
                                          bool       const force_finish_segment)
 {
     mutex.lock ();
-    logD_(_func_, "before 3 newFrameAdded_unlocked");
     newFrameAdded_unlocked (frame, force_finish_segment);
     mutex.unlock ();
 }
@@ -2034,7 +2047,7 @@ HlsServer::StreamSession::addSegmentSession (SegmentSession * const mt_nonnull s
     mutex.lock ();
 
     if (!valid) {
-        logD_(_func_, "stream session gone");
+        logD(hls_seg, _func_, "stream session gone");
 
         HandlerContext * ctx = seg_session->pHandlerCtx;
         Result const res = sendHttpNotFound(*ctx->pRequest, *ctx->pResponse);
@@ -2049,7 +2062,7 @@ HlsServer::StreamSession::addSegmentSession (SegmentSession * const mt_nonnull s
     if (seg_session->seg_no < oldest_seg_no
         || seg_session->seg_no > newest_seg_no + opts.num_lead_segments)
     {
-        logD_(_func_, "seg_no ", seg_session->seg_no, " not in segment window "
+        logD(hls_seg, _func_, "seg_no ", seg_session->seg_no, " not in segment window "
               "[", oldest_seg_no, ", ", newest_seg_no + opts.num_lead_segments, "]");
 
         HandlerContext * ctx = seg_session->pHandlerCtx;
@@ -2074,7 +2087,7 @@ HlsServer::StreamSession::addSegmentSession (SegmentSession * const mt_nonnull s
                     break;
             }
             if (!segment) {
-                logD_(_func_, "MISSING SEGMENT: seg_no: ", seg_session->seg_no);
+                logD(hls_seg, _func_, "MISSING SEGMENT: seg_no: ", seg_session->seg_no);
             }
             assert (segment);
         }
@@ -2108,7 +2121,7 @@ HlsServer::StreamSession::addSegmentSession (SegmentSession * const mt_nonnull s
         destroySegmentSession (seg_session);
         mutex.unlock ();
 
-        logD_(_func_, "segment sent: ", segment_len, " bytes, ",
+        logD(hls_seg, _func_, "segment sent: ", segment_len, " bytes, ",
               seg_session->client_address, " ", seg_session->request_line);
 
         return Result::Success;
@@ -2290,7 +2303,9 @@ HlsServer::doCreateStreamSession (HlsStream * const hls_stream)
 mt_unlocks (mutex) void
 HlsServer::markStreamSessionRequest (StreamSession * const mt_nonnull stream_session)
 {
-    stream_session->last_request_time_millisec = getTimeMilliseconds();
+    logD (hls, _func_);
+    stream_session->last_request_time_millisec = localGetTimeMilliseconds();
+    logD (hls, _func_, "last_request_time_millisec = ", stream_session->last_request_time_millisec);
 
     if (!stream_session->opts.one_session_per_stream) {
         stream_session_cleanup_list.remove (stream_session);
@@ -2306,7 +2321,7 @@ HlsServer::markStreamSessionRequest (StreamSession * const mt_nonnull stream_ses
             stream_session->ref ();
 
             mutex.unlock ();
-
+            logD (hls, _func_, "video_stream->plusOneWatcher");
             video_stream->plusOneWatcher ();
             return;
         }
@@ -2322,6 +2337,7 @@ static void
 doMinusOneWatcher (void * const _video_stream)
 {
     VideoStream * const video_stream = static_cast <VideoStream*> (_video_stream);
+    logD (hls, _func_, "video_stream->minusOneWatcher");
     video_stream->minusOneWatcher ();
 }
 
@@ -2438,6 +2454,7 @@ HlsServer::processStreamHttpRequest (HTTPServerRequest &req,
                                       HTTPServerResponse &resp,
                                       std::string & stream_name)
 {
+    logD(hls, _func_);
     Ref<StreamSession> stream_session;
 
     ConstMemory   const stream_name_mem = ConstMemory(stream_name.c_str(), stream_name.size());
@@ -2510,6 +2527,7 @@ HlsServer::processSegmentListHttpRequest (HTTPServerRequest &req,
                                           HTTPServerResponse &resp,
                                           std::string & stream_session_id)
 {
+    logD(hls, _func_);
     mutex.lock ();
 
     ConstMemory stream_session_id_mem = ConstMemory(stream_session_id.c_str(), stream_session_id.size());
@@ -2518,7 +2536,7 @@ HlsServer::processSegmentListHttpRequest (HTTPServerRequest &req,
     if (!stream_session)
     {
         mutex.unlock ();
-        logD_ (_func, "stream session not found, id ", stream_session_id.c_str());
+        logD(hls_seg, _func, "stream session not found, id ", stream_session_id.c_str());
         return sendHttpNotFound (req, resp);
     }
 
@@ -2534,7 +2552,7 @@ HlsServer::doProcessSegmentListHttpRequest (HTTPServerRequest &req,
                                              StreamSession * const stream_session,
                                              std::string path_prefix)
 {
-    logD_(_func_, "hls_stream 0x", fmt_hex, (UintPtr) stream_session->hls_stream.ptr());
+    logD(hls_seg, _func_, "hls_stream 0x", fmt_hex, (UintPtr) stream_session->hls_stream.ptr());
 
     mt_unlocks (mutex) markStreamSessionRequest (stream_session);
 
@@ -2544,7 +2562,7 @@ HlsServer::doProcessSegmentListHttpRequest (HTTPServerRequest &req,
     if (!stream_session->valid)
     {
         stream_session->mutex.unlock ();
-        logD_ (_func_, "stream session invalidated");
+        logD(hls_seg, _func_, "stream session invalidated");
         return sendHttpNotFound (req, resp);
     }
 
@@ -2572,7 +2590,7 @@ HlsServer::doProcessSegmentListHttpRequest (HTTPServerRequest &req,
             msg_body << path_prefix << "segment.ts?s=" << session_id->cstr() << "&n=" << segment->seg_no << "\n";
             ++num_segments;
         }
-        logD_(_func_, "num_segments: ", num_segments);
+        logD(hls_seg, _func_, "num_segments: ", num_segments);
 
         for (unsigned i = 0; i < stream_session->opts.num_lead_segments; ++i) {
             msg_body << "#EXTINF:" << extinf_str->cstr() << "\n";
@@ -2584,7 +2602,7 @@ HlsServer::doProcessSegmentListHttpRequest (HTTPServerRequest &req,
 
     if (just_started)
     {
-        logD_ (_func_, "just_started");
+        logD(hls_seg, _func_, "just_started");
         stream_session->hls_stream->mutex.lock ();
         stream_session->mutex.lock ();
 
@@ -2610,8 +2628,8 @@ HlsServer::doProcessSegmentListHttpRequest (HTTPServerRequest &req,
                     page_pool->getFillPages (&frame.page_list, ConstMemory::forObject (delimiter));
                 }
 
-                for (unsigned i = 0; i < num_dummy_starters; ++i){logD_(_func_, "before 1 newFrameAdded_unlocked");
-                    stream_session->newFrameAdded_unlocked (&frame, true /* force_finish_segment */);}
+                for (unsigned i = 0; i < num_dummy_starters; ++i)
+                    stream_session->newFrameAdded_unlocked (&frame, true /* force_finish_segment */);
             }
 
             stream_session->mutex.unlock ();
@@ -2627,7 +2645,7 @@ HlsServer::doProcessSegmentListHttpRequest (HTTPServerRequest &req,
     out << msg_body.str();
     out.flush();
 
-    logD_(_func_, "segment list sent: ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+    logD(hls_seg, _func_, "segment list sent: ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
 
     return Result::Success;
 }
@@ -2641,7 +2659,7 @@ void
 HlsServer::StreamSession::senderClosed (Exception * const /* exc_ */,
                                         void      * const _seg_session)
 {
-    logD_(_func_, "senderClosed");
+    logD(hls_seg, _func_, "senderClosed");
     SegmentSession * const seg_session = static_cast <SegmentSession*> (_seg_session);
     Ref<StreamSession> const stream_session = seg_session->weak_stream_session.getRef ();
     if (!stream_session) {
@@ -2674,6 +2692,7 @@ HlsServer::processSegmentHttpRequest (HandlerContext & ctx,
                                        std::string & stream_session_id,
                                        std::string & seg_no_str)
 {
+    logD(hls, _func_);
     ConstMemory   const stream_session_id_mem = ConstMemory(stream_session_id.c_str(), stream_session_id.size());
     ConstMemory   const seg_no_str_mem = ConstMemory(seg_no_str.c_str(), seg_no_str.size());
     Uint64 seg_no;
@@ -2698,13 +2717,13 @@ HlsServer::processSegmentHttpRequest (HandlerContext & ctx,
     if (!stream_session)
     {
         mutex.unlock ();
-        logD_(_func_, "stream session not found, id ", stream_session_id_mem);
+        logD(hls_seg, _func_, "stream session not found, id ", stream_session_id_mem);
         Result res = sendHttpNotFound (*ctx.pRequest, *ctx.pResponse);
         doSignal(ctx);
         return res;
     }
 
-    logD_(_func_, "hls_stream 0x", fmt_hex, (UintPtr) stream_session->hls_stream.ptr());
+    logD(hls_seg, _func_, "hls_stream 0x", fmt_hex, (UintPtr) stream_session->hls_stream.ptr());
 
     mt_unlocks (mutex) markStreamSessionRequest (stream_session);
 
@@ -2749,7 +2768,7 @@ HlsServer::httpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void *
 
     HlsServer * const self = static_cast <HlsServer*> (_self);
 
-    logD_ (_func_, req.getURI().c_str());
+    logD(hls_seg, _func_, req.getURI().c_str());
 
     URI uri(req.getURI());
     std::vector < std::string > segments;
@@ -2844,7 +2863,7 @@ HlsServer::httpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void *
         }
     }
 
-    logD_ (_func_, "bad request: ", req.getURI().c_str());
+    logD(hls_seg, _func_, "bad request: ", req.getURI().c_str());
 
     Result res = self->sendHttpNotFound (req, resp);
     return res == Result::Success;
@@ -2893,7 +2912,7 @@ HlsServer::init (MomentServer  * const mt_nonnull moment,
     }
 // TEST (remove)
 //    extinf_str = grab (new String ("0.01"));
-    logD_ (_func, "extinf_str: ", extinf_str);
+    logD(hls_seg, _func, "extinf_str: ", extinf_str);
 
     ServerApp * const server_app = moment->getServerApp();
 
@@ -2950,7 +2969,7 @@ HlsServer::HlsServer ()
 HlsServer::~HlsServer ()
 {
     mutex.lock ();
-    logD_(_func_, "HlsServer DESTRUCTOR");
+    logD(hls_seg, _func_, "HlsServer DESTRUCTOR");
     {
         StreamSessionHash::iter iter (stream_sessions);
         while (!stream_sessions.iter_done (iter)) {
@@ -2965,7 +2984,7 @@ HlsServer::~HlsServer ()
 
 static void momentHlsInit ()
 {
-    logD_ (_func, "Initializing mod_hls");
+    logD(hls_seg, _func, "Initializing mod_hls");
 
     CodeDepRef<MomentServer> const moment = MomentServer::getInstance();
     /* TODO CodeDepRef<Cofig> */ MConfig::Config * const config = moment->getConfig ();
@@ -2979,7 +2998,7 @@ static void momentHlsInit ()
 	}
 
 	if (enable == MConfig::Boolean_False) {
-	    logI_ (_func, "Apple HTTP Live Streaming module is not enabled. "
+        logI(hls_seg, _func, "Apple HTTP Live Streaming module is not enabled. "
 		   "Set \"", opt_name, "\" option to \"y\" to enable.");
 	    return;
 	}
@@ -2997,7 +3016,7 @@ static void momentHlsInit ()
         if (val == MConfig::Boolean_False)
             one_session_per_stream = false;
 
-        logI_ (_func, opt_name, ": ", one_session_per_stream);
+        logI(hls_seg, _func, opt_name, ": ", one_session_per_stream);
     }
 
     bool realtime_mode = false;
@@ -3012,7 +3031,7 @@ static void momentHlsInit ()
         if (val == MConfig::Boolean_True)
             realtime_mode = true;
 
-	logI_ (_func, opt_name, ": ", realtime_mode);
+    logI(hls_seg, _func, opt_name, ": ", realtime_mode);
     }
 
     bool no_audio = false;
@@ -3027,7 +3046,7 @@ static void momentHlsInit ()
         if (val == MConfig::Boolean_True)
             no_audio = true;
 
-        logI_ (_func, opt_name, ": ", no_audio);
+        logI(hls_seg, _func, opt_name, ": ", no_audio);
     }
 
     bool no_video = false;
@@ -3042,7 +3061,7 @@ static void momentHlsInit ()
         if (val == MConfig::Boolean_True)
             no_video = true;
 
-        logI_ (_func, opt_name, ": ", no_video);
+        logI(hls_seg, _func, opt_name, ": ", no_video);
     }
 
     bool no_rtmp_audio = false;
@@ -3057,7 +3076,7 @@ static void momentHlsInit ()
         if (val == MConfig::Boolean_True)
             no_rtmp_audio = true;
 
-        logI_ (_func, opt_name, ": ", no_rtmp_audio);
+        logI(hls_seg, _func, opt_name, ": ", no_rtmp_audio);
     }
 
     bool no_rtmp_video = false;
@@ -3072,7 +3091,7 @@ static void momentHlsInit ()
         if (val == MConfig::Boolean_True)
             no_rtmp_video = true;
 
-        logI_ (_func, opt_name, ": ", no_rtmp_video);
+        logI(hls_seg, _func, opt_name, ": ", no_rtmp_video);
     }
 
     bool insert_au_delimiters = false;
@@ -3087,7 +3106,7 @@ static void momentHlsInit ()
         if (val == MConfig::Boolean_True)
             insert_au_delimiters = true;
 
-        logI_ (_func, opt_name, ": ", insert_au_delimiters);
+        logI(hls_seg, _func, opt_name, ": ", insert_au_delimiters);
     }
 
     bool send_codec_data = true;
@@ -3102,7 +3121,7 @@ static void momentHlsInit ()
         if (val == MConfig::Boolean_False)
             send_codec_data = false;
 
-        logI_ (_func, opt_name, ": ", send_codec_data);
+        logI(hls_seg, _func, opt_name, ": ", send_codec_data);
     }
 
     Uint64 codec_data_interval_millisec = 1000;
@@ -3111,7 +3130,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &codec_data_interval_millisec, codec_data_interval_millisec))
             logE_ (_func, "bad value for ", opt_name, ": ", config->getString (opt_name));
 
-        logI_ (_func, opt_name, ": ", codec_data_interval_millisec);
+        logI(hls_seg, _func, opt_name, ": ", codec_data_interval_millisec);
     }
 
     /* TODO Make some better estimates based on bitrate and target duration. */
@@ -3121,7 +3140,7 @@ static void momentHlsInit ()
 	if (!config->getUint64_default (opt_name, &realtime_target_len, realtime_target_len))
 	    logE_ (_func, "bad value for ", opt_name);
 
-	logI_ (_func, opt_name, ": ", realtime_target_len);
+    logI(hls_seg, _func, opt_name, ": ", realtime_target_len);
     }
 
     Uint64 target_duration = 1;
@@ -3130,7 +3149,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &target_duration, target_duration))
             logE_ (_func, "bad value for ", opt_name);
 
-	logI_ (_func, opt_name, ": ", target_duration);
+    logI(hls_seg, _func, opt_name, ": ", target_duration);
     }
 
     Uint64 segment_duration = 1000;
@@ -3139,7 +3158,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &segment_duration, segment_duration))
             logE_ (_func, "bad value for ", opt_name);
 
-        logI_ (_func, opt_name, ": ", segment_duration);
+        logI(hls_seg, _func, opt_name, ": ", segment_duration);
     }
 
     Uint64 max_segment_len = 1 << 24 /* 16 MB */;
@@ -3148,7 +3167,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &max_segment_len, max_segment_len))
             logE_ (_func, "bad value for ", opt_name);
 
-        logI_ (_func, opt_name, ": ", max_segment_len);
+        logI(hls_seg, _func, opt_name, ": ", max_segment_len);
     }
 
     Uint64 num_dummy_starters = 0;
@@ -3157,7 +3176,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &num_dummy_starters, num_dummy_starters))
             logE_ (_func, "bad value for ", opt_name);
 
-        logI_ (_func, opt_name, ": ", num_dummy_starters);
+        logI(hls_seg, _func, opt_name, ": ", num_dummy_starters);
     }
 
     Uint64 num_real_segments = 2;
@@ -3166,7 +3185,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &num_real_segments, num_real_segments))
             logE_ (_func, "bad value for ", opt_name);
 
-        logI_ (_func, opt_name, ": ", num_real_segments);
+        logI(hls_seg, _func, opt_name, ": ", num_real_segments);
     }
 
     Uint64 num_lead_segments = 1;
@@ -3175,7 +3194,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &num_lead_segments, num_lead_segments))
             logE_ (_func, "bad value for ", opt_name);
 
-        logI_ (_func, opt_name, ": ", num_lead_segments);
+        logI(hls_seg, _func, opt_name, ": ", num_lead_segments);
     }
 
     Uint64 stream_timeout = 60;
@@ -3184,7 +3203,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &stream_timeout, stream_timeout))
             logE_ (_func, "bad value for ", opt_name);
 
-        logI_ (_func, opt_name, ": ", stream_timeout);
+        logI(hls_seg, _func, opt_name, ": ", stream_timeout);
     }
 
     Uint64 watcher_timeout_millisec = 5000;
@@ -3193,7 +3212,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &watcher_timeout_millisec, watcher_timeout_millisec))
             logE_ (_func, "bad value for ", opt_name);
 
-        logI_ (_func, opt_name, ": ", watcher_timeout_millisec);
+        logI(hls_seg, _func, opt_name, ": ", watcher_timeout_millisec);
     }
 
     Uint64 frame_window_seconds = target_duration * 3;
@@ -3202,7 +3221,7 @@ static void momentHlsInit ()
         if (!config->getUint64_default (opt_name, &frame_window_seconds, frame_window_seconds))
             logE_ (_func, "bad value for ", opt_name);
 
-        logI_ (_func, opt_name, ": ", frame_window_seconds);
+        logI(hls_seg, _func, opt_name, ": ", frame_window_seconds);
     }
 
     HlsServer::StreamOptions opts;
@@ -3232,7 +3251,7 @@ static void momentHlsInit ()
 
 static void momentHlsUnload ()
 {
-    logD_ (_func, "Unloading mod_hls");
+    logD(hls_seg, _func, "Unloading mod_hls");
 }
 
 

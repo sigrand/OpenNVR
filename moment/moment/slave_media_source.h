@@ -34,6 +34,10 @@ public:
 
     void getTrafficStats (TrafficStats * const mt_nonnull ret_traffic_stats) { ret_traffic_stats->reset(); }
     void resetTrafficStats () {}
+#ifdef LIBMARY_PERFORMANCE_TESTING
+    IStatMeasurer* getStatMeasurer() { return NULL; }
+    ITimeChecker* getTimeChecker() { return NULL; }
+#endif
   mt_iface_end
 
     void init (MomentServer * mt_nonnull moment,

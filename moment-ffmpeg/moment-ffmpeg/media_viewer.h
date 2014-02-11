@@ -23,6 +23,8 @@
 
 #include <moment/libmoment.h>
 
+#include <map>
+#include <string>
 #include <moment-ffmpeg/media_reader.h>
 
 
@@ -71,7 +73,7 @@ private:
     mt_const DataDepRef<Timers> timers;
 
     mt_const Ref<Vfs> vfs;
-    StRef<String> record_dir;
+    std::map<std::string, Ref<ChannelChecker> > * m_channel_checkers;
 
     static MediaReader::ReadFrameResult endFrame (Session              * mt_nonnull session,
                                                   VideoStream::Message * mt_nonnull msg);
@@ -165,8 +167,7 @@ private:
 
 public:
     void init (MomentServer * mt_nonnull moment,
-               Vfs          * mt_nonnull vfs,
-               StRef<String>  record_dir);
+               std::map<std::string, Ref<ChannelChecker> > * channel_checkers);
 
     MediaViewer ();
 };

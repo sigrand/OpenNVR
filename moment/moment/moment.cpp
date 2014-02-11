@@ -21,13 +21,17 @@
 
 #include <cstdio>
 
-#ifndef LIBMARY_PLATFORM_WIN32
+#ifndef PLATFORM_WIN32
 #include <unistd.h>
 #include <execinfo.h>
-#include <signal.h>
 #include <stdlib.h>
+#else
+#include <windows.h>
+#include <dbghelp.h>
 #endif
+
 #include <errno.h>
+#include <signal.h>
 
 #ifdef MOMENT_GPERFTOOLS
 #include <gperftools/profiler.h>
@@ -38,7 +42,6 @@
 #include <moment/moment_request_handler.h>
 #include <moment/moment_http_server.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 using namespace M;
 using namespace Moment;
@@ -730,14 +733,13 @@ struct strPorts
   int http_port;
 };
 
-void * server_thread_func(void * arg)
+void server_thread_func(void * arg)
 {
     struct strPorts * ports = (struct strPorts *)arg;
     MomentHTTPServer app;
     app.SetPorts(ports->http_port,ports->admin_http_port);
     char * chNull = "";
     app.run(1, &chNull);
-    return NULL;
 }
 
 bool
@@ -759,8 +761,14 @@ MomentInstance::initServer(MConfig::Config *config)
     ports.admin_http_port = admin_http_port;
     ports.http_port = http_port;
 
-    pthread_t server_thread;
-    pthread_create( &server_thread, NULL, server_thread_func, (void*)&ports);
+    {
+        Ref<Thread> const thread = grab (new (std::nothrow) Thread (
+            CbDesc<Thread::ThreadFunc> (server_thread_func, (void*)&ports, NULL)));
+        if (!thread->spawn (false /* joinable */)) {
+            logE_ (_func, "Failed to spawn Poco server thread: ", exc->toString());
+            return false;
+        }
+    }
 
     return true;
 }
@@ -844,9 +852,10 @@ MomentInstance::run ()
         return EXIT_FAILURE;
     }
 
-    // init server
-
-    initServer(config);
+    if (!initServer(config)) {
+        logE_ (_func, "webserver init failed");
+        return EXIT_FAILURE;
+    }
 
     AdminHttpReqHandler::addHandler(std::string("ctl"), ctlHttpRequest, this);
 
@@ -930,6 +939,8 @@ _stop_recorder:
 } // namespace {}
 
 void handler(int sig) {
+    fprintf(stderr, "Error: signal %d:\n", sig);
+#ifndef LIBMARY_PLATFORM_WIN32
   void *array[20];
   size_t size;
 
@@ -937,13 +948,36 @@ void handler(int sig) {
   size = backtrace(array, 20);
 
   // print out all the frames to stderr
-  fprintf(stderr, "Error: signal %d:\n", sig);
   backtrace_symbols_fd(array, size, STDERR_FILENO);
-  exit(1);
+#else
+    SYMBOL_INFO* symbol;
+    HANDLE process;
+
+    process = GetCurrentProcess();
+    SymInitialize( process, NULL, TRUE );
+    // Quote from Microsoft Documentation:
+    // ## Windows Server 2003 and Windows XP:
+    // ## The sum of the FramesToSkip and FramesToCapture parameters must be less than 63.
+    const int kMaxCallers = 62;
+    void* callers[kMaxCallers];
+    int count = CaptureStackBackTrace(0, kMaxCallers, callers, NULL);
+
+    symbol               = ( SYMBOL_INFO * )calloc( sizeof( SYMBOL_INFO ) + 256 * sizeof( char ), 1 );
+    symbol->MaxNameLen   = 255;
+    symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
+
+    for(int i = 0; i < count; i++) {
+        SymFromAddr( process, ( DWORD64 )( callers[ i ] ), 0, symbol );
+		fprintf(stderr, "*** %d called from %016I64LX - %s\n", i, callers[i], symbol->Name);
+    }
+    free( symbol );
+#endif
+  std::exit(1);
 }
 
 int main (int argc, char **argv)
 {
+#ifndef PLATFORM_WIN32
     // install signal handlers
     signal(SIGSEGV, handler);   // term
     signal(SIGKILL, handler);   // term
@@ -955,7 +989,14 @@ int main (int argc, char **argv)
     signal(SIGABRT, handler);   // core
     signal(SIGIO, handler);     // term
     signal(SIGSYS, handler);    // core
-
+#else
+    signal(SIGABRT, handler);
+    signal(SIGFPE, handler);
+    signal(SIGILL, handler);
+    signal(SIGINT, handler);
+    signal(SIGSEGV, handler);
+    signal(SIGTERM, handler);
+#endif
 
     libMaryInit ();
 

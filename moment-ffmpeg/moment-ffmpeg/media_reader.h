@@ -23,6 +23,7 @@
 
 #include <moment-ffmpeg/types.h>
 #include <moment-ffmpeg/nvr_file_iterator.h>
+#include <moment-ffmpeg/channel_checker.h>
 
 extern "C" {
 #ifndef INT64_C
@@ -258,7 +259,6 @@ private:
     mt_mutex (mutex) NvrFileIterator file_iter;
 
     mt_mutex (mutex) StRef<String> cur_filename;
-    mt_mutex (mutex) StRef<String> record_dir;
 
     mt_mutex (mutex) bool first_file;
 
@@ -278,6 +278,8 @@ private:
     FileReader m_fileReader;
     mt_mutex (mutex) StRef<String> fileDownload;
     bool bDownload;
+    ChannelChecker::ChannelFileDiskTimes m_channelFileDiskTimes;
+    ChannelChecker::ChannelFileDiskTimes::iterator m_itr;
 
     mt_mutex (mutex) void releaseSequenceHeaders_unlocked ();
 
@@ -320,11 +322,10 @@ public:
     }
 
     mt_const void init (PagePool    * mt_nonnull page_pool,
-                        Vfs         * mt_nonnull vfs,
+                        ChannelChecker::ChannelFileDiskTimes & channelFileDiskTimes,
                         ConstMemory  stream_name,
                         Time         start_unixtime_sec,
                         Size         burst_size_limit,
-                        StRef<String> record_dir,
                         StRef<String> fileDownload,
                         bool bDownload = false);
 

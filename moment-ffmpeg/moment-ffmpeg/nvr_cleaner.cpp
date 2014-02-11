@@ -30,8 +30,10 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
+static LogGroup libMary_logGroup_cleaner ("mod_ffmpeg.nvr_cleaner", LogLevel::E);
+
 void
-NvrCleaner::doRemoveFiles (ConstMemory const filename)
+NvrCleaner::doRemoveFiles (ConstMemory const filename, Vfs * vfs)
 {
   // TODO Check return values;
     vfs->removeFile (filename);
@@ -43,74 +45,86 @@ NvrCleaner::cleanupTimerTick (void * const _self)
 {
     NvrCleaner * const self = static_cast <NvrCleaner*> (_self);
 
-    logD_ (_func, "0x", fmt_hex, (UintPtr) self);
+    logD (cleaner, _func, "0x", fmt_hex, (UintPtr) self);
 
     TimeChecker tc;tc.Start();
 
-    NvrFileIterator file_iter;
-    file_iter.init (self->vfs, self->stream_name->mem(), 0 /* start_unixtime_sec */);
-
-    Time const cur_unixtime_sec = getUnixtime();
-
-  // TODO Convert cur_unixtime_sec to UTC and compare struct tm representations
-  //      instead of raw unixtimes.
-
-    while (true)
+    std::string curPath = self->m_recpathConfig->GetNextPath();
+    while(curPath.length() != 0)
     {
-        StRef<String> const filename = file_iter.getNext ();
+        StRef<String> strRecDir = st_makeString(curPath.c_str());
+        ConstMemory record_dir = strRecDir->mem();
+        logD(cleaner, _func_, "record_dir = ", record_dir);
+        Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir);
 
-        logD_(_func_, "current filename = ", filename);
+        NvrFileIterator file_iter;
+        file_iter.init (vfs, self->stream_name->mem(), 0 /* start_unixtime_sec */);
 
-        if (!filename)
-            break;
+        Time const cur_unixtime_sec = getUnixtime();
 
-        Time file_unixtime_sec;
-        std::string stdStr(filename->cstr());
-        std::string delimiter = "_";
-        size_t pos = 0;
-        std::string token;
-        // find '_'
-        pos = stdStr.rfind(delimiter);
+      // TODO Convert cur_unixtime_sec to UTC and compare struct tm representations
+      //      instead of raw unixtimes.
 
-        if(pos == std::string::npos)
-            continue;
+        while (true)
+        {
+            StRef<String> const filename = file_iter.getNext ();
 
-        token = stdStr.substr(0, pos);
-        stdStr.erase(0, pos + delimiter.length());
+        logD (cleaner, _func_, "current filename = ", filename);
 
-        strToUint64_safe(stdStr.c_str(), &file_unixtime_sec, 10);
+            if (!filename)
+                break;
 
-        file_unixtime_sec = file_unixtime_sec / 1000000000;
+            Time file_unixtime_sec;
+            std::string stdStr(filename->cstr());
+            std::string delimiter = "_";
+            size_t pos = 0;
+            std::string token;
+            // find '_'
+            pos = stdStr.rfind(delimiter);
+
+            if(pos == std::string::npos)
+                continue;
+
+            token = stdStr.substr(0, pos);
+            stdStr.erase(0, pos + delimiter.length());
+
+            strToUint64_safe(stdStr.c_str(), &file_unixtime_sec, 10);
+
+            file_unixtime_sec = file_unixtime_sec / 1000000000;
 
         if (file_unixtime_sec < cur_unixtime_sec
             && cur_unixtime_sec - file_unixtime_sec > self->max_age_sec)
         {
             StRef<String> const flv_filename = st_makeString (filename, ".flv");
-            logD_ (_func, "Removing ", flv_filename);
-            self->doRemoveFiles (flv_filename->mem());
+            logD (cleaner, _func, "Removing ", flv_filename);
+            self->doRemoveFiles (flv_filename->mem(), vfs);
         } else {
-            logD_ (_func, "end of removing");
+            logD (cleaner, _func, "end of removing");
             break;
         }
     }
 
+        curPath = self->m_recpathConfig->GetNextPath(curPath.c_str());
+    }
+
     Time t;tc.Stop(&t);
-    logD_(_func_, "NvrCleaner.cleanupTimerTick exectime = [", t, "]");
+    logD (cleaner, _func_, "NvrCleaner.cleanupTimerTick exectime = [", t, "]");
 }
 
 mt_const void
 NvrCleaner::init (Timers      * const mt_nonnull timers,
-                  Vfs         * const mt_nonnull vfs,
+                  RecpathConfig * const mt_nonnull recpathConfig,
                   ConstMemory   const stream_name,
                   Time          const max_age_sec,
                   Time          const clean_interval_sec)
 {
-    this->vfs = vfs;
+    //this->vfs = vfs;
+    this->m_recpathConfig = recpathConfig;
     this->stream_name = st_grab (new (std::nothrow) String (stream_name));
     this->max_age_sec = max_age_sec;
 
-    logD_(_func_, "stream_name = ", this->stream_name);
-    logD_(_func_, "max_age_sec = ", this->max_age_sec);
+    logD (cleaner, _func_, "stream_name = ", this->stream_name);
+    logD (cleaner, _func_, "max_age_sec = ", this->max_age_sec);
 
     this->timers = timers;
 
@@ -122,7 +136,7 @@ NvrCleaner::init (Timers      * const mt_nonnull timers,
     MOMENT_FFMPEG__NVR_CLEANER
 }
 
-NvrCleaner::NvrCleaner(): timers(this), timer_key (NULL)
+NvrCleaner::NvrCleaner(): timers(this), timer_key (NULL), m_recpathConfig(NULL)
 {
 
 }
@@ -133,6 +147,7 @@ NvrCleaner::~NvrCleaner()
         this->timers->deleteTimer (this->timer_key);
         this->timer_key = NULL;
     }
+    m_recpathConfig = NULL;
 }
 
 }

@@ -34,6 +34,11 @@
 
 namespace M {
 
+#ifdef LIBMARY_PERFORMANCE_TESTING
+IStatMeasurer* measurer_ = NULL;
+ITimeChecker* checker_ = NULL;
+#endif
+
 void libMary_platformInit ();
 
 #ifdef LIBMARY_MT_SAFE
@@ -90,13 +95,45 @@ void libMaryInit ()
 #endif
 
     randomSetSeed ((Uint32) getTime());
+
+#ifdef LIBMARY_PLATFORM_WIN32
+    WSADATA wsaData;
+    WORD wVersionRequested = MAKEWORD(2, 2);
+    int res = WSAStartup(wVersionRequested, &wsaData);
+    if (res != 0) {
+        logE_ (_func_, "WSAStartup failed");
+    } else {
+        if (LOBYTE(wsaData.wVersion) != 2 ||
+            HIBYTE(wsaData.wVersion) != 2) {
+            logE_ (_func_, "Could not find a requested version of Winsock.dll");
+            WSACleanup();
+        }
+        else {
+            logD_ (_func_, "The Winsock 2.2 dll was found");
+        }
+    }
+#endif
 }
+
+#ifdef LIBMARY_PERFORMANCE_TESTING
+void setMeasurer (IStatMeasurer* m) {
+    measurer_ = m;
+}
+
+void setTimeChecker (ITimeChecker* t) {
+    checker_ = t;
+}
+#endif
 
 void libMaryRelease ()
 {
   // Release thread-local data here?
   // This could be done after careful deinitialization is implemented.
     libMary_releaseThreadLocalForMainThread ();
+
+#ifdef LIBMARY_PLATFORM_WIN32
+    WSACleanup();
+#endif
 }
 
 }

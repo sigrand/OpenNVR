@@ -45,8 +45,6 @@ libmoment_ffmpeg_1_0_la_SOURCES =	\
         media_reader.cpp                \
         media_viewer.h                  \
         media_viewer.cpp                \
-        get_file_session.cpp            \
-        get_file_session.h              \
         types.h                         \
         types.cpp                       \
         time_checker.cpp                \
@@ -57,13 +55,22 @@ libmoment_ffmpeg_1_0_la_SOURCES =	\
         video_part_maker.h              \
         memory_dispatcher.cpp           \
         memory_dispatcher.h             \
+        rec_path_config.cpp             \
+        rec_path_config.h               \
+        ffmpeg_common.h                 \
         inc.h
+
+moment_ffmpeg_win_sources =                                         \
+        ../../../win_moment_ffmpeg/windows_helper_funcs.h           \
+        ../../../win_moment_ffmpeg/windows_helper_funcs.cpp
 
 moment_ffmpeg_extra_dist =
 
 libmoment_ffmpeg_1_0_la_LIBADD = $(THIS_LIBS)
 if PLATFORM_WIN32
 libmoment_ffmpeg_1_0_la_LIBADD += -lws2_32
+libmoment_ffmpeg_1_0_la_LDFLAGS = -no-undefined
+libmoment_ffmpeg_1_0_la_SOURCES += $(moment_ffmpeg_win_sources)
 endif
 
 EXTRA_DIST = $(moment_ffmpeg_private_headers) $(moment_ffmpeg_extra_dist)

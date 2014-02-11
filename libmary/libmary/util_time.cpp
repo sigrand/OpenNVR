@@ -33,6 +33,7 @@
 
 
 #ifdef LIBMARY_PLATFORM_WIN32
+#include <windows.h>
 #ifdef LIBMARY_WIN32_SECURE_CRT
 extern "C" {
     typedef int errno_t;
@@ -60,7 +61,7 @@ static void dumpTime (LibMary_ThreadLocal * const tlocal)
              "time_seconds: %lu, "
              "time_microseconds: %lu, "
              "unixtime: %lu\n",
-             (unsigned long) tlocal,
+             (ptrdiff_t) tlocal,
              (unsigned long) tlocal->time_seconds,
              (unsigned long) tlocal->time_microseconds,
              (unsigned long) tlocal->unixtime);
@@ -95,7 +96,8 @@ mt_throws Result updateTime ()
     LibMary_ThreadLocal * const tlocal = libMary_getThreadLocal();
 
 #ifdef LIBMARY_PLATFORM_WIN32
-    DWORD const win_time_dw = timeGetTime();
+    // replace timeGetTime() with GetTickCount() for a while, since GetTickCount provided by kernel.dll
+    DWORD const win_time_dw =  GetTickCount();
     if (tlocal->prv_win_time_dw >= win_time_dw) {
         tlocal->win_time_offs += 0x100000000;
     }

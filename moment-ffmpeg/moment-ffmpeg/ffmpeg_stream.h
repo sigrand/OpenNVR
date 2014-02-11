@@ -21,12 +21,18 @@
 #define MOMENT__FFMPEG_STREAM__H__
 
 
+#ifdef PLATFORM_WIN32
+    typedef unsigned char u_int8_t;
+    #define sleep(x) Sleep(x)
+#endif
+
 #include <libmary/types.h>
 //#include <libmary/util_time.h>
 
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/nvr_cleaner.h>
 #include <moment-ffmpeg/stat_measurer.h>
+#include <moment-ffmpeg/rec_path_config.h>
 #include <moment-ffmpeg/time_checker.h>
 
 extern "C" {
@@ -56,11 +62,11 @@ public:
     nvrData(void);
     ~nvrData();
 
-    Result Init(AVFormatContext * format_ctx, const char * channel_name, const char * filepath, const char * segMuxer,
-                Uint64 file_duration_sec = 3600, int skipAudioIndex = -1);
+    // Init() return 0 when success, 1 when fail to WriteHeader, -1 when fail to other init
+    int Init(AVFormatContext * format_ctx, const char * channel_name, const char * filepath, const char * segMuxer,
+                Uint64 file_duration_sec = 3600);
     void Deinit();
     bool IsInit() const;
-    Result Reinit(AVFormatContext * format_ctx);
 
     int WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & packet);
     int WriteHeader();
@@ -78,8 +84,6 @@ private /*variables*/:
 
     bool m_bIsInit;
     bool m_bWriteTrailer;
-    int m_skipAudioIndex;
-
 };
 
 class FFmpegStream;
@@ -92,7 +96,8 @@ public:
     ffmpegStreamData(void);
     ~ffmpegStreamData();
 
-    Result Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config, Timers * timers);
+    Result Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
+                Timers * timers, RecpathConfig * recpathConfig);
     void Deinit();
 
     // if PushMediaPacket returns 'false' consequently it is the end of stream (EOS).
@@ -124,6 +129,7 @@ private /*variables*/:
     std::vector<int64_t> m_vecDts; // correction value for packets
 
     nvrData m_nvrData;
+    RecpathConfig * m_recpathConfig;
 
     AVBitStreamFilterContext * m_absf_ctx; // filter for malformed aac
 
@@ -176,7 +182,11 @@ private:
 
     ffmpegStreamData m_ffmpegStreamData;
     Ref<MConfig::Config> config;
+    RecpathConfig * m_recpathConfig;
     StatMeasurer m_statMeasurer;
+#ifdef LIBMARY_PERFORMANCE_TESTING
+    TimeChecker m_timeChecker;
+#endif
 
 
     mt_const Ref<ChannelOptions> channel_opts;
@@ -351,6 +361,10 @@ public:
 
     int GetChannelState(bool & bState);
     int SetChannelState(bool const bState);
+#ifdef LIBMARY_PERFORMANCE_TESTING
+    IStatMeasurer* getStatMeasurer();
+    ITimeChecker* getTimeChecker();
+#endif
 
     StatMeasure GetStatMeasure();
   mt_iface_end
@@ -364,7 +378,8 @@ public:
 			Time               initial_seek,
                         ChannelOptions    *channel_opts,
                         PlaybackItem      *playback_item,
-                        const Ref<MConfig::Config> & config);
+                        MConfig::Config *config,
+                        RecpathConfig *recpathConfig);
 
      FFmpegStream ();
     ~FFmpegStream ();

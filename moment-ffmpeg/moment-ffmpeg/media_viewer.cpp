@@ -27,14 +27,15 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
-static LogGroup libMary_logGroup_viewer ("mod_ffmpeg.media_viewer", LogLevel::D);
+static LogGroup libMary_logGroup_viewer ("mod_ffmpeg.media_viewer", LogLevel::E);
+static LogGroup libMary_logGroup_frames ("mod_ffmpeg.media_viewer_frames", LogLevel::E);
 
 MediaReader::ReadFrameResult
 MediaViewer::endFrame (Session              * const mt_nonnull session,
                        VideoStream::Message * const mt_nonnull msg)
 {
     if (session->send_blocked.get()) {
-        logD (viewer, _func, "send_blocked");
+        logD (frames, _func, "send_blocked");
         return MediaReader::ReadFrameResult_BurstLimit;
     }
 
@@ -52,13 +53,13 @@ MediaViewer::endFrame (Session              * const mt_nonnull session,
             Time const ts_delta = msg->timestamp_nanosec - session->first_frame_ts;
             Time const srv_delta = srv_time - session->first_frame_srv_time;
 
-//            logD_ (_func, "ts_delta: ", ts_delta, ", "
-//                   "srv_delta: ", srv_delta, ", burst_high_mark: ", burst_high_mark);
+            logD(frames, _func, "ts_delta: ", ts_delta, ", "
+                   "srv_delta: ", srv_delta, ", burst_high_mark: ", burst_high_mark);
 
             if (ts_delta >= srv_delta
                 && ts_delta - srv_delta >= burst_high_mark)
             {
-                logD (viewer, _func, "BurstLimit: ts_delta: ", ts_delta, ", "
+                logD (frames, _func, "BurstLimit: ts_delta: ", ts_delta, ", "
                       "srv_delta: ", srv_delta, ", burst_high_mark: ", burst_high_mark);
                 return MediaReader::ReadFrameResult_BurstLimit;
             }
@@ -77,7 +78,7 @@ MediaReader::ReadFrameResult
 MediaViewer::audioFrame (VideoStream::AudioMessage * const mt_nonnull msg,
                          void                      * const _session)
 {
-//    logD_ (_func, "ts ", msg->timestamp_nanosec, " audio ", msg->frame_type);
+    logD(frames, _func, "ts ", msg->timestamp_nanosec, " audio ", msg->frame_type);
 
     Session * const session = static_cast <Session*> (_session);
     session->stream->fireAudioMessage (msg);
@@ -89,7 +90,7 @@ MediaReader::ReadFrameResult
 MediaViewer::videoFrame (VideoStream::VideoMessage * const mt_nonnull msg,
                          void                      * const _session)
 {
-//    logD_ (_func, "ts ", msg->timestamp_nanosec, " video ", msg->frame_type);
+    logD(frames, _func, "ts ", msg->timestamp_nanosec, " video ", msg->frame_type);
 
     Session * const session = static_cast <Session*> (_session);
     session->stream->fireVideoMessage (msg);
@@ -109,7 +110,7 @@ MediaViewer::sendMoreData (Session * const mt_nonnull session)
         MediaReader::ReadFrameResult const res =
                 session->media_reader.readMoreData (&read_frame_backend, session);
         if (res == MediaReader::ReadFrameResult_Failure) {
-            logD_ (_func, "ReadFrameResult_Failure");
+            logD (viewer, _func, "ReadFrameResult_Failure");
             return;
         }
 
@@ -370,12 +371,22 @@ MediaViewer::rtmpStartWatching (ConstMemory        const stream_name,
     session->stream_sbn = stream->getEventInformer()->subscribe (
             CbDesc<VideoStream::EventHandler> (&stream_handler, session, session));
 
+    StRef<String> str_stream_name = st_makeString(stream_name);
+    std::string streamName = std::string(str_stream_name->cstr());
+    std::map<std::string, Ref<ChannelChecker> >::iterator itr = self->m_channel_checkers->find(streamName);
+    if(itr == self->m_channel_checkers->end())
+    {
+        logE(viewer, _func_, "there is no channel [", stream_name, "] in m_channel_checkers");
+        return false;
+    }
+
+    ChannelChecker::ChannelFileDiskTimes channelFileDiskTimes = itr->second->getChannelFileDiskTimes();
+
     session->media_reader.init (self->page_pool,
-                                self->vfs,
+                                channelFileDiskTimes,
                                 stream_name,
                                 stream_params.start_unixtime_sec,
                                 0 /* 1 << 23 */ /* 8 Mb */ /* burst_size_limit */ /* TODO Config parameter */,
-                                self->record_dir,
                                 NULL, false);
 
     session->session_mutex.unlock ();
@@ -400,13 +411,9 @@ MediaViewer::rtmpStartStreaming (ConstMemory     const stream_name,
 
 void
 MediaViewer::init (MomentServer * const mt_nonnull moment,
-                   Vfs          * const mt_nonnull vfs,
-                   StRef<String> record_dir)
+                   std::map<std::string, Ref<ChannelChecker> > * channel_checkers)
 {
-    this->vfs = vfs;
-    this->record_dir = record_dir;
-
-    logD_(_func_, "record_dir", this->record_dir);
+    m_channel_checkers = channel_checkers;
 
     page_pool = moment->getPagePool();
 
@@ -419,7 +426,8 @@ MediaViewer::init (MomentServer * const mt_nonnull moment,
 
 MediaViewer::MediaViewer ()
     : page_pool (this /* coderef_container */),
-      timers    (this /* coderef_container */)
+      timers    (this /* coderef_container */),
+      m_channel_checkers(NULL)
 {
 }
 

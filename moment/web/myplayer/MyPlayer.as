@@ -7,6 +7,8 @@ import flash.display.StageScaleMode;
 import flash.display.StageAlign;
 import flash.display.Loader;
 import flash.media.Video;
+import flash.media.Sound;
+import flash.media.SoundTransform;
 import flash.net.NetConnection;
 import flash.net.NetStream;
 import flash.net.ObjectEncoding;
@@ -81,6 +83,7 @@ public class MyPlayer extends Sprite
     private var conn : NetConnection;
     private var net_stream : NetStream;
     private var video : Video;
+    private var sound : SoundTransform;
 
     private var buttons_visible : Boolean;
 
@@ -121,6 +124,15 @@ public class MyPlayer extends Sprite
 
     private var buffering_complete : Boolean;
     private var frame_no : uint;
+
+    private function toggleMute (val: Boolean) : void {
+        trace ("--- toggleMute(): " + val);
+        if (net_stream != null && sound != null)
+        {
+            sound.volume = int(val);
+            net_stream.soundTransform = sound;
+        }
+    }
 
     private function doResize () : void
     {
@@ -376,6 +388,8 @@ public class MyPlayer extends Sprite
 	    net_stream.bufferTime = buffer_time;
 	    net_stream.client = new MyStreamClient();
 
+        net_stream.soundTransform = sound;
+
 	    video.attachNetStream (net_stream);
 
 	    net_stream.addEventListener (NetStatusEvent.NET_STATUS, onStreamNetStatus);
@@ -628,10 +642,14 @@ public class MyPlayer extends Sprite
 	addChild (video);
 
 	trace ("--- ExternalInterface.available: " + ExternalInterface.available);
+    ExternalInterface.addCallback ("toggleMute", toggleMute);
 	ExternalInterface.addCallback ("setSource", setSource);
         ExternalInterface.addCallback ("setFirstUri", setFirstUri);
         ExternalInterface.addCallback ("getPlayheadTime", getPlayheadTime);
         ExternalInterface.addCallback ("setSourceSeeked", setSourceSeeked);
+
+        sound = new SoundTransform(1,0);
+        sound.volume = loaderInfo.parameters ["volume"];
 
         /*
         playlist_button = new Sprite();

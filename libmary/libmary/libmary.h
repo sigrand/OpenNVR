@@ -108,7 +108,7 @@
   #ifdef LIBMARY_WIN32_IOCP
     #include <libmary/iocp_poll_group.h>
   #else
-    #include <libmary/wsa_poll_group.h>
+    #include <wsa_poll_group.h>
   #endif
 #else
   #include <libmary/select_poll_group.h>
@@ -139,11 +139,19 @@
 #include <libmary/server_app.h>
 
 #include <libmary/stat.h>
+#ifdef LIBMARY_PERFORMANCE_TESTING
+#include <libmary/istat_measurer.h>
+#endif
 
 
 namespace M {
 
 void libMaryInit ();
+
+#ifdef LIBMARY_PERFORMANCE_TESTING
+void setMeasurer (IStatMeasurer*);
+void setTimeChecker (ITimeChecker*);
+#endif
 
 void libMaryRelease ();
 

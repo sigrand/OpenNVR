@@ -1148,7 +1148,7 @@ Result clientConnected (RtmpConnection  * const mt_nonnull rtmp_conn,
 			void            * const /* cb_data */)
 {
     logD (mod_rtmp, _func_);
-//    logD_ (_func, "--- client_addr: ", client_addr);
+    logD_ (_func, "--- client_addr: ", client_addr);
 
     getStat()->addInt (stat_num_sessions, 1);
 

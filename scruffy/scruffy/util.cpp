@@ -97,8 +97,8 @@ matchStrings (const char     *str,
 }
 
 bool
-numbersAreZero (const unsigned long *number_set,
-		unsigned long        nnumbers)
+numbersAreZero (const Size *number_set,
+        Size        nnumbers)
 {
     unsigned long i;
     for (i = 0; i < nnumbers; i++) {
@@ -110,8 +110,8 @@ numbersAreZero (const unsigned long *number_set,
 }
 
 bool
-numberIsMaxOf (unsigned long        number,
-	       const unsigned long *number_set,
+numberIsMaxOf (Size        number,
+           const Size *number_set,
 	       unsigned long        nnumbers)
 {
     unsigned long i;
@@ -123,13 +123,13 @@ numberIsMaxOf (unsigned long        number,
     return true;
 }
 
-unsigned long
-maxNumberOf (const unsigned long *number_set,
-	     unsigned long        nnumbers)
+Size
+maxNumberOf (const Size *number_set,
+         Size        nnumbers)
 {
     assert (nnumbers != 0);
 
-    unsigned long max = number_set [0];
+    Size max = number_set [0];
 
     unsigned long i;
     for (i = 1; i < nnumbers; i++) {

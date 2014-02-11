@@ -18,6 +18,9 @@
 
 
 #include <moment/channel.h>
+#ifdef LIBMARY_PERFORMANCE_TESTING
+#include <libmary/libmary.h>
+#endif
 
 
 using namespace M;
@@ -251,6 +254,14 @@ Channel::createStream (Time const initial_seek)
                            channel_opts,
                            cur_item);
     if (media_source) {
+#ifdef LIBMARY_PERFORMANCE_TESTING    
+    logD_(_func_, "Provide checker to libmary");
+    IStatMeasurer* m = media_source->getStatMeasurer();
+    ITimeChecker* t = media_source->getTimeChecker();
+    M::setMeasurer (m);
+    M::setTimeChecker (t);
+#endif
+
 	media_source->ref ();
 	GThread * const thread = g_thread_create (
 #warning Not joinable?

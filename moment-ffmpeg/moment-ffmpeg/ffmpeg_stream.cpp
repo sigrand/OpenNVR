@@ -21,6 +21,7 @@
 #include <moment-ffmpeg/nvr_file_iterator.h>
 #include <moment-ffmpeg/media_reader.h>
 #include <moment-ffmpeg/memory_dispatcher.h>
+#include <moment-ffmpeg/ffmpeg_common.h>
 #include "naming_scheme.h"
 #include <libmary/vfs.h>
 #include <iostream>
@@ -33,13 +34,12 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
-static LogGroup libMary_logGroup_chains   ("mod_ffmpeg.chains",   LogLevel::D);
-static LogGroup libMary_logGroup_pipeline ("mod_ffmpeg.pipeline", LogLevel::D);
-static LogGroup libMary_logGroup_stream   ("mod_ffmpeg.stream",   LogLevel::D);
-static LogGroup libMary_logGroup_bus      ("mod_ffmpeg.bus",      LogLevel::D);
+static LogGroup libMary_logGroup_pipeline ("mod_ffmpeg.pipeline", LogLevel::E);
+static LogGroup libMary_logGroup_stream   ("mod_ffmpeg.stream",   LogLevel::E);
+static LogGroup libMary_logGroup_bus      ("mod_ffmpeg.bus",      LogLevel::E);
+static LogGroup libMary_logGroup_timer    ("mod_ffmpeg.timer",    LogLevel::E);
+static LogGroup libMary_logGroup_ffmpeg   ("mod_ffmpeg.ffmpeg",   LogLevel::E);
 static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::E); // E is the default
-static LogGroup libMary_logGroup_novideo  ("mod_ffmpeg.novideo",  LogLevel::D);
-static LogGroup libMary_logGroup_plug     ("mod_ffmpeg.autoplug", LogLevel::D);
 
 
 
@@ -135,7 +135,7 @@ extern "C"
 
         strcpy(fullPath, sFullPath->cstr());
 
-        logD_ (_func, "new fullfilename: ", fullPath, ", "
+        logD(ffmpeg, _func_, "new fullfilename: ", fullPath, ", "
                "next_unixtime_sec: ", next_unixtime_sec, ", cur unixtime: ", tv.tv_sec);
 
         return 0;
@@ -150,7 +150,7 @@ extern "C"
             char chLogBuffer[2048] = {};
             vsnprintf(chLogBuffer, sizeof(chLogBuffer), outFmt, vl);
             //printf(chLogBuffer);
-            logD_(_func_, "ffmpeg LOG: ", chLogBuffer);
+            logD(ffmpeg, _func_, "ffmpeg LOG: ", chLogBuffer);
         }
     }
 }   // extern "C" ]
@@ -170,6 +170,7 @@ static int interrupt_cb(void* arg)
     return 0;
 }
 
+#ifndef PLATFORM_WIN32
 static int ff_lockmgr(void **mutex, enum AVLockOp op)
 {
    pthread_mutex_t** pmutex = (pthread_mutex_t**) mutex;
@@ -191,13 +192,37 @@ static int ff_lockmgr(void **mutex, enum AVLockOp op)
    }
    return 0;
 }
+#else
+static int ff_lockmgr(void **mutex, enum AVLockOp op)
+{
+    CRITICAL_SECTION **critSec = (CRITICAL_SECTION **)mutex;
+    switch (op) {
+    case AV_LOCK_CREATE:
+        *critSec = new CRITICAL_SECTION();
+        InitializeCriticalSection(*critSec);
+        break;
+    case AV_LOCK_OBTAIN:
+        EnterCriticalSection(*critSec);
+        break;
+    case AV_LOCK_RELEASE:
+        LeaveCriticalSection(*critSec);
+        break;
+    case AV_LOCK_DESTROY:
+        DeleteCriticalSection(*critSec);
+        delete *critSec;
+        break;
+    }
+    return 0;
+}
+#endif
+
 
 
 StateMutex ffmpegStreamData::g_mutexFFmpeg;
 
 static void RegisterFFMpeg(void)
 {
-    logD_(_func_, "RegisterFFMpeg");
+    logD(stream, _func_, "RegisterFFMpeg");
 
     static Uint32 uiInitialized = 0;
 
@@ -215,7 +240,7 @@ static void RegisterFFMpeg(void)
     avformat_network_init();
     av_lockmgr_register(ff_lockmgr);
 
-    logD_(_func_, "RegisterFFMpeg succeed");
+    logD(stream, _func_, "RegisterFFMpeg succeed");
 }
 
 
@@ -230,6 +255,7 @@ ffmpegStreamData::ffmpegStreamData(void)
     m_bRecordingState = false;
     m_bRecordingEnable = false;
     m_bGotFirstFrame = false;
+    m_recpathConfig = NULL;
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
@@ -260,7 +286,7 @@ void ffmpegStreamData::CloseCodecs(AVFormatContext * pAVFrmtCntxt)
 
 void ffmpegStreamData::Deinit()
 {
-    logD_(_func_, "ffmpegStreamData Deinit");
+    logD(stream, _func_, "ffmpegStreamData Deinit");
     // close writer before any actions with reader
     m_nvrData.Deinit();
 
@@ -282,23 +308,25 @@ void ffmpegStreamData::Deinit()
     m_bRecordingState = false;
     m_bRecordingEnable = false;
     m_bGotFirstFrame = false;
+    m_recpathConfig = NULL;
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
 }
 
-Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config, Timers * timers)
+Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
+                              Timers * timers, RecpathConfig * recpathConfig)
 {
     if(!uri || !uri[0])
     {
-        logD_(_func_, "ffmpegStreamData Init failed");
+        logD(stream, _func_, "ffmpegStreamData Init failed");
         return Result::Failure;
     }
 
     Deinit();
 
     // Open video file
-    logD_(_func_, "uri: ", uri);
+    logD(stream, _func_, "uri: ", uri);
     Result res = Result::Success;
 
     format_ctx = avformat_alloc_context();
@@ -309,7 +337,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     m_tcFFTimeout.Start();
     if(avformat_open_input(&format_ctx, uri, NULL, NULL) == 0)
     {
-        logD_(_func_, "avformat_open_input, success");
+        logD(stream, _func_, "avformat_open_input, success");
         // Retrieve stream information
 
         g_mutexFFmpeg.lock();
@@ -317,7 +345,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         m_tcFFTimeout.Start();
         if(avformat_find_stream_info(format_ctx, NULL) >= 0)
         {
-            logD_(_func_,"avformat_find_stream_info, success");
+            logD(stream, _func_,"avformat_find_stream_info, success");
 
             // Dump information about file onto standard error
             av_dump_format(format_ctx, 0, uri, 0);
@@ -331,7 +359,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     }
     else
     {
-        logE_(_func_, "Couldn't open uri");
+        logE_(_func_, "Couldn't open uri [", uri, "]");
         res = Result::Failure;
     }
 
@@ -376,6 +404,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
 
     // reading configs
 
+    m_recpathConfig = recpathConfig;
     ConstMemory record_dir;
     ConstMemory confd_dir;
     Uint64 max_age_minutes = 120;
@@ -401,21 +430,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
             m_bRecordingEnable = false;
         }
         else
-            logI_ (_func, opt_name, ": ", max_age_minutes);
-    }
-
-    // get path for recording
-    {
-        ConstMemory const opt_name = "mod_nvr/record_dir"; // TODO: change mod_nvr to mod_ffmpeg?
-        bool record_dir_is_set = false;
-        record_dir = config->getString (opt_name, &record_dir_is_set);
-        if (!record_dir_is_set)
-        {
-            logE_ (_func, opt_name, " config option is not set, disabling writing");
-            // we can not write without output path
-            res = Result::Failure;
-        }
-        logI_ (_func, opt_name, ": [", record_dir, "]");
+            logD (stream, _func_, opt_name, ": ", max_age_minutes);
     }
 
     // get duration for each recorded file
@@ -429,7 +444,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
             m_bRecordingEnable = false;
         }
         else
-            logI_ (_func, opt_name, ": ", m_file_duration_sec);
+            logD(stream, _func_, opt_name, ": ", m_file_duration_sec);
     }
 
     // get path for recording
@@ -443,32 +458,42 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
             // we can not write without output path
             m_bRecordingEnable = false;
         }
-        logI_ (_func, opt_name, ": [", confd_dir, "]");
+        logD(stream, _func_, opt_name, ": [", confd_dir, "]");
     }
+
+    if(m_recpathConfig == 0)
+        m_bRecordingEnable = false;
 
     if(m_bRecordingEnable)
     {
-        m_recordDir = st_makeString(record_dir);
+        if(m_recpathConfig->IsEmpty())
+        {
+            m_recordDir = st_makeString("");
+        }
+        else
+        {
+            m_recordDir = st_makeString(m_recpathConfig->GetNextPath().c_str());
+        }
+
         m_channelName = st_makeString(channel_name);
-        Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir);
         m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
-        m_nvr_cleaner->init (timers, vfs, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
+        m_nvr_cleaner->init (timers, m_recpathConfig, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
 
         bool bDisableRecord = false;
         StRef<String> st_confd_dir = st_makeString(confd_dir);
         StRef<String> channelFullPath = st_makeString(st_confd_dir, "/", channel_name);
         std::string line;
         std::ifstream channelPath (channelFullPath->cstr());
-        logD_(_func_, "channelFullPath = ", channelFullPath);
+        logD(stream, _func_, "channelFullPath = ", channelFullPath);
         if (channelPath.is_open())
         {
-            logD_(_func_, "channelFullPath opened");
+            logD(stream, _func_, "channelFullPath opened");
             while ( std::getline (channelPath, line) )
             {
-                logD_(_func_, "got line: [", line.c_str(), "]");
+                logD(stream, _func_, "got line: [", line.c_str(), "]");
                 if(line.compare("disable_record") == 0)
                 {
-                    logD_(_func_, "FOUND disable_record");
+                    logD(stream, _func_, "FOUND disable_record");
                     bDisableRecord = true;
                 }
             }
@@ -490,7 +515,7 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
 {
     if(!format_ctx || video_stream_idx == -1)
     {
-        logD_(_func_, "PushMediaPacket failed, video_stream_idx = [", video_stream_idx, "]");
+        logD(stream, _func_, "PushMediaPacket failed, video_stream_idx = [", video_stream_idx, "]");
         return false;
     }
 
@@ -499,7 +524,12 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
 
     while(1)
     {
-        TimeChecker tcInOut;tcInOut.Start();
+#ifdef LIBMARY_PERFORMANCE_TESTING
+		TimeChecker* tcInOut = dynamic_cast<TimeChecker*>(pParent->getTimeChecker());
+        tcInOut->Start();
+#else
+		TimeChecker tcInOut;tcInOut.Start();
+#endif
         TimeChecker tcInNvr;tcInNvr.Start();
 
         TimeChecker tc;tc.Start();
@@ -508,23 +538,23 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
         m_tcFFTimeout.Start();
         if((res = av_read_frame(format_ctx, &packet)) < 0)
         {
-            logD_(_func_, "av_read_frame failed, res = [", res, "]");
+            logD(frames, _func_, "av_read_frame failed, res = [", res, "]");
             break;
         }
 
         Time t;tc.Stop(&t);
-        logD_(_func_, "av_read_frame exectime = [", t, "]");
+        logD(frames, _func_, "av_read_frame exectime = [", t, "]");
 
         if(!m_bGotFirstFrame)
         {
             if (packet.flags & AV_PKT_FLAG_KEY)
             {
-                logD_(_func_, "got key frame");
+                logD(frames, _func_, "got key frame");
                 m_bGotFirstFrame = true;
             }
             else
             {
-                logD_(_func_, "skip non-key frame");
+                logD(frames, _func_, "skip non-key frame");
                 av_free_packet(&packet);
                 memset(&packet, 0, sizeof(packet));
                 continue;
@@ -548,23 +578,76 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
 
         if(packet.stream_index == video_stream_idx)
         {
-            logD_(_func_, "PACKET IS VIDEO");
+            logD(frames, _func_, "PACKET IS VIDEO");
         }
         else if(packet.stream_index == audio_stream_idx)
         {
-            logD_(_func_, "PACKET IS AUDIO");
+            logD(frames, _func_, "PACKET IS AUDIO");
+            if( format_ctx->streams[packet.stream_index]->codec->codec_id == AV_CODEC_ID_AAC &&
+                packet.size > 2 &&
+                (AV_RB16(packet.data) & 0xfff0) == 0xfff0 )
+            {
+                if(m_absf_ctx)
+                {
+                    logD(frames, _func_, "filtering aac packet");
+                    AVPacket new_inpkt = packet;
+                    int ret = av_bitstream_filter_filter(m_absf_ctx,
+                                               format_ctx->streams[audio_stream_idx]->codec,
+                                               NULL,
+                                               &new_inpkt.data, &new_inpkt.size,
+                                               packet.data, packet.size,
+                                               packet.flags & AV_PKT_FLAG_KEY);
+                    // create a padded packet
+                    if (ret == 0 && new_inpkt.data != packet.data && new_inpkt.destruct)
+                    {
+                        // the new buffer should be a subset of the old so cannot overflow
+                        uint8_t *t = (uint8_t *)av_malloc(new_inpkt.size + FF_INPUT_BUFFER_PADDING_SIZE);
+                        if (!t)
+                        {
+                            logE_(_func_, "fail to allocate memory");
+                        }
+                        else
+                        {
+                            memcpy(t, new_inpkt.data, new_inpkt.size);
+                            memset(t + new_inpkt.size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
+                            new_inpkt.data = t;
+                            new_inpkt.buf = NULL;
+                            ret = 1;
+                        }
+                    }
+
+                    if (ret > 0)
+                    {
+                        new_inpkt.buf = av_buffer_create(new_inpkt.data, new_inpkt.size,
+                                              av_buffer_default_free, NULL, 0);
+                        if (!new_inpkt.buf)
+                        {
+                            logE_(_func_, "fail to av_buffer_create");
+                        }
+                        else
+                        {
+                            av_free_packet(&packet);
+                            packet = new_inpkt;
+                        }
+                    }
+                }
+                else
+                {
+                    logE_(_func_, "Malformed stream and invalid bitstream filter");
+                }
+            }
         }
         else
         {
-            logD_(_func_, "PACKET IS NEITHER");
+            logD(frames, _func_, "PACKET IS NEITHER");
         }
 
-        logD_(_func_, "ORIGIN PACKET,indx=", packet.stream_index,
+        logD(frames, _func_, "ORIGIN PACKET,indx=", packet.stream_index,
                             ",pts=", packet.pts,
                             ",dts=", packet.dts,
                             ",size=", packet.size,
                             ",flags=", packet.flags);
-        logD_(_func_, "m_vecPts[packet.stream_index] = ", m_vecPts[packet.stream_index],
+        logD(frames, _func_, "m_vecPts[packet.stream_index] = ", m_vecPts[packet.stream_index],
                 ", m_vecPts[packet.stream_index] = ", m_vecDts[packet.stream_index]);
 
         if(packet.pts != AV_NOPTS_VALUE)
@@ -577,70 +660,11 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
             packet.dts -= m_vecDts[packet.stream_index];
         }
 
-        logD_(_func_, "PACKET,indx=", packet.stream_index,
+        logD(frames, _func_, "PACKET,indx=", packet.stream_index,
                             ",pts=", packet.pts,
                             ",dts=", packet.dts,
                             ",size=", packet.size,
                             ",flags=", packet.flags);
-
-
-        int nSkipAudioIndex = -1; // default no skip audio
-        // if aac is malformed then process it by bitstream aac filter
-        if(packet.stream_index == audio_stream_idx &&
-                format_ctx->streams[packet.stream_index]->codec->codec_id == AV_CODEC_ID_AAC &&
-                packet.size > 2 && (AV_RB16(packet.data) & 0xfff0) == 0xfff0)
-        {
-            if(m_absf_ctx)
-            {
-                logD_(_func_, "filtering aac packet");
-                AVPacket new_inpkt = packet;
-                int ret = av_bitstream_filter_filter(m_absf_ctx,
-                                           format_ctx->streams[audio_stream_idx]->codec,
-                                           NULL,
-                                           &new_inpkt.data, &new_inpkt.size,
-                                           packet.data, packet.size,
-                                           packet.flags & AV_PKT_FLAG_KEY);
-                // create a padded packet
-                if (ret == 0 && new_inpkt.data != packet.data && new_inpkt.destruct)
-                {
-                    // the new buffer should be a subset of the old so cannot overflow
-                    uint8_t *t = (uint8_t *)av_malloc(new_inpkt.size + FF_INPUT_BUFFER_PADDING_SIZE);
-                    if (!t)
-                    {
-                        logE_(_func_, "fail to allocate memory");
-                        nSkipAudioIndex = audio_stream_idx;
-                    }
-                    else
-                    {
-                        memcpy(t, new_inpkt.data, new_inpkt.size);
-                        memset(t + new_inpkt.size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
-                        new_inpkt.data = t;
-                        new_inpkt.buf = NULL;
-                        ret = 1;
-                    }
-                }
-
-                if (ret > 0)
-                {
-                    new_inpkt.buf = av_buffer_create(new_inpkt.data, new_inpkt.size,
-                                          av_buffer_default_free, NULL, 0);
-                    if (!new_inpkt.buf)
-                    {
-                        logE_(_func_, "fail to av_buffer_create");
-                        nSkipAudioIndex = audio_stream_idx;
-                    }
-                    else
-                    {
-                        av_free_packet(&packet);
-                        packet = new_inpkt;
-                    }
-                }
-            }
-            else
-            {
-                nSkipAudioIndex = audio_stream_idx;
-            }
-        }
 
         // Is this a packet from the video or audio stream?
         if(packet.stream_index == video_stream_idx || packet.stream_index == audio_stream_idx)
@@ -653,46 +677,78 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
                 pParent->doAudioData(packet, *(format_ctx->streams[packet.stream_index]));
 
             Time t;tc.Stop(&t);
-            logD_(_func_, "FFmpegStream.",
+            logD(frames, _func_, "FFmpegStream.",
                   (packet.stream_index == video_stream_idx) ? "doVideoData" : "doAudioData", " exectime = [", t, "]");
-
+#ifdef LIBMARY_PERFORMANCE_TESTING
+            tcInOut->SetPacketSize(packet.size);
+#else
             Time tInOut;tcInOut.Stop(&tInOut);
             pParent->m_statMeasurer.AddTimeInOut(tInOut);
+#endif
 
             media_found = true;
         }
 
         // write to file
-        if(m_bRecordingState && m_bRecordingEnable)
+        if(m_bRecordingEnable)
         {
-            // prepare to write in file
-            if(!m_nvrData.IsInit())
+            if(m_bRecordingState)
             {
-                StRef<String> filepath = st_makeString (m_recordDir, "/", m_channelName, ".flv");
-                Result nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec, nSkipAudioIndex);
-                logD_(_func_, "m_nvrData.Init = ", (nvrResult == Result::Success) ? "Success" : "Failed");
-            }
+                bool bNeedNextPath = false;
+                // prepare to write in file
+                if(!m_nvrData.IsInit())
+                {
+                    if(m_recordDir == NULL || m_recordDir->len() == 0)
+                    {
+                        bNeedNextPath = true;
+                        logD(frames,_func_, "m_recordDir is 0");
+                    }
+                    else
+                    {
+                        StRef<String> filepath = st_makeString (m_recordDir, "/", m_channelName, ".flv");
+                        int nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec);
+                        if(nvrResult == 1)
+                            bNeedNextPath = true;
+                        logD(frames,_func_, "m_nvrData.Init = ", (nvrResult == 0) ? "Success" : "Failed");
+                    }
+                }
 
-            // write in file
-            if(m_nvrData.IsInit())
-            {
-                TimeChecker tc;tc.Start();
-
-                int res = 0;
+                // write in file
                 if(m_nvrData.IsInit())
                 {
-                    res = m_nvrData.WritePacket(format_ctx, packet);
+                    TimeChecker tc;tc.Start();
+
+                    int res = m_nvrData.WritePacket(format_ctx, packet);
+                    if(res == ERR_NOSPACE)
+                        bNeedNextPath = true;
+
+                    logD(frames, _func_, "NvrData.WritePacket res = ", res);
+
+                    Time t;tc.Stop(&t);
+                    logD(frames, _func_, "NvrData.WritePacket exectime = [", t, "]");
+
+                    Time tInNvr;tcInNvr.Stop(&tInNvr);
+                    pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
                 }
-                else
+                if(!m_recpathConfig->IsPathExist(m_recordDir->cstr()))
                 {
-                    m_nvrData.Reinit(format_ctx);
+                    bNeedNextPath = true;
                 }
+                if(bNeedNextPath)
+                {
+                    if(!m_recpathConfig->IsEmpty())
+                        m_recordDir = st_makeString(m_recpathConfig->GetNextPath(m_recordDir->cstr()).c_str());
+                    else
+                        m_recordDir = st_makeString("");
+                    logD(frames,_func_, "next m_recordDir = [", m_recordDir, "]");
 
-                Time t;tc.Stop(&t);
-                logD_(_func_, "NvrData.WritePacket exectime = [", t, "]");
-
-                Time tInNvr;tcInNvr.Stop(&tInNvr);
-                pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
+                    m_nvrData.Deinit();
+                }
+            }
+            else
+            {
+                if(m_nvrData.IsInit())
+                    m_nvrData.Deinit();
             }
         }
 
@@ -725,7 +781,6 @@ int ffmpegStreamData::GetChannelState(bool & bState)
 nvrData::nvrData(void)
 {
     m_file_duration_sec = 0;
-    m_skipAudioIndex = -1;
 
     m_out_format_ctx = NULL;
 
@@ -738,20 +793,26 @@ nvrData::~nvrData(void)
     Deinit();
 }
 
-Result nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, const char * filepath,
-                        const char * segMuxer, Uint64 file_duration_sec, int skipAudioIndex)
+int nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, const char * filepath,
+                        const char * segMuxer, Uint64 file_duration_sec)
 {
     if(!format_ctx || !filepath)
     {
         logE_ (_func, "fail nvrData::Init");
         logE_ (_func, "filepath=", filepath);
-        return Result::Failure;
+        return -1;
+    }
+
+    if(!MemoryDispatcher::Instance().Init())
+    {
+        logE_ (_func, "fail MemoryDispatcher::Init");
+        return -1;
     }
 
     if(format_ctx->nb_streams <= 0)
     {
         logE_ (_func, "input number of streams = 0!");
-        return Result::Failure;
+        return -1;
     }
 
     // set internal members
@@ -769,31 +830,23 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, co
     m_segMuxer = st_grab (new (std::nothrow) String);
     m_segMuxer->set(temp_segMuxer->mem());
 
-    logD_ (_func, "filepath: ", m_filepath);
-    logD_ (_func, "segMuxer: ", !m_segMuxer->isNullString() ? m_segMuxer->cstr() : "NONE");
-    logD_ (_func, "m_file_duration_sec: ", m_file_duration_sec);
+    logD(stream, _func, "filepath: ", m_filepath);
+    logD(stream, _func, "segMuxer: ", !m_segMuxer->isNullString() ? m_segMuxer->cstr() : "NONE");
+    logD(stream, _func, "m_file_duration_sec: ", m_file_duration_sec);
 
-    logD_ (_func, "The output path: ", m_filepath);
-    Result res = Result::Success;
+    logD(stream, _func, "The output path: ", m_filepath);
+    int res = 0;
 
     if(avformat_alloc_output_context2(&m_out_format_ctx, NULL, !m_segMuxer->isNullString() ? m_segMuxer->cstr() : NULL, m_filepath->cstr()) >= 0)
     {
-        if(skipAudioIndex != -1)
-            m_skipAudioIndex = skipAudioIndex;
-
         for (int i = 0; i < format_ctx->nb_streams; ++i)
         {
-            if (m_skipAudioIndex != -1 && i == m_skipAudioIndex)
-            {
-                continue;
-            }
-
             AVStream * pStream = NULL;
 
             if (!(pStream = avformat_new_stream(m_out_format_ctx, NULL)))
             {
                 logE_(_func_, "avformat_new_stream failed!");
-                res = Result::Failure;
+                res = -1;
                 break;
             }
 
@@ -819,7 +872,7 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, co
             else
             {
                 logE_(_func_, "avcodec_copy_context failed!");
-                res = Result::Failure;
+                res = -1;
                 break;
             }
         }
@@ -827,12 +880,12 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, co
     else
     {
         logE_(_func_, "avformat_alloc_output_context2 failed!");
-        res = Result::Failure;
+        res = -1;
     }
 
-    if(res == Result::Success)
+    if(res == 0)
     {
-        logD_ (_func, "check m_out_format_ctx");
+        logD(stream, _func, "check m_out_format_ctx");
 
         av_dump_format(m_out_format_ctx, 0, m_filepath->cstr(), 1);
 
@@ -845,16 +898,22 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, co
             if ((rres = avio_open(&m_out_format_ctx->pb, m_filepath->cstr(), AVIO_FLAG_WRITE)) < 0)
             {
                 logE_(_func_, "fail to avio_open ", m_filepath);
-                res = Result::Failure;
+                res = -1;
             }
         }
     }
 
-    if(res == Result::Success)
+    if(res == 0)
     {
-        logD_ (_func, "init succeed");
+        if(this->WriteHeader() != 0) // -22 - error of non existing path
+        {
+            res = 1;
+        }
+    }
+
+    if(res == 0)
+    {
         m_bIsInit = true;
-        this->WriteHeader();
     }
     else
     {
@@ -867,7 +926,7 @@ Result nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, co
 
 void nvrData::Deinit()
 {
-    logD_(_func_, "Deinit");
+    logD(stream, _func_, "Deinit");
 
     if(m_out_format_ctx)
     {
@@ -887,9 +946,8 @@ void nvrData::Deinit()
 
     m_bIsInit = false;
     m_bWriteTrailer = false;
-    m_skipAudioIndex = -1;
 
-    logD_(_func_, "Deinit succeed");
+    logD(stream, _func_, "Deinit succeed");
 }
 
 bool nvrData::IsInit() const
@@ -897,25 +955,9 @@ bool nvrData::IsInit() const
     return m_bIsInit;
 }
 
-Result nvrData::Reinit(AVFormatContext * format_ctx)
-{
-    Result res = Result::Success;
-
-    Deinit();
-
-    res = Init(format_ctx, m_channelName->cstr(), m_filepath->cstr(), m_segMuxer->cstr(), m_file_duration_sec, m_skipAudioIndex);
-
-    return res;
-}
-
 int nvrData::WriteHeader()
 {
-    if(!m_bIsInit)
-    {
-        return -1;
-    }
-
-    logD_ (_func, "set options");
+    logD(stream, _func, "set options");
 
     AVDictionary * pOptions = NULL;
 
@@ -933,7 +975,7 @@ int nvrData::WriteHeader()
     av_dict_free(&pOptions);
 
     if (ret < 0)
-        logE_(_func_, "Error occurred when opening output file");
+        logE_(_func_, "Error occurred when opening output file, ret = ", ret);
     else
         m_bWriteTrailer = true;
 
@@ -948,46 +990,25 @@ int nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & pac
         return -1;
     }
 
-    if(m_skipAudioIndex == packet.stream_index)
-        return 0;
-
-//    AVCodecContext * pInpCodec = inCtx->streams[packet.stream_index]->codec;
-
-//    logD_(_func_, "pInpCodec time_base.num: ", pInpCodec->time_base.num);
-//    logD_(_func_, "pInpCodec time_base.den: ", pInpCodec->time_base.den);
-//    logD_(_func_, "inCtx->streams[i]->time_base.num: ", inCtx->streams[packet.stream_index]->time_base.num);
-//    logD_(_func_, "inCtx->streams[i]->time_base.den: ", inCtx->streams[packet.stream_index]->time_base.den);
-
-//    AVCodecContext * pOutCodec = m_out_format_ctx->streams[packet.stream_index]->codec;
-
-//    logD_(_func_, "pOutCodec time_base.num: ", pOutCodec->time_base.num);
-//    logD_(_func_, "pOutCodec time_base.den: ", pOutCodec->time_base.den);
-//    logD_(_func_, "m_out_format_ctx->streams[i]->time_base.num: ", m_out_format_ctx->streams[packet.stream_index]->time_base.num);
-//    logD_(_func_, "m_out_format_ctx->streams[i]->time_base.den: ", m_out_format_ctx->streams[packet.stream_index]->time_base.den);
-
     AVPacket opkt;
     av_init_packet(&opkt);
 
     if (packet.pts != AV_NOPTS_VALUE)
     {
         opkt.pts = av_rescale_q(packet.pts, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
-        //av_log(NULL, 0, "**********packet.pts != AV_NOPTS_VALUE\n");
     }
     else
     {
         opkt.pts = AV_NOPTS_VALUE;
-        //av_log(NULL, 0, "**********packet.pts == AV_NOPTS_VALUE\n");
     }
 
     if (packet.dts != AV_NOPTS_VALUE)
     {
         opkt.dts = av_rescale_q(packet.dts, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
-        //av_log(NULL, 0, "**********packet.dts != AV_NOPTS_VALUE\n");
     }
     else
     {
         opkt.dts = AV_NOPTS_VALUE;
-        //av_log(NULL, 0, "**********packet.dts == AV_NOPTS_VALUE\n");
     }
 
     opkt.duration = av_rescale_q(packet.duration, inCtx->streams[packet.stream_index]->time_base, m_out_format_ctx->streams[packet.stream_index]->time_base);
@@ -998,11 +1019,10 @@ int nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & pac
 
     if(m_out_format_ctx->streams[packet.stream_index]->pts.den == 0)
     {
-        logD_(_func_, "stream's den is 0, skipping packet");
+        logD(frames, _func_, "stream's den is 0, skipping packet");
         return 0;
     }
 
-    //int nres = av_interleaved_write_frame(m_out_format_ctx, &opkt); // may return -1094995529
     int nres = av_write_frame(m_out_format_ctx, &opkt);
 
     return nres;
@@ -1145,8 +1165,6 @@ static const Byte * AvcFindStartCode(const Byte *p, const Byte *end)
 
 int FFmpegStream::AvcParseNalUnits(ConstMemory const mem, MemoryEx * pMemoryOut)
 {
-    //logD_ (_func);
-
     const Byte *p = mem.mem();
     const Byte *end = p + mem.len();
     const Byte *nal_start, *nal_end;
@@ -1174,8 +1192,6 @@ int FFmpegStream::AvcParseNalUnits(ConstMemory const mem, MemoryEx * pMemoryOut)
         nal_start = nal_end;
     }
 
-    //logD_ (_func, "Returned size = ", size);
-
     return size;
 }
 
@@ -1183,8 +1199,6 @@ int FFmpegStream::AvcParseNalUnits(ConstMemory const mem, MemoryEx * pMemoryOut)
 
 int FFmpegStream::IsomWriteAvcc(ConstMemory const memory, MemoryEx & memoryOut)
 {
-    //logD_ (_func, "IsomWriteAvcc = ", memory.len());
-
     if (memory.len() > 6)
     {
         Byte const * data = memory.mem();
@@ -1255,7 +1269,7 @@ int FFmpegStream::IsomWriteAvcc(ConstMemory const memory, MemoryEx & memoryOut)
         }
         else
         {
-            logD_ (_func, "AVC header, ONLY WriteDataInternal, ", data[0], ", ", data[1], ", ", data[2], ", ", data[3], ", ");
+            //logD(frames, _func, "AVC header, ONLY WriteDataInternal, ", data[0], ", ", data[1], ", ", data[2], ", ", data[3], ", ");
             WriteDataToBuffer(memory, memoryOut);
         }
     }
@@ -1266,7 +1280,7 @@ int FFmpegStream::IsomWriteAvcc(ConstMemory const memory, MemoryEx & memoryOut)
 void
 FFmpegStream::reportStatusEvents ()
 {
-    logD_("task is reported");
+    logD(pipeline, _func_, "task is reported");
     deferred_reg.scheduleTask (&deferred_task, false /* permanent */);
 }
 
@@ -1286,7 +1300,7 @@ FFmpegStream::workqueueThreadFunc (void * const _self)
 
     updateTime ();
 
-    logD_(_func_);
+    logD(pipeline, _func_);
 
     self->mutex.lock ();
 
@@ -1302,7 +1316,7 @@ FFmpegStream::workqueueThreadFunc (void * const _self)
             updateTime ();
 
             if (self->stream_closed) {
-                logD_(_func_, "stream is closed");
+                logD(pipeline, _func_, "stream is closed");
                 self->mutex.unlock ();
                 return;
             }
@@ -1330,11 +1344,11 @@ FFmpegStream::ffmpegThreadFunc (void * const _self)
 {
     FFmpegStream * const self = static_cast <FFmpegStream*> (_self);
 
-    logD_(_func_);
+    logD(stream, _func_);
 
     self->beginPushPacket();
 
-    logD_(_func_, "End of ffmpeg_thread");
+    logD(stream, _func_, "End of ffmpeg_thread");
 }
 
 void
@@ -1359,7 +1373,7 @@ FFmpegStream::beginPushPacket()
     {
         if(!m_ffmpegStreamData.PushMediaPacket(this))
         {
-            logD_(_func_, "EOS");
+            logD(stream, _func_, "EOS");
 
             m_bIsPlaying = false;
 
@@ -1373,7 +1387,7 @@ FFmpegStream::beginPushPacket()
 void
 FFmpegStream::createSmartPipelineForUri ()
 {
-    logD_ (_func_);
+    logD(pipeline, _func_);
     assert (playback_item->spec_kind == PlaybackItem::SpecKind::Uri);
 
     if (playback_item->stream_spec->mem().len() == 0) {
@@ -1387,19 +1401,13 @@ FFmpegStream::createSmartPipelineForUri ()
         goto _failure;
     }
 
-    logD_ (_func, "uri: ", playback_item->stream_spec);
+    logD(pipeline, _func, "uri: ", playback_item->stream_spec);
 
-//    if(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(), this->config, this->timers) != Result::Success)
-//    {
-//        mutex.lock ();
-//        logE_ (_this_func, "stream is not initialized, uri \"", playback_item->stream_spec->cstr(), "\"");
-//        goto _failure;
-//    }
-
-    while(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(), this->config, this->timers) != Result::Success)
+    while(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(),
+            channel_opts->channel_name->cstr(), this->config, this->timers, this->m_recpathConfig) != Result::Success)
     {
         m_ffmpegStreamData.Deinit();
-        logD_(_func_, "wait for 1 sec and init ffmpegStreamData again");
+        logD(pipeline, _func_, "wait for 1 sec and init ffmpegStreamData again");
         sleep(1);
         if(m_bReleaseCalled)
         {
@@ -1417,7 +1425,7 @@ FFmpegStream::createSmartPipelineForUri ()
 
     m_bIsPlaying = true;
 
-    logD_ (_func, "all ok");
+    logD(pipeline, _func, "all ok");
     goto _return;
 
 mt_mutex (mutex) _failure:
@@ -1446,7 +1454,7 @@ FFmpegStream::doReleasePipeline ()
 {
     // some deinit, if it's needed
 
-    logD_(_func_);
+    logD(pipeline, _func_);
 
     m_bIsPlaying = false;
 
@@ -1469,7 +1477,7 @@ FFmpegStream::doReleasePipeline ()
 
 
     reportStatusEvents ();
-    logD_(_func_, "released, m_bIsPlaying is false");
+    logD(pipeline, _func_, "released, m_bIsPlaying is false");
 }
 
 void
@@ -1562,7 +1570,7 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
 
     if (first_video_frame)
     {
-        logD_(_func_, "it is first video frame");
+        logD(frames, _func_, "it is first video frame");
         first_video_frame = false;
 
         video_codec_id = VideoStream::VideoCodecId::AVC;
@@ -1625,7 +1633,7 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
                 memcpy(avc_codec_data_buffer, m_OutMemory.mem(), m_OutMemory.size());
                 avc_codec_data_buffer_size = m_OutMemory.size();
                 report_avc_codec_data = true;
-                logD_ (_func, "new codec data");
+                logD(frames, _func, "new codec data");
             } while (0);
         }
 
@@ -1675,7 +1683,7 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
             msg.msg_offset = 0;
 
             if (logLevelOn (frames, LogLevel::D)) {
-                logD_ (_func, "Firing video message (AVC sequence header):");
+                logD(frames,_func, "Firing video message (AVC sequence header):");
                 logLock ();
                 PagePool::dumpPages (logs, &page_list);
                 logUnlock ();
@@ -1705,14 +1713,14 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
 
     if (packet.flags & AV_PKT_FLAG_KEY)
     {
-        logD_(_func_, "IT IS KEY FRAME\n");
+        logD(frames, _func_, "IT IS KEY FRAME\n");
         msg.frame_type = VideoStream::VideoFrameType::KeyFrame;
     }
 
     MemorySafe allocMemory(packet.size * 2);
     MemoryEx localMemory((Byte *)allocMemory.cstr(), allocMemory.len());
-    size_t sizee = 0;
-    if(sizee = AvcParseNalUnits(ConstMemory(packet.data, packet.size), &localMemory) < 0)
+    int sizee = 0;
+    if( (sizee = AvcParseNalUnits(ConstMemory(packet.data, packet.size), &localMemory)) < 0 )
     {
         logE_ (_func, "AvcParseNalUnits fails");
         return;
@@ -1734,10 +1742,6 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
                                              RtmpConnection::DefaultVideoChunkStreamId,
                                              timestamp_nanosec / 1000000,
                                              false /* first_chunk */);
-
-
-//    logD_ (_func, "size of packet = ", localMemory.size());
-
     } else {
     page_pool->getFillPages (&page_list,
                   ConstMemory (packet.data, packet.size));
@@ -1754,7 +1758,7 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
     msg.msg_offset = 0;
 
     video_stream->fireVideoMessage (&msg);
-    logD_ (_func, "fireVideoMessage succeed, msg.msg_len=", msg.msg_len, ", msg.timestamp_nanosec=", msg.timestamp_nanosec);
+    logD(frames, _func, "fireVideoMessage succeed, msg.msg_len=", msg.msg_len, ", msg.timestamp_nanosec=", msg.timestamp_nanosec);
 
     page_pool->msgUnref (page_list.first);
 
@@ -1848,7 +1852,7 @@ void FFmpegStream::doAudioData(AVPacket & packet, const AVStream & stream)
             audio_rate = pctx->sample_rate;
             audio_channels = pctx->channels;
 
-            logD_ (_func, "Audio Params, codec(", audio_codec_id, ") Frq(", metadata.audio_sample_rate,
+            logD(frames, _func, "Audio Params, codec(", audio_codec_id, ") Frq(", metadata.audio_sample_rate,
                    ") SampleSizeInBits(", metadata.audio_sample_size, ") Channels(", metadata.num_channels, ")");
 
             if(playback_item->send_metadata)
@@ -2089,7 +2093,7 @@ FFmpegStream::noVideoTimerTick (void * const _self)
 
     self->mutex.lock ();
 
-    logD_(_func_, "time: 0x", fmt_hex, time, ", last_frame_time: 0x", self->last_frame_time);
+    logD(timer, _func_, "time: 0x", fmt_hex, time, ", last_frame_time: 0x", self->last_frame_time);
 
     if (self->stream_closed) {
         self->mutex.unlock ();
@@ -2099,7 +2103,7 @@ FFmpegStream::noVideoTimerTick (void * const _self)
     if (time > self->last_frame_time &&
     time - self->last_frame_time >= 15 /* TODO Config param for the timeout */)
     {
-        logD (novideo, _func, "firing \"no video\" event");
+        logD (timer, _func, "firing \"no video\" event");
 
         if (self->no_video_timer) {
             self->timers->deleteTimer (self->no_video_timer);
@@ -2132,7 +2136,7 @@ FFmpegStream::doCreatePipeline ()
     logD (pipeline, _this_func_);
 
     if (playback_item->spec_kind == PlaybackItem::SpecKind::Chain) {
-        logD_ (_func, "place for createPipelineForChainSpec()");
+        logD(pipeline, _func, "place for createPipelineForChainSpec()");
     } else
     if (playback_item->spec_kind == PlaybackItem::SpecKind::Uri) {
         createSmartPipelineForUri ();
@@ -2174,7 +2178,7 @@ FFmpegStream::createPipeline ()
 void
 FFmpegStream::doReportStatusEvents ()
 {
-    logD (stream, _func_);
+    logD (bus, _func_);
 
     mutex.lock ();
     if (reporting_status_events) {
@@ -2190,127 +2194,69 @@ FFmpegStream::doReportStatusEvents ()
        seek_pending      ||
        play_pending)
     {
-    if (close_notified) {
-        logD (stream, _func, "close_notified");
+        if (close_notified) {
+            logD (bus, _func, "close_notified");
 
-        mutex.unlock ();
-        return;
-    }
-
-    if (eos_pending) {
-        logD (stream, _func, "eos_pending");
-        eos_pending = false;
-        close_notified = true;
-
-        if (frontend) {
-        logD (stream, _func, "firing EOS");
-        mt_unlocks_locks (mutex) frontend.call_mutex (frontend->eos, mutex);
+            mutex.unlock ();
+            return;
         }
 
-        break;
-    }
+        if (eos_pending) {
+            logD (bus, _func, "eos_pending");
+            eos_pending = false;
+            close_notified = true;
 
-    if (error_pending) {
-        logD (stream, _func, "error_pending");
-        error_pending = false;
-        close_notified = true;
+            if (frontend) {
+            logD (bus, _func, "firing EOS");
+            mt_unlocks_locks (mutex) frontend.call_mutex (frontend->eos, mutex);
+            }
 
-        if (frontend) {
-        logD (stream, _func, "firing ERROR");
-        mt_unlocks_locks (mutex) frontend.call_mutex (frontend->error, mutex);
+            break;
         }
 
-        break;
-    }
+        if (error_pending) {
+            logD (bus, _func, "error_pending");
+            error_pending = false;
+            close_notified = true;
 
-    if (no_video_pending) {
+            if (frontend) {
+            logD (bus, _func, "firing ERROR");
+            mt_unlocks_locks (mutex) frontend.call_mutex (frontend->error, mutex);
+            }
+
+            break;
+        }
+
+        if (no_video_pending) {
+                got_video_pending = false;
+
+            logD (bus, _func, "no_video_pending");
+            no_video_pending = false;
+            if (stream_closed) {
+            mutex.unlock ();
+            return;
+            }
+
+            if (frontend) {
+            logD (bus, _func, "firing NO_VIDEO");
+            mt_unlocks_locks (mutex) frontend.call_mutex (frontend->noVideo, mutex);
+            }
+        }
+
+        if (got_video_pending) {
+            logD (bus, _func, "got_video_pending");
             got_video_pending = false;
+            if (stream_closed) {
+            mutex.unlock ();
+            return;
+            }
 
-        logD (stream, _func, "no_video_pending");
-        no_video_pending = false;
-        if (stream_closed) {
-        mutex.unlock ();
-        return;
-        }
-
-        if (frontend) {
-        logD (stream, _func, "firing NO_VIDEO");
-        mt_unlocks_locks (mutex) frontend.call_mutex (frontend->noVideo, mutex);
+            if (frontend)
+            mt_unlocks_locks (mutex) frontend.call_mutex (frontend->gotVideo, mutex);
         }
     }
 
-    if (got_video_pending) {
-        logD (stream, _func, "got_video_pending");
-        got_video_pending = false;
-        if (stream_closed) {
-        mutex.unlock ();
-        return;
-        }
-
-        if (frontend)
-        mt_unlocks_locks (mutex) frontend.call_mutex (frontend->gotVideo, mutex);
-    }
-
-//    if (seek_pending) {
-//        logD (stream, _func, "seek_pending");
-//        assert (!play_pending);
-//        seek_pending = false;
-//        if (stream_closed) {
-//        mutex.unlock ();
-//        return;
-//        }
-
-//        if (initial_seek > 0) {
-//        logD (stream, _func, "initial_seek: ", initial_seek);
-
-//        Time const tmp_initial_seek = initial_seek;
-
-//        GstElement * const tmp_playbin = playbin;
-//        gst_object_ref (tmp_playbin);
-//        mutex.unlock ();
-
-//        bool seek_failed = false;
-//        if (!gst_element_seek_simple (tmp_playbin,
-//                          GST_FORMAT_TIME,
-//                          (GstSeekFlags) (GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT),
-//                          (GstClockTime) tmp_initial_seek * 1000000000LL))
-//        {
-//            seek_failed = true;
-//            logE_ (_func, "Seek failed");
-//        }
-
-//        gst_object_unref (tmp_playbin);
-//        mutex.lock ();
-//        if (seek_failed)
-//            play_pending = true;
-//        } else {
-//        play_pending = true;
-//        }
-//    }
-
-//    if (play_pending) {
-//        logD (stream, _func, "play_pending");
-//        assert (!seek_pending);
-//        play_pending = false;
-//        if (stream_closed) {
-//        mutex.unlock ();
-//        return;
-//        }
-
-//        GstElement * const tmp_playbin = playbin;
-//        gst_object_ref (tmp_playbin);
-//        mutex.unlock ();
-
-//        logD (stream, _func, "Setting pipeline state to PLAYING");
-//        if (gst_element_set_state (tmp_playbin, GST_STATE_PLAYING) == GST_STATE_CHANGE_FAILURE)
-//        logE_ (_func, "gst_element_set_state() failed (PLAYING)");
-
-//        gst_object_unref (tmp_playbin);
-//        mutex.lock ();
-//    }
-    }
-
-    logD (stream, _func, "done");
+    logD (bus, _func, "done");
     reporting_status_events = false;
     mutex.unlock ();
 }
@@ -2332,6 +2278,17 @@ FFmpegStream::resetTrafficStats ()
     rx_audio_bytes = 0;
     rx_video_bytes = 0;
 }
+#ifdef LIBMARY_PERFORMANCE_TESTING
+IStatMeasurer*
+FFmpegStream::getStatMeasurer() {
+    return static_cast<IStatMeasurer*>(&m_statMeasurer);
+}
+
+ITimeChecker*
+FFmpegStream::getTimeChecker() {
+    return static_cast<ITimeChecker*>(&m_timeChecker);
+}
+#endif
 
 StatMeasure
 FFmpegStream::GetStatMeasure()
@@ -2349,7 +2306,8 @@ FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
                  Time                const initial_seek,
                  ChannelOptions    * const channel_opts,
                  PlaybackItem      * const playback_item,
-                 const Ref<MConfig::Config> & config)
+                 MConfig::Config   * const config,
+                 RecpathConfig     * const recpathConfig)
 {
     logD (pipeline, _this_func_);
 
@@ -2369,6 +2327,7 @@ FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
         initial_seek_complete = true;
 
     this->config = config;
+    this->m_recpathConfig = recpathConfig;
 
     std::string channel_name = this->channel_opts->channel_name->cstr();
 
@@ -2449,7 +2408,8 @@ FFmpegStream::FFmpegStream ()
 
       tlocal (NULL),
       m_bIsPlaying(false),
-      m_bReleaseCalled(false)
+      m_bReleaseCalled(false),
+      m_recpathConfig(NULL)
 {
     logD (pipeline, _this_func_);
 

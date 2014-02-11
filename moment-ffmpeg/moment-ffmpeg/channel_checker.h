@@ -10,6 +10,7 @@
 
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/nvr_file_iterator.h>
+#include <moment-ffmpeg/rec_path_config.h>
 
 using namespace M;
 using namespace Moment;
@@ -32,34 +33,38 @@ public:
         CheckMode_FileSummary
     };
 
-    typedef std::map<std::string, std::pair<int,int> > ChannelFileSummary;
+    typedef std::map<std::string, std::pair<int,int> > ChannelFileSummary; // [filename, [start time, end time]]
+    typedef std::vector<std::pair<int,int> > ChannelFileTimes; // [start time, end time]
+    typedef std::map<std::string,std::pair<std::string,std::pair<int,int> > > ChannelFileDiskTimes; // [filename,[diskname,[start time, end time]]]
 
-    mt_const void init (Timers * mt_nonnull timers, Vfs * const vfs, StRef<String> & record_dir, StRef<String> & channel_name);
-    std::vector<std::pair<int,int>> * getChannelExistence ();
-    ChannelFileSummary * getChannelFilesExistence ();
-    bool writeIdx(ChannelFileSummary & files_existence,
-                  StRef<String> const dir_name, StRef<String> const channel_name);
-    bool readIdx(ChannelFileSummary & files_existence,
-                 StRef<String> const dir_name, StRef<String> const channel_name);
+    mt_const void init (Timers * mt_nonnull timers, RecpathConfig * recpathConfig, StRef<String> & channel_name);
+    ChannelFileTimes getChannelExistence ();
+    ChannelFileDiskTimes getChannelFileDiskTimes ();
+    bool DeleteFromCache(const std::string & dir_name, const std::string & fileName);
     ChannelChecker ();
     ~ChannelChecker ();
 
 private:
-     Vfs * vfs;
-     StRef<String> m_record_dir;
+     RecpathConfig * m_recpathConfig;
      StRef<String> m_channel_name;
-     std::vector<std::pair<int,int>> existence;
-     ChannelFileSummary files_existence;
 
-     mt_const DataDepRef<Timers> timers;
-     Timers::TimerKey timer_key;
+     ChannelFileDiskTimes m_chFileDiskTimes;
+     ChannelFileTimes m_chTimes;
 
+     StateMutex m_mutex;
+     mt_const DataDepRef<Timers> m_timers;
+     Timers::TimerKey m_timer_key;
+
+     bool writeIdx(ChannelFileSummary & files_existence, StRef<String> const dir_name, StRef<String> const channel_name);
+     bool readIdx(StRef<String> const dir_name, StRef<String> const channel_name);
      void concatenateSuccessiveIntervals();
      CheckResult initCache ();
      CheckResult completeCache (bool bUpdate); // bUpdate means if it is true then update record that exists in cache
      CheckResult cleanCache ();
      CheckResult recreateExistence ();
-     CheckResult addRecordInCache (StRef<String> path, bool bUpdate);
+     CheckResult addRecordInCache (StRef<String> path, StRef<String> record_dir, bool bUpdate);
+     ChannelFileSummary getChFileSummary (const std::string & dirname);
+     bool updateLastRecordInCache();
 
      int readTime(Byte * buffer);
 

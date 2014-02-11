@@ -32,7 +32,7 @@
 #include <float.h>
 
 #include "libavformat/avformat.h"
-#include "internal.h"
+#include "libavformat/internal.h"
 
 #include "libavutil/avassert.h"
 #include "libavutil/log.h"
@@ -54,9 +54,7 @@
     #include <string.h>
     #include "sys/stat.h"    /* Fix up for Windows - inc mode_t */
 
-    #define ERR_NOSPACE -10000
-
-    typedef struct stat Stat;
+    #include "moment-ffmpeg/ffmpeg_common.h"
 
     //if CONFIG_SMALL
     //#   define NULL_IF_CONFIG_SMALL(x) NULL
@@ -132,6 +130,9 @@ typedef struct {
     SegmentListEntry *segment_list_entries_end;
 
     int is_first_pkt;      ///< tells if it is the first packet in the segment
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+    int is_first_segment;      ///< tells if it is the first segment
+#endif  // !MOMENT_CHANGE ]
 } SegmentContext;
 
 static void print_csv_escaped_str(AVIOContext *ctx, const char *str)
@@ -668,6 +669,7 @@ static int seg_write_header(AVFormatContext *s)
 
     if (seg->write_header_trailer) {
 #ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+    seg->is_first_segment = 1;
     int64_t ssize = GetPermission(oc->filename, seg->time / 1000000);
     if(!ssize){
         ret = ERR_NOSPACE;
@@ -717,6 +719,21 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
     int start_frame = INT_MAX;
     int ret;
 
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+    while(seg->is_first_segment)
+    {
+        int64_t end_pts2 = seg->time * seg->segment_count;
+        if(av_compare_ts(pkt->pts, st->time_base, end_pts2-seg->time_delta, AV_TIME_BASE_Q) < 0)
+        {
+            seg->is_first_segment = 0;
+        }
+        else
+        {
+            seg->segment_count++;
+        }
+    }
+#endif  // !MOMENT_CHANGE ]
+
     if (seg->times) {
         end_pts = seg->segment_count <= seg->nb_times ?
             seg->times[seg->segment_count-1] : INT64_MAX;
@@ -742,14 +759,6 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
     if(oc->streams && oc->streams[pkt->stream_index] && oc->streams[pkt->stream_index]->pts.den != 0)
         ret = segment_end(s, seg->individual_header_trailer, 0);
     else ret = 0;
-    while(1){
-        seg->segment_count++;
-        int64_t end_pts2 = seg->time * seg->segment_count;
-        if(av_compare_ts(pkt->pts, st->time_base, end_pts2-seg->time_delta, AV_TIME_BASE_Q) < 0){
-            seg->segment_count--;
-            break;
-        }
-    }
 #else   // MOMENT_CHANGE ], [ !MOMENT_CHANGE
         ret = segment_end(s, seg->individual_header_trailer, 0);
 #endif  // !MOMENT_CHANGE ]
@@ -800,7 +809,7 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
         Notify(oc->filename, 0, oc->pb->pos+1);
     }
     else
-        return ERR_NOSPACE;
+        return ERR_STREAMERR;
 #else   // MOMENT_CHANGE ], [ !MOMENT_CHANGE
     ret = ff_write_chained(oc, pkt->stream_index, pkt, s);
 #endif  // !MOMENT_CHANGE ]

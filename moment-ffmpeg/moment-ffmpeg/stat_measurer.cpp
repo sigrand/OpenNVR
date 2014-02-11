@@ -1,8 +1,5 @@
-#include <moment-ffmpeg/inc.h>
-#include <moment-ffmpeg/stat_measurer.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/times.h>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -11,6 +8,13 @@
 #include <algorithm>
 #include <iterator>
 #include <limits>
+
+#include <moment-ffmpeg/inc.h>
+#include <moment-ffmpeg/stat_measurer.h>
+
+#ifndef PLATFORM_WIN32
+#include <sys/times.h>
+#endif
 
 using namespace M;
 using namespace Moment;
@@ -93,10 +97,9 @@ getCurProcCPU(Time * utime)
     if ((ct0 = times (&tms0)) == -1)
         return false;
 
-    *utime = tms0.tms_utime;
-    //*stime = tms0.tms_stime;
+    *utime = tms0.tms_utime;    
 
-    return false;
+    return true;
 }
 
 void
@@ -160,6 +163,8 @@ StatMeasurer::AddTimeInNvr(Time t)
 bool
 StatMeasurer::CheckRAM()
 {
+    size_t result = -1;
+#ifndef PLATFORM_WIN32
     std::ifstream procFile;
     procFile.open("/proc/self/status", std::ios::in);
     std::string line;
@@ -179,7 +184,7 @@ StatMeasurer::CheckRAM()
     }
     else
     {
-        logD_(_func_, "fail to open /proc/self/status");
+        logE_(_func_, "fail to open /proc/self/status");
         return false;
     }
 
@@ -188,17 +193,25 @@ StatMeasurer::CheckRAM()
     line = line.substr(0, lastSpace);
     lastSpace = line.find_last_of(' ');
     line = line.substr(lastSpace + 1);
-    int res = atoi(line.c_str());
-
-    m_allRAM += res;
-
-    if(m_minRAM > res)
-    {
-        m_minRAM = res;
+    result = atoi(line.c_str());
+#else
+    int error = 0;
+    result = ::getUsedRAM_(error);
+    if(result == -1) {
+        logE_(_func_, "getUsedRAM_ failed with GetLastError= ", error);
+        return false;
     }
-    if(m_maxRAM < res)
+#endif
+
+    m_allRAM += result;
+
+    if(m_minRAM > result)
     {
-        m_maxRAM = res;
+        m_minRAM = result;
+    }
+    if(m_maxRAM < result)
+    {
+        m_maxRAM = result;
     }
 
     m_RAMCount++;
@@ -209,18 +222,42 @@ StatMeasurer::CheckRAM()
 bool
 StatMeasurer::CheckCPU()
 {
+    double user_util = 0.0;
+#ifndef PLATFORM_WIN32
     Time user_time_now = 0;
     Time all_proc_time_now = 0;
 
     getTotalCPU(&all_proc_time_now);
     getCurProcCPU(&user_time_now);
 
-    double user_util = 0.0;
     if(all_proc_time_now != m_all_proc_time_prev)
         user_util = 100.0 * (user_time_now - m_user_time_prev) / (double)(all_proc_time_now - m_all_proc_time_prev);
 
     m_user_time_prev = user_time_now;
     m_all_proc_time_prev = all_proc_time_now;
+#else /* PLATFORM_WIN32 */
+    BOOL fSuccess = FALSE;
+    m_pPerfDataHead = (LPBYTE) ::getPerformanceData_(L"230", INIT_OBJECT_BUFFER_SIZE);
+    if (NULL == m_pPerfDataHead)
+    {
+        logE_(_func_, "GetPerformanceData in loop failed.");
+        return false;
+    }
+
+    fSuccess = ::getCounterValues_(m_pPerfDataHead, 230, 6, &m_pCurrSample);
+    if (FALSE == fSuccess)
+    {
+        logE_(_func_, "GetCounterValues failed.");
+        return false;
+    }
+
+    ULONGLONG numerator = m_pCurrSample.Data - m_pPrevSample.Data;
+    LONGLONG denominator = m_pCurrSample.Time - m_pPrevSample.Time;
+    user_util = (double)(100 * numerator) / denominator;
+
+
+    memcpy(&m_pPrevSample, &m_pCurrSample, sizeof(RAW_DATA));
+#endif /* PLATFORM_WIN32 */
 
     m_user_util_all += user_util;
 
@@ -314,8 +351,26 @@ StatMeasurer::Init (Timers * const mt_nonnull timers, int time_seconds)
                   true /* auto_delete */);
     }
 
+#ifndef PLATFORM_WIN32
     getTotalCPU(&m_all_proc_time_prev);
     getCurProcCPU(&m_user_time_prev);
+#else /* PLATFORM_WIN32 */
+    BOOL fSuccess = FALSE;
+    m_pPerfDataHead = (LPBYTE) ::getPerformanceData_(L"230", INIT_OBJECT_BUFFER_SIZE);
+    if (NULL == m_pPerfDataHead)
+    {
+        logE_(_func_, "GetPerformanceData failed.\n");
+        return;
+    }
+
+    // Then, sample the "% Processor Time" counter for instance "0" of the moment object.
+    fSuccess = ::getCounterValues_(m_pPerfDataHead, 230, 6, &m_pPrevSample);
+    if (FALSE == fSuccess)
+    {
+        logE_(_func_, "GetCounterValues failed.\n");
+    }
+
+#endif /* PLATFORM_WIN32 */
 }
 
 StatMeasurer::StatMeasurer(): timers(this /* coderef_container */), timer_keyCPURAM (NULL)
@@ -342,6 +397,12 @@ StatMeasurer::StatMeasurer(): timers(this /* coderef_container */), timer_keyCPU
 
     m_user_time_prev = 0;
     m_all_proc_time_prev = 0;
+
+#ifdef PLATFORM_WIN32
+    m_pPerfDataHead = NULL;
+    memset(&m_pPrevSample, 0 ,sizeof(RAW_DATA));
+    memset(&m_pCurrSample, 0 ,sizeof(RAW_DATA));
+#endif
 }
 
 StatMeasurer::~StatMeasurer()

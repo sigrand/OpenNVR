@@ -22,6 +22,7 @@
 
 
 #include <moment/libmoment.h>
+#include <moment-ffmpeg/rec_path_config.h>
 
 
 namespace MomentFFmpeg {
@@ -32,14 +33,14 @@ using namespace Moment;
 class NvrCleaner : public Object
 {
 private:
-    mt_const Ref<Vfs> vfs;
+    RecpathConfig * m_recpathConfig;
     mt_const StRef<String> stream_name;
     mt_const Time max_age_sec;
 
     mt_const DataDepRef<Timers> timers;
     Timers::TimerKey timer_key;
 
-    void doRemoveFiles (ConstMemory filename);
+    void doRemoveFiles (ConstMemory filename, Vfs * vfs);
 
     static void cleanupTimerTick (void *_self);
 
@@ -49,7 +50,7 @@ public:
     ~NvrCleaner();
 
     mt_const void init (Timers      * mt_nonnull timers,
-                        Vfs         * mt_nonnull vfs,
+                        RecpathConfig * pRecpathConfig,
                         ConstMemory  stream_name,
                         Time         max_age_sec,
                         Time         clean_interval_sec);
