@@ -22,8 +22,8 @@
 			</div>
 			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 				<ul class="nav navbar-nav">
-					<li><?php echo CHtml::link('Главная', $this->createUrl('/')); ?></li>
-					<li><?php echo CHtml::link('О нас', $this->createUrl('site/about')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Главная'), $this->createUrl('/')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'О нас'), $this->createUrl('site/about')); ?></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<?php if(!Yii::app()->user->isGuest) { ?>
@@ -31,10 +31,10 @@
 					<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Админка <b class="caret"></b></a>
 					<ul class="dropdown-menu">
-						<li><?php echo CHtml::link('Статистика сервера', $this->createUrl('admin/stat')); ?></li>
-						<li><?php echo CHtml::link('Публичные камеры', $this->createUrl('admin/cams')); ?></li>
-						<li><?php echo CHtml::link('Пользователи', $this->createUrl('admin/users')); ?></li>
-						<li><?php echo CHtml::link('Логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
+						<li><?php echo CHtml::link(Yii::t('menu', 'Статистика сервера'), $this->createUrl('admin/stat')); ?></li>
+						<li><?php echo CHtml::link(Yii::t('menu', 'Публичные камеры'), $this->createUrl('admin/cams')); ?></li>
+						<li><?php echo CHtml::link(Yii::t('menu', 'Пользователи'), $this->createUrl('admin/users')); ?></li>
+						<li><?php echo CHtml::link(Yii::t('menu', 'Логи'), $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
 					</ul>
 					</li>
 					<?php } ?>
@@ -45,12 +45,12 @@
 						</a>
 					</li>
 					<?php if((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) { ?>
-					<li><?php echo CHtml::link('Камеры', $this->createUrl('cams/manage')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Камеры'), $this->createUrl('cams/manage')); ?></li>
 					<?php } ?>
 					<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Экраны <b class="caret"></b></a>
 						<ul class="dropdown-menu">
-							<li><?php echo CHtml::link('Редактировать', $this->createUrl('screens/manage')); ?></li>
+							<li><?php echo CHtml::link(Yii::t('menu', 'Редактировать'), $this->createUrl('screens/manage')); ?></li>
 							<?php
 								if (Yii::app()->user->permissions == 3) {
 									$myscreens = Screens::model()->findAll();
@@ -64,11 +64,11 @@
 						</ul>
 					</li>
 
-					<li><?php echo CHtml::link('Настройки профиля', $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
-					<li><?php echo CHtml::link('Выход', $this->createUrl('site/logout')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Настройки профиля'), $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Выход'), $this->createUrl('site/logout')); ?></li>
 					<?php } else { ?>
-					<li><?php echo CHtml::link('Вход', $this->createUrl('site/login')); ?></li>
-					<li><?php echo CHtml::link('Регистрация', $this->createUrl('site/register')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Вход'), $this->createUrl('site/login')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Регистрация'), $this->createUrl('site/register')); ?></li>
 					<?php } ?>
 				</ul>
 			</div>

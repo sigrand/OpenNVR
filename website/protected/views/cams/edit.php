@@ -7,7 +7,7 @@
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><?php echo $model->isNewRecord ? 'Заполните поля. * - помечены обязательные' : 'Редактирование'; ?></h3>
+			<h3 class="panel-title"><?php echo $model->isNewRecord ? Yii::t('cams', 'Заполните поля. * - помечены обязательные') : Yii::t('cams', 'Редактирование'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php $form = $this->beginWidget('CActiveForm', array(
@@ -98,7 +98,7 @@
 				</div>
 				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
-						<?php echo CHtml::submitButton($model->isNewRecord ? 'Добавить' : 'Сохранить', array('class' => 'btn btn-primary')); ?>
+						<?php echo CHtml::submitButton($model->isNewRecord ? Yii::t('cams', 'Добавить') : Yii::t('cams', 'Сохранить'), array('class' => 'btn btn-primary')); ?>
 					</div>
 				</div>
 				<?php $this->endWidget(); ?>
@@ -108,7 +108,7 @@
 		if(Yii::app()->user->hasFlash('notify')) {
 		$notify = Yii::app()->user->getFlash('notify');
 		?>
-		<div class="alert alert-<?php echo $notify['type']; ?>"><?php echo $notify['message']; ?>. Перейти в <?php echo CHtml::link('личный кабинет', $this->createUrl('cams/manage')); ?>?</div>
+		<div class="alert alert-<?php echo $notify['type']; ?>"><?php echo $notify['message']; ?>. <?php echo Yii::t('cams', 'Перейти в {user CP}', array('{user CP}')); ?> <?php echo CHtml::link(Yii::t('cams', 'личный кабинет'), $this->createUrl('cams/manage')); ?>?</div>
 		<?php } ?>
 	</div>
 

@@ -4,6 +4,8 @@ class UserIdentity extends CUserIdentity {
 	private $_id;
 	public $permissions; // 0 - inactive; 1 - viewer; 2 - operator; 3 - admin; 4 - banned;
 	public $isAdmin;
+	public $nick;
+	
 	public function authenticate() {
 		$nick = strtolower($this->username);
 		$user = Users::model()->find('LOWER(email)=?', array($nick));

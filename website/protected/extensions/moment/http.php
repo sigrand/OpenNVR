@@ -162,20 +162,20 @@ class http
 		/* open connection */
 		if ($this->_useproxy) {
 		//echo 'connected to ',$this->_proxy_host,':', $this->_proxy_port,"\r\n";
-			$fp = stream_socket_client('tcp://'.$this->_proxy_host.':'.$this->_proxy_port, $errno, $errstr, ($this->_request_time != 0 ? $this->_request_time : 30));
+			$fp = @stream_socket_client('tcp://'.$this->_proxy_host.':'.$this->_proxy_port, $errno, $errstr, ($this->_request_time != 0 ? $this->_request_time : 30));
 			
 		} else  {
 			if(!is_array($this->_context)) {
-				$fp = stream_socket_client(($scheme=='https' ? 'ssl://'.$host : $host).':'.$port, $errno, $errstr, ($this->_request_time != 0 ? $this->_request_time : 30), STREAM_CLIENT_CONNECT, $this->_context);
+				$fp = @stream_socket_client(($scheme=='https' ? 'ssl://'.$host : $host).':'.$port, $errno, $errstr, ($this->_request_time != 0 ? $this->_request_time : 30), STREAM_CLIENT_CONNECT, $this->_context);
 			} else {
-				$fp = stream_socket_client(($scheme=='https' ? 'ssl://'.$host : $host).':'.$port, $errno, $errstr, ($this->_request_time != 0 ? $this->_request_time : 30));
+				$fp = @stream_socket_client(($scheme=='https' ? 'ssl://'.$host : $host).':'.$port, $errno, $errstr, ($this->_request_time != 0 ? $this->_request_time : 30));
 			}
 		}
 		
 		/* always check */
 		if (!$fp) {
 
-			echo "Cannot connect to $host!<br/>\n";
+			//echo "Cannot connect to $host!<br/>\n";
 			return 0;
 			
 		}

@@ -13,10 +13,10 @@ $creators = array('0' => 'sys');
 			<div class="panel-heading">
 				<ul class="nav nav-tabs">
 					<li <?php echo $type == 'system' ? 'class="active"' : ''; ?>>
-						<?php echo CHtml::link('Системные логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?>
+						<?php echo CHtml::link(Yii::t('admin', 'Системные логи'), $this->createUrl('admin/logs', array('type' => 'system'))); ?>
 					</li>
 					<li <?php echo $type != 'system' ? 'class="active"' : ''; ?>>
-						<?php echo CHtml::link('Пользовательские логи', $this->createUrl('admin/logs', array('type' => 'user'))); ?>
+						<?php echo CHtml::link(Yii::t('admin', 'Пользовательские логи'), $this->createUrl('admin/logs', array('type' => 'user'))); ?>
 					</li>
 				</ul>
 			</div>
@@ -27,10 +27,10 @@ $creators = array('0' => 'sys');
 					<table class="table table-striped">
 						<thead>
 							<th>#</th>
-							<th>Кто</th>
-							<th>Кому</th>
-							<th>Сообщение</th>
-							<th>Время</th>
+							<th><?php echo Yii::t('admin', 'Кто'); ?></th>
+							<th><?php echo Yii::t('admin', 'Кому'); ?></th>
+							<th><?php echo Yii::t('admin', 'Сообщение'); ?></th>
+							<th><?php echo Yii::t('admin', 'Время'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -56,9 +56,7 @@ $creators = array('0' => 'sys');
 					</table>
 					<?php
 				} else {
-					?>
-					логи пусты
-					<?php
+					echo Yii::t('admin', 'логи пусты');
 				}
 				?>
 			</div>

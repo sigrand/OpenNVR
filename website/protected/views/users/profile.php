@@ -6,7 +6,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title">Изменение часового пояса</h3>
+			<h3 class="panel-title"><?php echo Yii::t('user', 'Изменение часового пояса'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php $form=$this->beginWidget('CActiveForm', array(
@@ -34,8 +34,8 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 							$model,
 							'options',
 							array(
-								0 => 'пользователя',
-								1 => 'камеры',
+								0 => Yii::t('user', 'пользователя'),
+								1 => Yii::t('user', 'камеры'),
 								)
 							);
 							?>
@@ -46,7 +46,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 					</div>
 					<div class="form-group">
 						<div class="col-sm-offset-2 col-sm-10">
-							<?php echo CHtml::submitButton('Изменить', array('class' => 'btn btn-primary')); ?>
+							<?php echo CHtml::submitButton(Yii::t('user', 'Изменить'), array('class' => 'btn btn-primary')); ?>
 						</div>
 					</div>
 					<?php $this->endWidget(); ?>
@@ -61,7 +61,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 			</div><div class="col-md-offset-3 col-md-5">
 			<div class="panel panel-default">
 				<div class="panel-heading">
-					<h3 class="panel-title">Изменение пароля</h3>
+					<h3 class="panel-title"><?php echo Yii::t('user', 'Изменение пароля'); ?></h3>
 				</div>
 				<div class="panel-body">
 					<?php $form=$this->beginWidget('CActiveForm', array(
@@ -92,7 +92,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 						</div>
 						<div class="form-group">
 							<div class="col-sm-offset-2 col-sm-10">
-								<?php echo CHtml::submitButton('Изменить', array('class' => 'btn btn-primary')); ?>
+								<?php echo CHtml::submitButton(Yii::t('user', 'Изменить'), array('class' => 'btn btn-primary')); ?>
 							</div>
 						</div>
 						<?php $this->endWidget(); ?>

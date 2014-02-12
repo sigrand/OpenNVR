@@ -5,7 +5,7 @@
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title">Введите email и пароль</h3>
+			<h3 class="panel-title"><?php echo Yii::t('register', 'Введите email и пароль'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php
@@ -21,26 +21,26 @@
 			);
 			?>
 			<div class="form-group">
-				<label class="col-sm-4 control-label">Введите Ник:</label>
+				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Введите Ник:'); ?></label>
 				<div class="col-sm-8">
 					<input type="text" name="nick" value="" class="form-control">
 				</div>
 			</div>
 			<div class="form-group">
 				<div class="col-sm-offset-4 col-sm-8">
-					<input type="submit" value="Восстановить" class="btn btn-primary">
+					<input type="submit" value="<?php echo Yii::t('register', 'Восстановить'); ?>" class="btn btn-primary">
 				</div>
 			</div>
-			или<br/><br/>
+			<?php echo Yii::t('register', 'или'); ?><br/><br/>
 			<div class="form-group">
-				<label class="col-sm-4 control-label">Введите email:</label>
+				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Введите email:'); ?></label>
 				<div class="col-sm-8">
 					<input type="text" name="email" value="" class="form-control">
 				</div>
 			</div>
 			<div class="form-group">
 				<div class="col-sm-offset-4 col-sm-8">
-					<input type="submit" value="Восстановить" class="btn btn-primary">
+					<input type="submit" value="<?php echo Yii::t('register', 'Восстановить'); ?>" class="btn btn-primary">
 				</div>
 			</div>
 			<?php $this->endWidget(); ?><br/>
@@ -48,15 +48,15 @@
 		</div>
 	</div>
 </div>
-<?php } elseif($code == 1) { ?>
-Такого пользователя нет.
-<?php } elseif($code == 2) { ?>
-Неправильный код.
-<?php } elseif($code == 3 || $code == 4 || $code == 5) { ?>
+<?php } elseif($code == 1) { 
+	echo Yii::t('register', 'Такого пользователя нет.');
+} elseif($code == 2) { 
+	echo Yii::t('register', 'Неправильный код.');
+} elseif($code == 3 || $code == 4 || $code == 5) { ?>
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title">Изменение пароля</h3>
+			<h3 class="panel-title"><?php echo Yii::t('register', 'Изменение пароля'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php
@@ -72,13 +72,13 @@
 			);
 			?>
 			<div class="form-group">
-				<label class="col-sm-4 control-label">Введите пароль:</label>
+				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Введите пароль:'); ?></label>
 				<div class="col-sm-8">
 					<input type="text" name="pass" value="" class="form-control">
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-4 control-label">Подтвердите пароль:</label>
+				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Подтвердите пароль:'); ?></label>
 				<div class="col-sm-8">
 					<input type="text" name="pass2" value="" class="form-control">
 				</div>
@@ -89,14 +89,16 @@
 				</div>
 			</div>
 			<?php $this->endWidget(); ?><br/>
-			<?php  if($code == 4) { ?>
-			Пароли не совпадают!
-			<?php } if($code == 5) { ?>
-			Пароль не может быть пустым.
-			<?php } ?>
+			<?php  if($code == 4) {
+				echo Yii::t('register', 'Пароли не совпадают!');
+			} if($code == 5) {
+				echo Yii::t('register', 'Пароль не может быть пустым.');
+			} ?>
 		</div>
 	</div>
 </div>
-<?php } elseif($code == 6) { ?>
-Ваш пароль успешно изменен.
-<?php } ?>
+<?php
+} elseif($code == 6) {
+	echo Yii::t('register', 'Ваш пароль успешно изменен.');
+}
+?>

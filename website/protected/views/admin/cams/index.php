@@ -10,7 +10,7 @@
 		<?php } ?>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Мои камеры</h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Мои камеры'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -20,9 +20,9 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAll", array ("class" => "checkAll")); ?></th>
 							<th>#</th>
-							<th>Название</th>
-							<th>Описание</th>
-							<th>Статус</th>
+							<th><?php echo Yii::t('admin', 'Название'); ?></th>
+							<th><?php echo Yii::t('admin', 'Описание'); ?></th>
+							<th><?php echo Yii::t('admin', 'Статус'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -33,22 +33,20 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? 'Публичная' : 'Не публичная').'</td>
+								<td>'.($cam->public ? Yii::t('admin', 'Публичная') : Yii::t('admin', 'Не публичная')).'</td>
 								</tr>';
 							}
 							?>
 							<tr>
 								<td colspan="4"></td>
-								<td><?php echo CHtml::submitButton('Опубликовать/Скрыть', array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Опубликовать/Скрыть'), array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					?>
-					Список моих камер пуст.
-					<?php
+					echo Yii::t('admin', 'Список моих камер пуст.<br/>');
 				}
 				?>
 			</div>
@@ -57,7 +55,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Публичные камеры</h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Публичные камеры'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -67,9 +65,9 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllSh", array ("class" => "checkAllSh")); ?></th>
 							<th>#</th>
-							<th>Название</th>
-							<th>Описание</th>
-							<th>Статус</th>
+							<th><?php echo Yii::t('admin', 'Название'); ?></th>
+							<th><?php echo Yii::t('admin', 'Описание'); ?></th>
+							<th><?php echo Yii::t('admin', 'Статус'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -80,7 +78,7 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? 'Публичная' : 'Не публичная').'</td>
+								<td>'.($cam->public ? Yii::t('admin', 'Публичная') : Yii::t('admin', 'Не публичная')).'</td>
 								</tr>';
 							}
 							?>
@@ -93,10 +91,7 @@
 					</table>
 					<?php
 				} else {
-					?>
-					Список публичных камер пуст.
-					<br/>
-					<?php
+					echo Yii::t('admin', 'Список публичных камер пуст.<br/>');
 				}
 				?>
 			</div>
@@ -105,7 +100,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Все остальные камеры</h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Все остальные камеры'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -115,9 +110,9 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllP", array ("class" => "checkAllP")); ?></th>
 							<th>#</th>
-							<th>Название</th>
-							<th>Описание</th>
-							<th>Статус</th>
+							<th><?php echo Yii::t('admin', 'Название'); ?></th>
+							<th><?php echo Yii::t('admin', 'Описание'); ?></th>
+							<th><?php echo Yii::t('admin', 'Статус'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -128,7 +123,7 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? 'Публичная' : 'Не публичная').'</td>
+								<td>'.($cam->public ? Yii::t('admin', 'Публичная') : Yii::t('admin', 'Не публичная')).'</td>
 								</tr>';
 							}
 							?>
@@ -137,39 +132,36 @@
 									<?php
 									$this->widget('CLinkPager', array(
 										'pages' => $pages,
-										'header' => 'Перейти на страницу: ',
-										'nextPageLabel' => 'далее',
-										'prevPageLabel' => 'назад',
+										'header' => Yii::t('admin', 'Перейти на страницу: '),
+										'nextPageLabel' => Yii::t('admin', 'далее'),
+										'prevPageLabel' => Yii::t('admin', 'назад'),
 										));
 										?>
-										</td>
-										<td></td>
-										<td><?php echo CHtml::submitButton('Опубликовать/Скрыть', array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
-									</tr>
-									<?php echo CHtml::endForm(); ?>
-								</tbody>
-							</table>
-							<?php
-						} else {
-							?>
-							Список камер пуст.
-							<br/>
-							<?php
-						}
-						?>
-					</div>
+									</td>
+									<td></td>
+									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Опубликовать/Скрыть'), array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
+								</tr>
+								<?php echo CHtml::endForm(); ?>
+							</tbody>
+						</table>
+						<?php
+					} else {
+						echo Yii::t('admin', 'Список камер пуст.<br/>');
+					}
+					?>
 				</div>
 			</div>
-			<script>
-			$(document).ready(function(){
-				$(".checkAll").click(function(){
-					$('input[id*="CamsForm_cam_"]').not(this).prop('checked', this.checked);
-				});
-				$(".checkAllSh").click(function(){
-					$('input[id*="CamsForm_shcam_"]').not(this).prop('checked', this.checked);
-				});
-				$(".checkAllP").click(function(){
-					$('input[id*="CamsForm_pcam_"]').not(this).prop('checked', this.checked);
-				});
+		</div>
+		<script>
+		$(document).ready(function(){
+			$(".checkAll").click(function(){
+				$('input[id*="CamsForm_cam_"]').not(this).prop('checked', this.checked);
 			});
-			</script>
+			$(".checkAllSh").click(function(){
+				$('input[id*="CamsForm_shcam_"]').not(this).prop('checked', this.checked);
+			});
+			$(".checkAllP").click(function(){
+				$('input[id*="CamsForm_pcam_"]').not(this).prop('checked', this.checked);
+			});
+		});
+		</script>

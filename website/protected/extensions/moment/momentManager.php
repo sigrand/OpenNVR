@@ -72,10 +72,10 @@ public function existence($stream) {
     return $result;
 }
 
-public function stat() {
-    $result = $this->moment->stat();
+public function stat($type) {
+    $result = $this->moment->stat($type);
     if(!$result) {
-        Notify::note('Неудалось получить статистику, проблема с моментом');
+        Notify::note('Неудалось получить статистику вида: '.$type.', проблема с моментом');
     }
     return $result;
 }
