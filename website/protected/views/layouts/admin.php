@@ -22,14 +22,14 @@
 			</div>
 			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 				<ul class="nav navbar-nav">
-					<li><?php echo CHtml::link('Главная', $this->createUrl('admin/index')); ?></li>
-					<li><?php echo CHtml::link('Статистика сервера', $this->createUrl('admin/stat')); ?></li>
-					<li><?php echo CHtml::link('Камеры', $this->createUrl('admin/cams')); ?></li>
-					<li><?php echo CHtml::link('Пользователи', $this->createUrl('admin/users')); ?></li>
-					<li><?php echo CHtml::link('Логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Главная'), $this->createUrl('admin/index')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Статистика сервера'), $this->createUrl('admin/stat', array('type' => 'disk'))); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Камеры'), $this->createUrl('admin/cams')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Пользователи'), $this->createUrl('admin/users')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'Логи'), $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
-					<li><?php echo CHtml::link('На сайт', $this->createUrl('/')); ?></li>
+					<li><?php echo CHtml::link(Yii::t('menu', 'На сайт'), $this->createUrl('/')); ?></li>
 				</ul>
 			</div>
 		</div>

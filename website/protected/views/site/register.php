@@ -8,7 +8,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 <div class="col-md-offset-3 col-md-5">
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title">Введите ник, email и пароль</h3>
+            <h3 class="panel-title"><?php echo Yii::t('register', 'Введите ник, email и пароль'); ?></h3>
         </div>
         <div class="panel-body">
             <?php $form=$this->beginWidget('CActiveForm', array(
@@ -48,7 +48,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <?php echo CHtml::submitButton('Регистрация', array('class' => 'btn btn-primary')); ?>
+                        <?php echo CHtml::submitButton(Yii::t('register', 'Регистрация'), array('class' => 'btn btn-primary')); ?>
                     </div>
                 </div>
                 <?php $this->endWidget(); ?>

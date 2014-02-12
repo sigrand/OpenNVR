@@ -2,7 +2,7 @@
 <html style="height: 100%" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>Просмотр <?php echo $cam->name; ?></title>
+    <title><?php echo Yii::t('cams', 'Просмотр {cam_name}', array('{cam_name}' => $cam->name)); ?></title>
     <style type="text/css">
     body {
         font-family: sans-serif;
@@ -91,6 +91,10 @@
 
     .live-button {
         background-color: #884466;
+    }
+
+    .hd-button {
+        background-color: #996600;
     }
 
     .progressbar:hover {
@@ -331,16 +335,14 @@ function updatePlaylist() {
 
                                                         doResize();
 
-                                                        /* TODO POST */
+
                                                         $.get("<?php echo $this->createUrl('cams/unixtime'); ?>",
                                                             {},
                                                             function (dataTime) {
                                                                 var unixtime = eval('(' + dataTime + ')');
                                                                 var local_unixtime = Math.floor((new Date).getTime() / 1000);
 
-                                                                /*var date = new Date (unixtime * 1000);*/
 
-                                                                /* var unixtime = Math.floor (date.getTime() / 1000); */
 
                                                                 reference_pos = data["timings"][cur_playing_archive]["start"];
                                                                 console.log(cur_playing_archive + " do function cur_playing_archive");
@@ -358,7 +360,7 @@ function updatePlaylist() {
                                                                     time_end = data["timings"][cur_playing_archive]["end"];
 
                                                                     document["MyPlayer"].setSourceSeeked(uriParsered.protocol + "://" + uriParsered.host + ":" + uriParsered.port + "/nvr/" + stream_name, stream_name, time, time_end);
-
+                                                                    console.log('ololo1');
                                                                     cur_position_playing_archive = time;
                                                                 });
 
@@ -367,19 +369,18 @@ $("#progressbar").mousemove(function (e) {
     var z = (data["timings"][cur_playing_archive]["end"] - data["timings"][cur_playing_archive]["start"]);
     var y = $(".progressbar").width();
     var x = e.pageX;
-                                                                    //console.log(e.pageX + " e.pageX " + z +  "  " + y + ' ' + x);
-                                                                    var time = Math.floor(reference_pos + (x * (z / y)));
-                                                                    mark_cursor_x = x;
-                                                                    mark_cursor_sel.style.left = mark_cursor_x + 'px';
-                                                                    setCursorPosition(time);
-                                                                });
-
-$("#go-button").click(function (e) {
+    var time = Math.floor(reference_pos + (x * (z / y)));
+    mark_cursor_x = x;
+    mark_cursor_sel.style.left = mark_cursor_x + 'px';
+    setCursorPosition(time);
+});
+$("#go-button").click (function (e) {
     var time = getPosInputUnixtime();
     mark_cursor_sel.style.left = (mark_cursor_x + reference_pos - time) + 'px';
     reference_pos = time;
-    setPlayStartPosition(time, true);
+    setPlayStartPosition (time, true);
     document["MyPlayer"].setSourceSeeked(uriParsered.protocol + "://" + uriParsered.host + ":" + uriParsered.port + "/nvr/" + stream_name, stream_name, time, time_end);
+    console.log('fgo', uriParsered.protocol + "://" + uriParsered.host + ":" + uriParsered.port + "/nvr/" + stream_name+'/'+ stream_name+'/'+  time+'/'+  time_end);
 });
 
 $("#download-button").click(function (e) {
@@ -392,8 +393,9 @@ $("#watch-button").click(function (e) {
 
 $("#live-button").click(function (e) {
     var time = getPosInputUnixtime();
-    document ["MyPlayer"].setSource(uri, stream_name + "?start=" + time);
+    document["MyPlayer"].setSource(uri, stream_name + "?start=" + time);
 });
+
 
 setInterval(
     function () {
@@ -415,8 +417,8 @@ $("#rec-button").click(function (e) {
     showRecording();
 
     state_seq = state_seq + 1;
-    $.get("/mod_nvr_admin/rec_" + (was_on ? "off" : "on") + "?stream=Sigrand_1C-131&seq=" + state_seq,
-        {}, processStateReply);
+   // $.get("/mod_nvr_admin/rec_" + (was_on ? "off" : "on") + "?stream=Sigrand_1C-131&seq=" + state_seq,
+   // {}, processStateReply);
 });
 }
 );
@@ -434,6 +436,7 @@ menuArchiveList.appendChild(entryArchive);
 //                      
 }
 });
+window.uri = uri;
 console.log("uri - ", uri);
 console.log("stream_name - ", stream_name);
 document["MyPlayer"].setSource(uri, stream_name);
@@ -474,8 +477,8 @@ function doResize() {
                 <param name="wmode" value="opaque"/>
                 <param name="bgcolor" value="#000000"/>
                 <param name="allowFullScreen" value="true"/>
-                <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
-                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3"
+                <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3&volume=0.0"/>
+                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3&volume=0.0"
                 src="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer.swf"
                 bgcolor="#000000"
                 width="100%"
@@ -513,7 +516,7 @@ style="width: 15%; height: 100%; background-color: #fff; border-left: 1px solid 
     <span style="font-size: large; font-weight: bold; color: #777777"><?php echo $cam->name; ?></span>
 </div>
 <div style="padding: 1.2em; border-bottom: 5px solid #444444; vertical-align: bottom; text-align: center">
-    <span style="font-size: large; font-weight: bold; color: #777777">Архив</span>
+    <span style="font-size: large; font-weight: bold; color: #777777"><?php echo Yii::t('cams', 'Архив'); ?></span>
 </div>
 <div id="menuArchiveList" style="width: 100%">
 </div>
@@ -544,7 +547,7 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="rec-button" class="go-button rec-button-<?php echo !$cam->record ? 'on' : 'off'; ?>">
-                        Запись <?php echo $cam->record ? 'идет' : 'не идет'; ?>
+                        <?php echo Yii::t('cams', 'Запись {record status}', array('{record status}' => $cam->record ? 'идет' : 'не идет')); ?>
                     </td>
                 </tr>
             </table>
@@ -556,34 +559,11 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
     <table border="0" cellpadding="0" cellspacing="0"
     style="height: 100%; padding-left: 1ex; padding-right: 0px">
     <tr>
-        <td>
-            <input type="text" id="pos-input-year" class="date-input year-input" placeholder="Year"/>
-        </td>
-        <td class="date-separator">.</td>
-        <td>
-            <input type="text" id="pos-input-month" class="date-input" placeholder="Mon."/>
-        </td>
-        <td class="date-separator">.</td>
-        <td>
-            <input type="text" id="pos-input-day" class="date-input" placeholder="Day"/>
-        </td>
-        <td>&nbsp;&nbsp;</td>
-        <td>
-            <input type="text" id="pos-input-hour" class="date-input" placeholder="Clock"/>
-        </td>
-        <td class="date-separator">:</td>
-        <td>
-            <input type="text" id="pos-input-minute" class="date-input" placeholder="Min."/>
-        </td>
-        <td class="date-separator">:</td>
-        <td style="padding-right: 0px">
-            <input type="text" id="pos-input-second" class="date-input" placeholder="Sec."/>
-        </td>
-        <td style="padding-left: 5px; padding-right: 5px">
+        <td style="padding-left: 15px; padding-right: 5px">
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
-                    <td id="go-button" class="go-button">
-                        Перейти
+                    <td id="jump-button" class="go-button">
+                        <?php echo Yii::t('cams', 'Перейти'); ?>
                     </td>
                 </tr>
             </table>
@@ -592,7 +572,7 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="download-button" class="go-button download-button">
-                        Скачать
+                        <?php echo Yii::t('cams', 'Скачать'); ?>
                     </td>
                 </tr>
             </table>
@@ -601,11 +581,32 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="live-button" class="go-button live-button">
-                        Прямой эфир
+                        <?php echo Yii::t('cams', 'Прямой эфир'); ?>
                     </td>
                 </tr>
             </table>
         </td>
+        <?php if($low) { ?>
+        <td style="padding-left: 10px; padding-right: 5px">
+            <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
+                <tr>
+                    <td id="hd-button" class="go-button hd-button">
+                        <?php echo Yii::t('cams', 'Лучшее качество'); ?>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <?php } elseif($cam->prev_url) { ?>
+        <td style="padding-left: 10px; padding-right: 5px">
+            <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
+                <tr>
+                    <td id="hd-button" class="go-button hd-button">
+                        <?php echo Yii::t('cams', 'Худшее качество'); ?>
+                    </td>
+                </tr>
+            </table>
+        </td>
+        <?php } ?>
     </tr>
 </table>
 </div>
@@ -621,14 +622,15 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
 </div>
 <?php } ?>
 </div>
+<div class="jumptime" style="display:none;">0</div>
 <div class="mindate" style="display:none;"></div>
-<div class="maxdate" style="display:none;"></div>
 <div class="downlink" style="display:none;"></div>
 <?php $this->beginWidget('zii.widgets.jui.CJuiDialog',array(
-    'id'=>'download-dialog',
-    'options'=>array(
-        'title'=>'Выбор интервала',
-        'autoOpen'=>false,
+    'id' => 'download-dialog',
+    'options' => array(
+        'title' => Yii::t('cams', 'Выбор интервала'),
+        'height' => '350',
+        'autoOpen' => false,
         ),
     ));
 echo 'Дата<br/>';
@@ -636,80 +638,174 @@ $this->widget('zii.widgets.jui.CJuiDatePicker',
     array(
         //'model'=>$model,
         //'attribute'=>'birthdate',
-        'name' => '123',
+        'name' => 'ddtpckr',
         'options'=>array(
             'showAnim'=>'fold',
             'autoSize'=>true,
-            'minDate' => 'new Date(parseInt($(\'.mindate\').text()))',
-            'maxDate' => 'new Date(parseInt($(\'.maxdate\').text()))',
+            'minDate' => '0',
+            'maxDate' => '0',
             'dateFormat'=>'dd/mm/yy',
             'defaultDate'=>date('d/m/y'),
-            ),
-        'htmlOptions'=>array(
-            'value'=>date_format(new DateTime, 'd/m/Y'),
-            ),
-        )
-    ); 
-    ?>
-    <br/><br/>
-    Промежуток времени:<br/>
-    <span id="mnv">00:00:00</span>-<span id="mxv">00:00:00</span> (<span id="sumv">0</span> минут)
-    <br/><br/>
-    <div id="slider-range"></div>
-    <br/>
-    <br/>
-    <input type="button" onclick="window.location.href = $('.downlink').text()" value="Скачать"><br/>
-    <?php $this->endWidget(); ?>
-
-    <script type="text/javascript">
-    var flash_initialized = false;
-    var first_uri;
-    var first_stream_name;
-    var cur_playing = -1;
-    var cur_playing_archive = -1;
-    var start_playing_archive = 0;
-    var end_playing_archive = 0;
-    var cur_position_playing_archive = 0;
-    updatePlaylist();
-    var class_one = "menuentry_one";
-    var class_two = "menuentry_two";
-    var menuSourcesList = document.getElementById("menuSourcesList");
-    var menuArchiveList = document.getElementById("menuArchiveList");
-    var iv = setInterval(function () {
-        if ($('#<?php echo $this->showStatusbar ? $cam->id : $cam->id.'_low'; ?>').html()) {
-            clearInterval(iv);
-            $('#<?php echo $this->showStatusbar ? $cam->id : $cam->id.'_low'; ?>').click()
-        }
-    }, 100);
-    $(document).ready(function() {
-        $('#download-button').bind('click', function() {
-            $('.downlink').text('<?php echo 'http://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_web_port'].'/mod_nvr/file?stream='.$cam->id; ?>&start='+ parseInt($('.mindate').text()/1000) + '&end=' + parseInt($('.maxdate').text()/1000));
-            var t = new Date(parseInt($('.mindate').text()));
-            $('#mnv').text(t.getHours() + ':' + t.getMinutes() + ':' + t.getSeconds());
-            var min = t.getTime();
-            t = new Date(parseInt($('.maxdate').text()));
-            $('#mxv').text(t.getHours() + ':' + t.getMinutes() + ':' + t.getSeconds());
-            var max = t.getTime();
-            $(function() {
-                $("#slider-range").slider({
-                    range: true,
-                    min: min,
-                    max: max,
-                    values: [ min, max ],
-                    slide: function(event, ui) {
-                        var t = new Date(parseInt(ui.values[0]));
-                        $('.downlink').text('<?php echo 'http://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_web_port'].'/mod_nvr/file.mp4?stream='.$cam->id; ?>&start='+ parseInt(ui.values[0]/1000) + '&end=' + parseInt(ui.values[1]/1000));
-                        $('#mnv').text(t.getHours() + ':' + t.getMinutes() + ':' + t.getSeconds());
-                        t = new Date(parseInt(ui.values[1]));
-                        $('#mxv').text(t.getHours() + ':' + t.getMinutes() + ':' + t.getSeconds());
-                        $('#sumv').text(parseInt(((ui.values[1]-ui.values[0])/1000)/60));
-                    }
-                });
+            'onSelect' => "js:function() {
+                $('#mnv').text('00:00:00');
+                $('#mxv').text('00:00:00');
+                $('#sumv').text('1439');
+                var t = new Date(parseInt($('#ddtpckr').datepicker('getDate').getTime()));
+                $('#mnv').text(beatiful(t.getHours()) + ':' + beatiful(t.getMinutes()) + ':' + beatiful(t.getSeconds()));
+                window.min = t.getTime();
+                t = new Date(parseInt(t.getTime()+86399000));
+                $('#mxv').text(t.getHours() + ':' + t.getMinutes() + ':' + t.getSeconds());
+                window.max = t.getTime();
+                $(function() {
+                    $('#slider-range').slider({
+                        range: true,
+                        min: window.min,
+                        max: window.max,
+                        values: [ window.min, window.max ],
+                        slide: function(event, ui) {
+                            var t = new Date(parseInt(ui.values[0]));
+                            $('.downlink').text('".'http://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_web_port'].'/mod_nvr/file.mp4?stream='.$cam->id."&start='+ parseInt(ui.values[0]/1000) + '&end=' + parseInt(ui.values[1]/1000));
+                            $('#mnv').text(beatiful(t.getHours()) + ':' + beatiful(t.getMinutes()) + ':' + beatiful(t.getSeconds()));
+                            t = new Date(parseInt(ui.values[1]));
+                            $('#mxv').text(beatiful(t.getHours()) + ':' + beatiful(t.getMinutes()) + ':' + beatiful(t.getSeconds()));
+                            $('#sumv').text(parseInt(((ui.values[1]-ui.values[0])/1000)/60));
+                        }
                     });
-
-                $('#download-dialog').dialog("open");
-            });
 });
+}",
+),
+'htmlOptions'=>array(
+    'value'=>date_format(new DateTime, 'd/m/Y'),
+    ),
+)
+); 
+?>
+<br/><br/>
+<?php echo Yii::t('cams', 'Промежуток времени:'); ?><br/>
+<span id="mnv">00:00:00</span>-<span id="mxv">00:00:00</span><br/>(<span id="sumv">1439</span> <?php echo Yii::t('cams', 'минут'); ?>)
+<br/><br/>
+<div id="slider-range"></div>
+<br/>
+<br/>
+<input type="button" onclick="window.location.href = $('.downlink').text()" value="<?php echo Yii::t('cams', 'Скачать'); ?>"><br/>
+<?php $this->endWidget(); ?>
+<?php $this->beginWidget('zii.widgets.jui.CJuiDialog',array(
+    'id' => 'jump-dialog',
+    'options' => array(
+        'title' => Yii::t('cams', 'Выбор интервала'),
+        'height' => '310',
+        'autoOpen' => false,
+        ),
+    ));
+echo 'Дата<br/>';
+$this->widget('zii.widgets.jui.CJuiDatePicker', 
+    array(
+        //'model'=>$model,
+        //'attribute'=>'birthdate',
+        'name' => 'jdtpckr',
+        'options' => array(
+            'showAnim' => 'fold',
+            'autoSize' => true,
+            'minDate' => '0',
+            'maxDate' => '0',
+            'dateFormat' => 'dd/mm/yy',
+            'defaultDate' => date('d/m/y'),
+            'onSelect' => "js:function() {
+                $('#mnvj').text('00:00:00');
+                var t = new Date(parseInt($('#jdtpckr').datepicker('getDate').getTime()));
+                min = t.getTime();
+                t = new Date(parseInt(t.getTime()+86399000));
+                max = t.getTime();
+                $(function() {
+                    $('#slider-range-jump').slider({
+                        min: min,
+                        max: max,
+                        values: [ min ],
+                        slide: function(event, ui) {
+                           t = new Date(parseInt(ui.value));
+                           $('#mnvj').text(beatiful(t.getHours()) + ':' + beatiful(t.getMinutes()) + ':' + beatiful(t.getSeconds()));
+                           $('.jumptime').text(parseInt(ui.value/1000));
+                       }
+                   });
+});
+}",
+),
+'htmlOptions' => array(
+    'value' => date_format(new DateTime, 'd/m/Y'),
+    ),
+)
+); 
+?>
+<br/><br/>
+<?php echo Yii::t('cams', 'Момент времени:'); ?><br/>
+<span id="mnvj">00:00:00</span>
+<br/><br/>
+<div id="slider-range-jump"></div>
+<br/>
+<input type="button" onclick="jump();" value="<?php echo Yii::t('cams', 'Перейти'); ?>"><br/>
+<?php $this->endWidget(); ?>
+
+<script type="text/javascript">
+
+var flash_initialized = false;
+var first_uri;
+var first_stream_name;
+var cur_playing = -1;
+var cur_playing_archive = -1;
+var start_playing_archive = 0;
+var end_playing_archive = 0;
+var cur_position_playing_archive = 0;
+updatePlaylist();
+var class_one = "menuentry_one";
+var class_two = "menuentry_two";
+var menuSourcesList = document.getElementById("menuSourcesList");
+var menuArchiveList = document.getElementById("menuArchiveList");
+var iv = setInterval(function () {
+    var cam = $('#<?php echo $low ? $cam->id.'_low' : $cam->id;  ?>');
+    if (cam.html()) {
+        clearInterval(iv);
+        cam.click();            
+    }
+}, 100);
+$(document).ready(function() {
+
+
+    $('#download-button').bind('click', function() {
+        minChange('#ddtpckr');
+            $('.downlink').text('<?php echo 'http://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_web_port'].'/mod_nvr/file?stream='.$cam->id; ?>&start='+ parseInt($('.mindate').text()/1000) + '&end=' + parseInt($('.maxdate').text()/1000));
+            $('#download-dialog').dialog("open");
+        });
+
+            $('#hd-button').bind('click', function() {
+                var link = '<?php echo $this->createUrl('cams/fullscreen', array('id' => $cam->id, 'full' => (int)$low)); ?>';
+                window.location.href = link;
+            });
+
+            $("#jump-button").bind('click', function() {
+                minChange('#jdtpckr');
+                $('#jump-dialog').dialog("open");
+            });
+        });
+
+    function minChange(id) {
+        var d = new Date();
+        d = d.getTime()-parseInt($('.mindate').text());
+        d = parseInt(Math.round((d/1000)/86400));
+        $(id).datepicker('option', 'minDate', '-'+d);
+    }
+
+    function beatiful(value) {
+        value = '' + value;
+        return value.length == 2 ? value : '0' + value;
+    }
+
+    function jump() {
+        var time = parseInt($('.jumptime').text());
+    // setSourceSeeked есть баг, ожидает увидеть в урле nvr вместо live
+    document["MyPlayer"].setSourceSeeked(window.uri.replace('live', 'nvr'), '<?php echo $low ? $cam->id.'_low' : $cam->id; ?>', time, time+1000);
+    $('#jump-dialog').dialog('close');
+}
+
 </script>
 </body>
 </html>

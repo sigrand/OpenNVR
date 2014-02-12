@@ -7,8 +7,8 @@ class SiteController extends Controller {
 	}
 
 	public function actionAbout() {
-		Notify::note('Кто то посетил about');
-		$this->render('info', array('title' => 'О нас', 'content' => 'О нас...'));
+		//Notify::note('Кто то посетил about');
+		$this->render('info', array('title' => Yii::t('app', 'О нас'), 'content' => Yii::t('app', 'О нас...')));
 	}
 
 	public function actionRegister() {
@@ -88,22 +88,22 @@ class SiteController extends Controller {
 		} elseif(!isset($_POST['nick']) || !isset($_POST['email'])) {
 			$this->render('recovery', array('result' => ''));
 		} else {
-			$answer = 'Нет такого пользователя';
+			$answer = Yii::t('register', 'Нет такого пользователя');
 			if(isset($_POST['nick']) && !empty($_POST['nick'])) {
 				$user = Users::model()->findByAttributes(array('nick' => $_POST['nick']));
 				if(!$user) {
-					$answer = 'Нет такого пользователя';
+					$answer = Yii::t('register', 'Нет такого пользователя');
 				} else {
 					$mail = 1;
-					$answer = 'Письмо с данными для восстановления отправлено на ваш email';
+					$answer = Yii::t('register', 'Письмо с данными для восстановления отправлено на ваш email');
 				}
 			} elseif(isset($_POST['email']) && !empty($_POST['email'])) {
 				$user = Users::model()->findByAttributes(array('email' => $_POST['email']));
 				if(!$user) {
-					$answer = 'Нет такого пользователя';
+					$answer = Yii::t('register', 'Нет такого пользователя');
 				} else {
 					$mail = 1;
-					$answer = 'Письмо с данными для восстановления отправлено на ваш email';
+					$answer = Yii::t('register', 'Письмо с данными для восстановления отправлено на ваш email');
 				}
 			}
 			if(isset($mail) && $mail) {
@@ -112,11 +112,12 @@ class SiteController extends Controller {
 				$mail = new YiiMailer();
 				$mail->setFrom('recovery@camshot.ru');
 				$mail->setTo($user->email);
-				$mail->setSubject('Восстановление пароля');
+				$mail->setSubject(Yii::t('register', 'Восстановление пароля'));
 				$mail->setBody(
-					"\r\n".
-					'Ссылка для восстановления: '.
-					Yii::app()->createAbsoluteUrl('site/recovery', array('user' => $user->nick, 'code' => $code))
+					Yii::t('register', 
+						"\r\nСсылка для восстановления: {link}\r\n",
+						array('{link}' => Yii::app()->createAbsoluteUrl('site/recovery', array('user' => $user->nick, 'code' => $code)))
+						)
 					);
 				$mail->send();
 			}
@@ -125,12 +126,8 @@ class SiteController extends Controller {
 	}
 
 	public function actionError() {
-		if($error=Yii::app()->errorHandler->error) {
-			if(Yii::app()->request->isAjaxRequest)
-				echo $error['message'];
-		} else {
+		if($error=Yii::app()->errorHandler->error)
 			$this->render('error', $error);
-		}
 	}
 
 	public function actionLogin() {

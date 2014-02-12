@@ -28,28 +28,68 @@ class AdminController extends Controller {
 	}
 	
 	public function actionIndex() {
-		$this->render('index', array('title' => 'Главная страница', 'content' => 'Это админка<br>Ваш К.О.'));
+		$this->render('index', array('title' => Yii::t('admin', 'Главная страница'), 'content' => Yii::t('admin', 'Это админка<br>Ваш К.О.')));
 	}
-	public function actionStat() {
+	public function actionStat($type) {
 		Yii::import('ext.moment.index', 1);
 		$momentManager = new momentManager;
-		$stat = $momentManager->stat();
-        if(empty($stat)) {
-            $this->render('stat', array('title' => 'Статистика(100 последних измерений)', 'stat' => array()));
-            Yii::app()->end();
-        }
-		$all = array();
-		$stat = array_reverse($stat['statistics']);
-		$stat = array_slice($stat, 0, 100);
-		$stat = array_reverse($stat);
-		foreach($stat as $key => $value) {
-			$all['time'][] = $value['time'];
-			foreach($value as $k => $v) {
-				if($k == 'time') { continue; }
-				$all[$k]['min'][] = (float)$v['min'];
-				$all[$k]['max'][] = (float)$v['max'];
-				$all[$k]['avg'][] = (float)$v['avg'];
+		$stat = $momentManager->stat($type);
+		if(empty($stat)) {
+			$this->render('stat', array('title' => Yii::t('admin', 'Статистика недоступна'), 'stat' => array()));
+			Yii::app()->end();
+		}
+		switch ($type) {
+			case 'disk':
+			$stat = json_decode($stat, 1);
+			foreach($stat as $k => $s) {
+				foreach ($s['disk info'] as $key => $value) {
+					$s['disk info'][$key] = $this->convertSize($value);
+				}
+				$stat[$k] = $s;
 			}
+			$all = $stat;
+			break;      
+
+			case 'rtmp':
+			$all = str_replace(array('<html><body>', '</html></body>'), '', $stat);
+			break;        
+
+			case 'load':
+			$stat = json_decode($stat, 1);
+			$all = array();
+			$stat = array_reverse($stat['statistics']);
+			$stat = array_slice($stat, 0, 100);
+			$stat = array_reverse($stat);
+			foreach($stat as $key => $value) {
+				$all['time'][] = $value['time'];
+				foreach($value as $k => $v) {
+					if($k == 'time') { continue; }
+					$all[$k]['min'][] = (float)$v['min'];
+					$all[$k]['max'][] = (float)$v['max'];
+					$all[$k]['avg'][] = (float)$v['avg'];
+				}
+			}
+			break;
+
+			default:
+			$all = array();
+			break;
+		}
+
+		$this->render('stat/index', array('title' => Yii::t('admin', 'Статистика(100 последних измерений)'), 'stat' => $all, 'type' => $type));
+	}
+
+	function convertSize($s) {
+		if (is_int($s)) {
+			$s = sprintf("%u", $s);		
+		} if($s >= 1073741824) {
+			return sprintf('%1.2f', $s / 1073741824 ). ' GB';
+		} elseif($s >= 1048576) {
+			return sprintf('%1.2f', $s / 1048576 ) . ' MB';
+		} elseif($s >= 1024) {
+			return sprintf('%1.2f', $s / 1024 ) . ' KB';
+		} else {
+			return $s . ' B';
 		}
 		$this->render('stat', array('title' => 'Статистика(100 последних измерений)', 'stat' => $all));
 	}
@@ -65,7 +105,7 @@ class AdminController extends Controller {
 						if($cam) {
 							$cam->public = $cam->public ? 0 : 1;
 							if($cam->save()) {
-								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Настройки камер изменены'));
+								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Настройки камер изменены')));
 							}
 						}
 					}
@@ -145,7 +185,7 @@ class AdminController extends Controller {
 					$user->status = $value[0];
 				}
 				if($user->save()) {
-					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Пользователь(и) '.$value[1]));
+					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Пользователь(и) {action}', array('{action}' => $value[1]))));
 					return;
 				}
 			}

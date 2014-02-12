@@ -8,7 +8,12 @@
 return array(
 	'basePath'=>dirname(__FILE__).DIRECTORY_SEPARATOR.'..',
 	'name'=>'My Web Application',
-
+	'sourceLanguage' => 'ru',
+	'behaviors'=>array(
+		'onBeginRequest' => array(
+			'class' => 'application.components.behaviors.BeginRequest'
+			),
+		),
 	// preloading 'log' component
 	'preload'=>array('log'),
 
@@ -34,6 +39,7 @@ return array(
 	'components'=>array(
 		'request'=>array(
 			'enableCsrfValidation'=>true,
+			'enableCookieValidation'=>true,
 			),
 		'user'=>array(
 			// enable cookie-based authentication
@@ -45,7 +51,7 @@ return array(
 			'urlFormat'=>'path',
 			'rules'=>array(
 				'/'=>'cams/index',
-'cams/existence/<stream:\d+>'=>'cams/existence',
+				'cams/existence/<stream:\d+|\d+_low>'=>'cams/existence',
 				),
 			),
 		//*/
@@ -73,7 +79,7 @@ return array(
 				array(
 					'class'=>'CWebLogRoute',
 				),
-				*/
+				//*/
 			),
 			),
 		),
@@ -81,6 +87,12 @@ return array(
 	// application-level parameters that can be accessed
 	// using Yii::app()->params['paramName']
 	'params'=>array(
+	'languages' => 
+	array(
+		'ru'=>'Russian',
+		'en'=>'English',
+		'cn'=>'Chinese'
+		),
 		// this is used in contact page
 		'moment_server_protocol' => 'http',
 		'moment_server_ip' => 'localhost',

@@ -41,9 +41,9 @@ class UsersController extends Controller {
 			$model->attributes = $_POST['ProfileForm'];
 			if($model->validate() && $model->change()) {
 				if($id == 'pass') {
-				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Пароль успешно изменен'));
+				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('user', 'Пароль успешно изменен')));
 			} else {
-				Yii::app()->user->setFlash('notifyTO', array('type' => 'success', 'message' => 'Часовой пояс успешно изменен'));
+				Yii::app()->user->setFlash('notifyTO', array('type' => 'success', 'message' => Yii::t('user', 'Часовой пояс успешно изменен')));
 			}
 				$this->render('profile', array('model'=>$model));
 				Yii::app()->end();

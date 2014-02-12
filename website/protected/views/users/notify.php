@@ -4,7 +4,7 @@
 <div class="col-sm-12">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title">Новые уведомления</h3>
+			<h3 class="panel-title"><?php echo Yii::t('user', 'Новые уведомления'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php
@@ -15,8 +15,8 @@
 				<thead>
 					<tr>
 					<td>#</td>
-					<td>Инициатор</td>
-					<td>Сообщение</td>
+					<td><?php echo Yii::t('user', 'Инициатор'); ?></td>
+					<td><?php echo Yii::t('user', 'Сообщение'); ?></td>
 					</tr>
 				</thead>
 				<tbody>
@@ -39,7 +39,7 @@
 				</table>
 				<?php
 			} else {
-				echo 'Нет новых уведомлений';
+				echo Yii::t('user', 'Нет новых уведомлений');
 			}
 			?>
 		</div>
@@ -48,7 +48,7 @@
 <div class="col-sm-12">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title">Старые уведомления</h3>
+			<h3 class="panel-title"><?php echo Yii::t('user', 'Старые уведомления'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php
@@ -58,8 +58,8 @@
 				<thead>
 					<tr>
 					<td>#</td>
-					<td>Инициатор</td>
-					<td>Сообщение</td>
+					<td><?php echo Yii::t('user', 'Инициатор'); ?></td>
+					<td><?php echo Yii::t('user', 'Сообщение'); ?></td>
 					</tr>
 				</thead>
 				<tbody>
@@ -82,7 +82,7 @@
 				</table>
 				<?php
 			} else {
-				echo 'Нет старых уведомлений';
+				echo Yii::t('user', 'Нет старых уведомлений');
 			}
 			?>
 		</div>

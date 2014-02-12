@@ -89,27 +89,28 @@ class CamsController extends Controller {
 			);
 	}
 
-	public function actionFullscreen($id, $preview = 0) {
+	public function actionFullscreen($id, $preview = 0, $full = 0) {
 		if(!is_numeric($id)) { $this->redirect('/player/'.$id); }
 		//$this->layout = 'fullscreencolumn';
 		$this->layout = 'emptycolumn';
 		$cam = Cams::model()->findByPK($id);
 		if(!$cam) {
-			throw new CHttpException(404, 'Нет такой камеры');
+			throw new CHttpException(404, Yii::t('errors', 'Нет такой камеры'));
 		}
 		if(!$cam->public && Yii::app()->user->isGuest) {
-			throw new CHttpException(403, 'Доступ запрещен');
+			throw new CHttpException(403, Yii::t('errors', 'Доступ запрещен'));
 		}
 		$uid = Yii::app()->user->getId();
 		$this->showArchive = !$preview && (!$cam->public || $uid == $cam->user_id) ? 1 : 0;
 		$this->showStatusbar = !$preview;
 		if($cam->user_id != $uid) {
-			$shared = Shared::model()->findByAttributes(array('user_id' => $uid, 'cam_id' => $id));
+			$shared = (bool)Shared::model()->findByAttributes(array('user_id' => $uid, 'cam_id' => $id));
 			if(!$cam->public && !$shared) {
-				throw new CHttpException(403, 'Доступ запрещен');
+				throw new CHttpException(403, Yii::t('errors', 'Доступ запрещен'));
 			}
 		}
-		$this->render('fullscreen3', array('cam' => $cam));
+		$this->showStatusbar = $this->showArchive = !$preview && ((!$cam->public || $shared) || $uid == $cam->user_id) ? 1 : 0;
+		$this->render('fullscreen3', array('cam' => $cam, 'low' => !$full && isset($cam->prev_url) && !empty($cam->prev_url)));
 	}
 
 	public function actionAdd() {
@@ -120,9 +121,9 @@ class CamsController extends Controller {
 			if($model->validate() && $model->save()) {
 				$momentManager = new momentManager;
 				if($momentManager->add($model)) {
-					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Камера успешно добавлена'));
+					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Камера успешно добавлена')));
 				} else {
-					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => 'Камера не добавлена, проблемы с Moment`ом'));
+					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Камера не добавлена, проблемы с Moment`ом')));
 					$model->delete();
 				}
 				$this->redirect(array('manage'));
@@ -142,9 +143,9 @@ class CamsController extends Controller {
 			if($model->validate()) {
 				$momentManager = new momentManager;
 				if($momentManager->edit($model) && $model->save()) {
-					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Камера успешно изменена'));
+					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Камера успешно изменена')));
 				} else {
-					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => 'Камера не изменена, проблемы с Moment`ом'));
+					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Камера не изменена, проблемы с Moment`ом')));
 				}
 				$this->redirect(array('edit', 'id' => $model->id));
 			}
@@ -166,11 +167,11 @@ class CamsController extends Controller {
 
 		if($type != 'share' && $model->delete()) {
 			$momentManager->delete($model);
-			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Камера успешно удалена'));
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Камера успешно удалена')));
 		} elseif ($type == 'share' && $model->delete()) {
-			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Камера успешно удалена'));
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Камера успешно удалена')));
 		} else {
-			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => 'Камера не удалена, проблемы с Moment`ом'));
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Камера не удалена, проблемы с Moment`ом')));
 		}
 		
 		$this->redirect(array('manage'));
@@ -181,7 +182,7 @@ class CamsController extends Controller {
 		if(isset($_POST['ShareForm'])) {
 			$form->attributes = $_POST['ShareForm'];
 			if($form->validate() && $form->save()) {
-				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Камеры успешно расшарены'));
+				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Камеры успешно расшарены')));
 				$this->redirect(array('manage'));
 				Yii::app()->end();
 			}
@@ -226,24 +227,24 @@ class CamsController extends Controller {
 					if(isset($_POST['show'])) {
 						$cam->show = $cam->show ? 0 : 1;
 						if($cam->save()) {
-							Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Настройки камер изменены'));
+							Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Настройки камер изменены')));
 						}
 					} elseif(isset($_POST['del'])) {
 						if($key[0] == 'shcam') {
 							if($cam->delete()) {
-								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Камеры удалены'));
+								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Камеры удалены')));
 							}
 						} else {
 							if($cam->delete()) {
 								$momentManager->delete($cam);
-								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Камеры удалены'));
+								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Камеры удалены')));
 							}
 						}
 					} elseif(isset($_POST['record'])) {
 						$cam->record = $cam->record ? 0 : 1;
 						$momentManager->rec($cam->record == 1 ? 'on' : 'off', $cam->id);
 						if($cam->save()) {
-							Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Настройки камер изменены'));
+							Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Настройки камер изменены')));
 						}
 					}
 				}
@@ -251,7 +252,7 @@ class CamsController extends Controller {
 			$this->refresh();
 			Yii::app()->end();
 		} elseif(isset($_POST['show']) || isset($_POST['del']) || isset($_POST['share'])) {
-			Yii::app()->user->setFlash('notify', array('type' => 'warning', 'message' => 'Для начала выберите камеры'));
+			Yii::app()->user->setFlash('notify', array('type' => 'warning', 'message' => Yii::t('cams', 'Для начала выберите камеры')));
 		}
 		$public = array();
 		$publicAll = Cams::model()->findAllByAttributes(array('public' => 1));
