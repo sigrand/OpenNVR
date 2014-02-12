@@ -1,0 +1,24 @@
+#screen_name {
+	margin:auto;
+	text-align:center;
+	margin-bottom: 10px;
+}
+#add_cam_div {
+	margin:auto;
+	text-align:center;
+}
+.cams {
+	position:absolute;
+}
+#screen {
+	border:1px solid black;
+	width:100%;
+	height:642px;
+	padding:0px;
+	margin:0px;
+}
+.cam_id_class {
+	width:100%;
+}
+.ui-resizable {
+}

@@ -10,7 +10,7 @@
 	<title><?php echo CHtml::encode($this->pageTitle); ?></title>
 </head>
 <body>
-	<nav class="navbar navbar-default navbar-inverse" role="navigation">
+	<nav class="navbar navbar-default navbar-inverse" role="navigation" style="z-index:10000">
 		<div class="container">
 			<div class="navbar-header">
 				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
@@ -29,7 +29,50 @@
 					<li><?php echo CHtml::link(Yii::t('menu', 'Логи'), $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
-					<li><?php echo CHtml::link(Yii::t('menu', 'На сайт'), $this->createUrl('/')); ?></li>
+					<?php if(!Yii::app()->user->isGuest) { ?>
+					<?php if(Yii::app()->user->isAdmin) { ?>
+					<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Админка <b class="caret"></b></a>
+					<ul class="dropdown-menu">
+						<li><?php echo CHtml::link('Статистика сервера', $this->createUrl('admin/stat')); ?></li>
+						<li><?php echo CHtml::link('Публичные камеры', $this->createUrl('admin/cams')); ?></li>
+						<li><?php echo CHtml::link('Пользователи', $this->createUrl('admin/users')); ?></li>
+						<li><?php echo CHtml::link('Логи', $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>
+					</ul>
+					</li>
+					<?php } ?>
+					<li>
+						<a href="<?php echo $this->createUrl('users/notifications'); ?>">
+							Уведомления
+							<span class="badge"><?php echo Notify::model()->countByAttributes(array('dest_id' => Yii::app()->user->getId(), 'is_new' => 1)); ?></span>
+						</a>
+					</li>
+					<?php if((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) { ?>
+					<li><?php echo CHtml::link('Камеры', $this->createUrl('cams/manage')); ?></li>
+					<?php } ?>
+					<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Экраны <b class="caret"></b></a>
+						<ul class="dropdown-menu">
+							<li><?php echo CHtml::link('Редактировать', $this->createUrl('screens/manage')); ?></li>
+							<?php
+								if (Yii::app()->user->permissions == 3) {
+									$myscreens = Screens::model()->findAll();
+								} else {
+									$myscreens = Screens::model()->findAllByAttributes(array('owner_id' => Yii::app()->user->getId()));
+								}
+								foreach ($myscreens as $key => $value) {
+									echo "<li>".CHtml::link("$value->name", $this->createUrl("screens/view/id/$value->id"))."</li>";
+								}
+							?>
+						</ul>
+					</li>
+
+					<li><?php echo CHtml::link('Настройки профиля', $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
+					<li><?php echo CHtml::link('Выход', $this->createUrl('site/logout')); ?></li>
+					<?php } else { ?>
+					<li><?php echo CHtml::link('Вход', $this->createUrl('site/login')); ?></li>
+					<li><?php echo CHtml::link('Регистрация', $this->createUrl('site/register')); ?></li>
+					<?php } ?>
 				</ul>
 			</div>
 		</div>
