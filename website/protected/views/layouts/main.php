@@ -52,11 +52,10 @@
 					<?php if((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) { ?>
 					<li><?php echo CHtml::link(Yii::t('menu', 'Камеры'), $this->createUrl('cams/manage')); ?></li>
 					<?php } ?>
-<<<<<<< HEAD
 					<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Экраны <b class="caret"></b></a>
 						<ul class="dropdown-menu">
-							<li><?php echo CHtml::link('Редактировать', $this->createUrl('screens/manage')); ?></li>
+							<li><?php echo CHtml::link(Yii::t('menu', 'Редактировать'), $this->createUrl('screens/manage')); ?></li>
 							<?php
 								if (Yii::app()->user->permissions == 3) {
 									$myscreens = Screens::model()->findAll();
@@ -69,12 +68,8 @@
 							?>
 						</ul>
 					</li>
-					<li><?php echo CHtml::link('Настройки профиля', $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
-					<li><?php echo CHtml::link('Выход', $this->createUrl('site/logout')); ?></li>
-=======
 					<li><?php echo CHtml::link(Yii::t('menu', 'Настройки профиля'), $this->createUrl('users/profile', array('id' => 'any'))); ?></li>
-					<li><?php echo CHtml::link(Yii::t('menu', 'Выход [{username}]', array('{username}' => Yii::app()->user->nick)), $this->createUrl('site/logout')); ?></li>
->>>>>>> middle
+					<li><?php echo CHtml::link(Yii::t('menu', 'Выход'), $this->createUrl('site/logout')); ?></li>
 					<?php } else { ?>
 					<li><?php echo CHtml::link(Yii::t('menu', 'Вход'), $this->createUrl('site/login')); ?></li>
 					<li><?php echo CHtml::link(Yii::t('menu', 'Регистрация'), $this->createUrl('site/register')); ?></li>
