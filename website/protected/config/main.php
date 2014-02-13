@@ -50,7 +50,7 @@ return array(
 		'urlManager'=>array(
 			'urlFormat'=>'path',
 			'rules'=>array(
-				'/'=>'cams/index',
+				'/'=>'cams/map',
 				'cams/existence/<stream:\d+|\d+_low>'=>'cams/existence',
 				),
 			),
@@ -95,7 +95,7 @@ return array(
 		),
 		// this is used in contact page
 		'moment_server_protocol' => 'http',
-		'moment_server_ip' => 'localhost',
+		'moment_server_ip' => '192.168.2.5',
 		'moment_server_port' => '8082',
 		'moment_web_port' => '8080',
 		'moment_live_port' => '1935',
