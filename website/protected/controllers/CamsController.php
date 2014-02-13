@@ -103,8 +103,8 @@ class CamsController extends Controller {
 		$uid = Yii::app()->user->getId();
 		$this->showArchive = !$preview && (!$cam->public || $uid == $cam->user_id) ? 1 : 0;
 		$this->showStatusbar = !$preview;
+		$shared = (bool)Shared::model()->findByAttributes(array('user_id' => $uid, 'cam_id' => $id));
 		if($cam->user_id != $uid) {
-			$shared = (bool)Shared::model()->findByAttributes(array('user_id' => $uid, 'cam_id' => $id));
 			if(!$cam->public && !$shared) {
 				throw new CHttpException(403, Yii::t('errors', 'Доступ запрещен'));
 			}
