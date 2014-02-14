@@ -1,3 +1,10 @@
 .icons {
 font-size: 30px;
 }
+.container {
+	width:100%;
+	padding:0px;
+}
+.navbar {
+	margin-bottom: 10px;
+}

@@ -47,7 +47,7 @@
 	<?php
 		for ($i=1; $i<=4; $i++) {
 	?>
-	<div class="col-sm-3 col-xs-6" style="height:156px;padding:0px">
+	<div class="col-sm-3 col-xs-6 carousel_players" style="height:174px;padding:0px">
                 <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo "$i\""; ?>
                 align="middle">
                 <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
@@ -121,7 +121,7 @@
 	<a id="left_button" class="carousel-control left" href="#myCarousel" data-slide="prev">‹</a>
 	<a id="right_button" class="carousel-control right" href="#myCarousel" data-slide="next">›</a>
 </div>
-				<div class="cols-sm-12" id="map" style="width:100%;height:400px;"></div>
+				<div class="cols-sm-12" id="map" style="width:100%;height:1000px;"></div>
 			</div>
 		</div>
 	</div>
@@ -151,6 +151,11 @@
 
 
 	$(document).ready(function(){
+		$(window).on('load resize',function(){
+			$(".carousel_players").css("height", Math.round($(".carousel_players").width()*9/16));
+			$("#map").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-34));
+			console.log($(window).height()+"-"+$(".carousel_players").height()+"-"+$(".navbar").height() - 30);
+		});
 		var map = L.map('map');
 		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
 			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
