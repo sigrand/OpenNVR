@@ -76,6 +76,7 @@
                 />
             </object>
 	</div>
+	<div id="on_MyPlayer<?php echo "$i\""; ?> num="<?php echo "$i\""; ?> style="position:absolute;padding:0;margin:0;"></div>
 	<?php
 		}
 	?>
@@ -132,6 +133,9 @@
 	var cam_id = "";
 	var cams = [];
 	var cams_markers = [];
+	var markers = {};
+	var m = [];
+	var map;
 	function flashInitialized() {
 		if (cam_id != "") {
 			// for popup player;
@@ -140,50 +144,63 @@
 			cam_id = "";
 		} else {
 			// for carousel players
-//			console.log("here!!");
 			for (i=1;i<=4;i++) {
-//				if (carousel_cams[i])
 				document["MyPlayer"+i].setSource(<?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>, carousel_cams[i]+"_low", carousel_cams[i]);
-//				$("#MyPlayer"+i).html(carousel_cams[i]);
 			}
 		}
 	}
 
-
 	$(document).ready(function(){
-		$(window).on('load resize',function(){
-			$(".carousel_players").css("height", Math.round($(".carousel_players").width()*9/16));
-			$("#map").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-34));
-			console.log($(window).height()+"-"+$(".carousel_players").height()+"-"+$(".navbar").height() - 30);
-		});
-		var map = L.map('map');
-		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-		}).addTo(map);
 		var mypopup = L.popup(document.getElementById("MyPlayer_div"));
-		var qweqwe = "";
 		<?php
 			foreach ($myCams as $cam) {
 		?>
 				cams.push(<?php echo "\"$cam->id\""; ?>);
-				cams_markers[<?php echo "\"$cam->id\""; ?>] = [<?php echo "$cam->coordinates"; ?>];
 		<?php
 				if ($cam->coordinates != "") {
 		?>
-				// add a marker in the given location, attach some popup content to it and open the popup
-				var marker = L.marker([<?php echo "$cam->coordinates"; ?>]).addTo(map)
-					.bindPopup(document.getElementById("MyPlayer_div"));
-				marker.on('click', function() {
+				cams_markers.push(L.latLng(<?php echo "$cam->coordinates"; ?>));
+				var marker = L.marker([<?php echo "$cam->coordinates"; ?>]);
+				markers[<?php echo "\"$cam->id\""; ?>] = marker;
+				m[<?php echo "\"$cam->id\""; ?>] = marker.on('click', function() {
 					cam_id = <?php echo "$cam->id"; ?>;
-//					console.log(this);
 				});
 		<?php
 				}
 			}
 		?>
-		map.fitBounds(cams_markers);
+		console.log(markers);
+
+		$(window).on('load resize',function(){
+			$(".carousel_players").css("height", Math.round($(".carousel_players").width()*9/16));
+			for (ii=1;ii<=4;ii++) {
+				$("#on_MyPlayer"+ii).offset($("#MyPlayer"+ii+" embed").offset());
+				$("#on_MyPlayer"+ii).css("width", $("#MyPlayer"+ii+" embed").width());
+				$("#on_MyPlayer"+ii).css("height", $("#MyPlayer"+ii+" embed").height());
+			}
+			$("#map").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-34)+"px");
+			if (!map) {
+				map = L.map('map');
+				L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+					attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+				}).addTo(map);
+				$.each(markers, function(key, val) {
+					val.addTo(map).bindPopup(document.getElementById("MyPlayer_div"));
+				});
+			}
+			map.fitBounds(L.latLngBounds(cams_markers));
+		});
+
+		for (i=1;i<=4;i++) {
+			$("#on_MyPlayer"+i).click(function(){
+				cam_id = carousel_cams[this.id.substring(11)];
+				map.setView(markers[carousel_cams[this.id.substring(11)]].getLatLng(), 20, {animate:true});
+				markers[carousel_cams[this.id.substring(11)]].bindPopup(document.getElementById("MyPlayer_div")).openPopup();
+			});
+		}
+
+/* carousel */
 		var set_carousel_cams = function(carousel_position) {
-			console.log("carousel_position="+carousel_position);
 			if (cams.length <= 4) {
 				var i = 1;
 				for (c=0; c < cams.length; c++) {
