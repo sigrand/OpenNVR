@@ -37,11 +37,9 @@
 			<a href="" target="_blank" id="open_link">Открыть в новом окне</a>
 </div>
 </div>
-<div class="col-sm-12">
-		<div class="panel panel-default">
-			<div class="panel-body" style="padding:0px;">
+<div class="col-sm-12" style="padding-left:5px;padding-right:5px;">
 
-<div class="carousel slide">
+<div class="carousel slide" style="padding-bottom:5px;">
 <div class="carousel-inner">
 <div class="cols-sm-12 active">
 	<?php
@@ -123,8 +121,6 @@
 	<a id="right_button" class="carousel-control right" href="#myCarousel" data-slide="next">›</a>
 </div>
 				<div class="cols-sm-12" id="map" style="width:100%;height:1000px;"></div>
-			</div>
-		</div>
 	</div>
 	<script>
 
@@ -178,7 +174,7 @@
 				$("#on_MyPlayer"+ii).css("width", $("#MyPlayer"+ii+" embed").width());
 				$("#on_MyPlayer"+ii).css("height", $("#MyPlayer"+ii+" embed").height());
 			}
-			$("#map").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-34)+"px");
+			$("#map").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-17)+"px");
 			if (!map) {
 				map = L.map('map', {closePopupOnClick:false});
 				L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
