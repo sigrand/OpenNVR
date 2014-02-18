@@ -180,7 +180,7 @@
 			}
 			$("#map").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-34)+"px");
 			if (!map) {
-				map = L.map('map');
+				map = L.map('map', {closePopupOnClick:false});
 				L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
 					attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
 				}).addTo(map);
@@ -195,7 +195,7 @@
 			$("#on_MyPlayer"+i).click(function(){
 				cam_id = carousel_cams[this.id.substring(11)];
 				map.setView(markers[carousel_cams[this.id.substring(11)]].getLatLng(), 20, {animate:true});
-				markers[carousel_cams[this.id.substring(11)]].bindPopup(document.getElementById("MyPlayer_div")).openPopup();
+				markers[carousel_cams[this.id.substring(11)]].openPopup();
 			});
 		}
 
