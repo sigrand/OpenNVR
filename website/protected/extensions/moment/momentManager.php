@@ -8,7 +8,7 @@ class momentManager {
 		$this->moment = new moment(
 			$http,
 			array(
-				'server_ip' => Yii::app()->params['moment_server_ip'],
+				'server_ip' => '127.0.0.1',
 				'server_port' => Yii::app()->params['moment_server_port'],
 				'web_port' => Yii::app()->params['moment_web_port'],
 				)
