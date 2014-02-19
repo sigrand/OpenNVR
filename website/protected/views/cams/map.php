@@ -136,7 +136,7 @@
 		if (cam_id != "") {
 			// for popup player;
 			document["MyPlayer"].setSource(<?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>, cam_id+"_low", cam_id);
-			document.getElementById("open_link").href="/index.php/cams/fullscreen/id/"+cam_id;
+			document.getElementById("open_link").href="/index.php/cams/fullscreen/full/1/id/"+cam_id;
 			cam_id = "";
 		} else {
 			// for carousel players
