@@ -11,18 +11,18 @@ static LogGroup libMary_logGroup_recpath ("mod_ffmpeg.recpath", LogLevel::I);
 
 RecpathConfig::RecpathConfig()
 {
-    m_bIsEmpty = true;
+    m_bIsInit = false;
     m_configJson = "";
 }
 
 RecpathConfig::~RecpathConfig()
 {
     m_configs.clear();
-    m_bIsEmpty = true;
+    m_bIsInit = false;
     m_configJson = "";
 }
 
-bool RecpathConfig::LoadConfig(std::string path_to_config)
+bool RecpathConfig::LoadConfig(const std::string & path_to_config)
 {
     logD(recpath, _func_);
     m_mutex.lock();
@@ -36,24 +36,24 @@ bool RecpathConfig::LoadConfig(std::string path_to_config)
     std::ifstream config_file(path_to_config, std::ifstream::binary);
     if(!config_file.good())
     {
-        logE_(_func_, "fail to load config");
         m_mutex.unlock();
+        logE_(_func_, "fail to load config");
         return false;
     }
 
     bool parsingSuccessful = reader.parse( config_file, root, false );
     if(!parsingSuccessful)
     {
-        logE_(_func_, "fail to parse config");
         m_mutex.unlock();
+        logE_(_func_, "fail to parse config");
         return false;
     }
 
     Json::Value configs = root["configs"];
     if(configs.empty())
     {
-        logE_(_func_, "fail to find \"configs\" section");
         m_mutex.unlock();
+        logE_(_func_, "fail to find \"configs\" section");
         return false;
     }
 
@@ -67,33 +67,27 @@ bool RecpathConfig::LoadConfig(std::string path_to_config)
 
         if(path.empty())// || quota.empty() || mode.empty())
         {
-            logE_(_func_, "fail to parse params for section No ", itr.index());
             m_configs.clear();
             m_mutex.unlock();
+            logE_(_func_, "fail to parse params for section No ", itr.index());
             return false;
         }
 
-        std::vector<int> vec;
-//        vec.push_back(quota.asInt());
-//        int nMode = !mode.asString().compare("ro")? 0:
-//                    !mode.asString().compare("rw")? 1: -1;
-
-//        vec.push_back(nMode);
-
-        m_configs[path.asString()] = vec;
+        m_configs[path.asString()] = ConfigParam();
     }
+
     // dump config in log
     int i = 0;
     for(ConfigMap::const_iterator it = m_configs.begin(); it != m_configs.end(); ++it)
     {
         logD(recpath, _func_, "PathEntry ", i++);
         logD(recpath, _func_, "Path: ", it->first.c_str());
-//        logD(recpath, _func_, "Quota: ", it->second[0]);
-//        logD(recpath, _func_, "Mode: ", it->second[1]);
+//        logD(recpath, _func_, "Quota: ", it->second.quota);
+//        logD(recpath, _func_, "Mode: ", it->second.write_mode);
     }
     m_configJson = root.toStyledString();
 
-    m_bIsEmpty = false;
+    m_bIsInit = true;
 
     m_mutex.unlock();
 
@@ -102,7 +96,12 @@ bool RecpathConfig::LoadConfig(std::string path_to_config)
 
 bool RecpathConfig::IsEmpty()
 {
-    return m_bIsEmpty;
+    return !m_configs.size();
+}
+
+bool RecpathConfig::IsInit()
+{
+    return m_bIsInit;
 }
 
 std::string RecpathConfig::GetConfigJson()
@@ -110,7 +109,12 @@ std::string RecpathConfig::GetConfigJson()
     return m_configJson;
 }
 
-std::string RecpathConfig::GetNextPath(const char * prev_path)
+std::string RecpathConfig::GetNextPath()
+{
+    return GetNextPath(std::string());
+}
+
+std::string RecpathConfig::GetNextPath(const std::string & prev_path)
 {
     logD(recpath, _func_);
 
@@ -124,9 +128,9 @@ std::string RecpathConfig::GetNextPath(const char * prev_path)
     }
 
     std::string next_path;
-    if(prev_path)
+    if(prev_path.size())
     {
-        logD(recpath, _func_, "prev_path is ", prev_path);
+        logD(recpath, _func_, "prev_path is ", prev_path.c_str());
         ConfigMap::iterator itr = m_configs.find(std::string(prev_path));
         if(itr == m_configs.end())
         {
@@ -165,18 +169,18 @@ std::string RecpathConfig::GetNextPath(const char * prev_path)
 }
 
 bool
-RecpathConfig::IsPathExist(const char * path)
+RecpathConfig::IsPathExist(const std::string & path)
 {
     logD(recpath, _func_);
 
     m_mutex.lock();
 
-    ConfigMap::iterator itr = m_configs.find(std::string(path));
+    ConfigMap::iterator itr = m_configs.find(path);
     bool bRes = (itr != m_configs.end());
     if(bRes)
-        logD(recpath, _func_, "path [", path, "] exist");
+        logD(recpath, _func_, "path [", path.c_str(), "] exist");
     else
-        logD(recpath, _func_, "path [", path, "] doesnt exist");
+        logD(recpath, _func_, "path [", path.c_str(), "] doesnt exist");
 
     m_mutex.unlock();
 

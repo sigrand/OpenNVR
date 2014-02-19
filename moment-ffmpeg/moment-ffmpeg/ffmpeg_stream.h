@@ -33,6 +33,7 @@
 #include <moment-ffmpeg/nvr_cleaner.h>
 #include <moment-ffmpeg/stat_measurer.h>
 #include <moment-ffmpeg/rec_path_config.h>
+#include <moment-ffmpeg/channel_checker.h>
 #include <moment-ffmpeg/time_checker.h>
 
 extern "C" {
@@ -53,6 +54,43 @@ using namespace M;
 using namespace Moment;
 
 static int ff_lockmgr(void **mutex, enum AVLockOp op);
+
+struct stStreamInfo
+{
+    std::string streamType;
+    std::string codecName;
+    std::string profile;
+};
+
+struct stVideoStream
+{
+    stVideoStream():fps(0),width(0),height(0){}
+    stStreamInfo streamInfo;
+    double fps;
+    int width;
+    int height;
+};
+
+struct stAudioStream
+{
+    stAudioStream():sampleRate(0){}
+    stStreamInfo streamInfo;
+    int sampleRate;
+};
+
+struct stOtherStream
+{
+    stStreamInfo streamInfo;
+};
+
+struct stSourceInfo
+{
+    std::string sourceName;
+    std::string uri;
+    std::vector<stVideoStream> videoStreams;
+    std::vector<stAudioStream> audioStreams;
+    std::vector<stOtherStream> otherStreams;
+};
 
 class nvrData
 {
@@ -83,7 +121,6 @@ private /*variables*/:
     StRef<String>       m_channelName;
 
     bool m_bIsInit;
-    bool m_bWriteTrailer;
 };
 
 class FFmpegStream;
@@ -105,8 +142,12 @@ public:
 
     static void CloseCodecs(AVFormatContext * pAVFrmtCntxt);
 
-    int GetChannelState(bool & bState);
-    int SetChannelState(bool const bState);
+    int GetRecordingState(bool & bState);       // affects on m_bRecordingState, which controls from user
+    int SetRecordingState(bool const bState);
+
+    bool IsRecording(); // returns actual info about recording (m_bIsRecording)
+
+    stSourceInfo GetSourceInfo();
 
 private /*functions*/:
 
@@ -122,18 +163,21 @@ private /*variables*/:
     StRef<String>       m_channelName;
     Uint64              m_file_duration_sec;
 
-    bool m_bRecordingState;     // true - do record, false - do not
-    bool m_bRecordingEnable;    // the same thing, value gets from config (mod_nvr.enable)
+    bool m_bRecordingState;     // true - do record, false - do not. value controlled by user (f.e. via http request)
+    bool m_bRecordingEnable;    // the same thing, value gets from config (mod_nvr.enable and so on)
+    volatile bool m_bIsRecording;        // is source really recording on disk
     bool m_bGotFirstFrame;
-    std::vector<int64_t> m_vecPts; // correction values for packets
-    std::vector<int64_t> m_vecDts; // correction value for packets
+    std::vector<Uint64> m_vecPts; // correction values for packets
+    std::vector<Uint64> m_vecDts; // correction value for packets
 
     nvrData m_nvrData;
-    RecpathConfig * m_recpathConfig;
+    RecpathConfig * m_pRecpathConfig;
 
     AVBitStreamFilterContext * m_absf_ctx; // filter for malformed aac
 
     TimeChecker m_tcFFTimeout; // timer for timeout in ffmpeg blocking operations such as av_read_frame
+
+    stSourceInfo m_sourceInfo;
 };
 
 class FFmpegStream : public MediaSource
@@ -182,7 +226,8 @@ private:
 
     ffmpegStreamData m_ffmpegStreamData;
     Ref<MConfig::Config> config;
-    RecpathConfig * m_recpathConfig;
+    RecpathConfig * m_pRecpathConfig;
+    Ref<ChannelChecker> m_channel_checker;
     StatMeasurer m_statMeasurer;
 #ifdef LIBMARY_PERFORMANCE_TESTING
     TimeChecker m_timeChecker;
@@ -284,7 +329,7 @@ private:
     // If 'true', then the stream associated with this FFmpegStream
     // instance has been closed, which means that all associated ffmpeg
     // objects should be released.
-    bool stream_closed;
+    volatile bool stream_closed;
 
     // Bytes received (in_stats_el's sink pad).
     Uint64 rx_bytes;
@@ -295,7 +340,7 @@ private:
 
     LibMary_ThreadLocal *tlocal;
 
-    bool m_bIsPlaying;
+    volatile bool m_bIsRestreaming;
     bool m_bReleaseCalled;      // called releasePipeline when we are in init stage in createSmartPipelineForUri
 
     mt_end
@@ -359,14 +404,22 @@ public:
 
     void beginPushPacket();
 
-    int GetChannelState(bool & bState);
-    int SetChannelState(bool const bState);
+    int GetRecordingState(bool & bState);
+    int SetRecordingState(bool const bState);
+
+    bool IsRecording();
+    bool IsRestreaming();
+
+    bool IsClosed();
+    stSourceInfo GetSourceInfo();
+
 #ifdef LIBMARY_PERFORMANCE_TESTING
     IStatMeasurer* getStatMeasurer();
     ITimeChecker* getTimeChecker();
 #endif
 
     StatMeasure GetStatMeasure();
+    Ref<ChannelChecker> GetChannelChecker();
   mt_iface_end
 
     mt_const void init (CbDesc<MediaSource::Frontend> const &frontend,
@@ -379,7 +432,8 @@ public:
                         ChannelOptions    *channel_opts,
                         PlaybackItem      *playback_item,
                         MConfig::Config *config,
-                        RecpathConfig *recpathConfig);
+                        RecpathConfig *recpathConfig,
+                        ChannelChecker * channel_checker);
 
      FFmpegStream ();
     ~FFmpegStream ();

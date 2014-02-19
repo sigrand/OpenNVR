@@ -5,15 +5,74 @@
 #include <moment-ffmpeg/time_checker.h>
 #include <moment-ffmpeg/naming_scheme.h>
 
+#ifdef __linux__
+#include <dirent.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
 
 using namespace M;
 using namespace Moment;
 
 namespace MomentFFmpeg {
 
+#define CONCAT_INTERVAL 6
+#define TIMER_TICK 5 // in seconds
+
 static LogGroup libMary_logGroup_channelcheck ("mod_ffmpeg.channelcheck", LogLevel::E);
 
-bool ChannelChecker::writeIdx(ChannelFileSummary & files_existence,
+#ifdef __linux__
+uint64_t get_dir_space(char *dirname)
+{
+  DIR *dir;
+  struct dirent *ent;
+  struct stat st;
+  char buf[PATH_MAX];
+  uint64_t totalsize = 0LL;
+
+  if(!(dir = opendir(dirname)))
+  {
+    logE(channelcheck, _func_, "fail to open folder: ", dirname);
+    return totalsize;
+  }
+
+  while((ent = readdir(dir)))
+  {
+    if(!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, ".."))
+      continue;
+
+    sprintf(buf, "%s%s", dirname, ent->d_name);
+
+    if(lstat(buf, &st) == -1)
+    {
+      logE(channelcheck, _func_, "Couldn't stat: ", buf);
+      continue;
+    }
+
+    if(S_ISDIR(st.st_mode) && !S_ISLNK(st.st_mode))
+    {
+      uint64_t dirsize;
+
+      strcat(buf, "/");
+      dirsize = get_dir_space(buf);
+      totalsize += dirsize;
+    }
+    else if(S_ISREG(st.st_mode)) // We only want to count regular files
+    {
+      totalsize += st.st_size;
+    }
+  }
+
+  closedir(dir);
+  return totalsize;
+}
+#endif
+
+bool ChannelChecker::writeIdx(const ChannelFileSummary & files_existence,
                               StRef<String> const dir_name, StRef<String> const channel_name)
 {
     TimeChecker tc;tc.Start();
@@ -27,14 +86,15 @@ bool ChannelChecker::writeIdx(ChannelFileSummary & files_existence,
     idxFile.open(path);
     if (idxFile.is_open())
     {
-        ChannelFileSummary::iterator it = files_existence.begin();
-        for(it; it != files_existence.end(); ++it)
+        ChannelFileSummary::const_iterator it = files_existence.begin();
+        
+        for(; it != files_existence.end(); ++it)
         {
             idxFile << it->first;
             idxFile << "|";
-            idxFile << it->second.first;
+            idxFile << it->second.timeStart;
             idxFile << "|";
-            idxFile << it->second.second;
+            idxFile << it->second.timeEnd;
             idxFile << std::endl;
         }
         idxFile.close();
@@ -85,7 +145,12 @@ bool ChannelChecker::readIdx(StRef<String> const dir_name, StRef<String> const c
             strToInt32_safe(strToken->cstr(), &initTime);
             line.erase(pos);
 
-            m_chFileDiskTimes[line] = std::make_pair(std::string(dir_name->cstr()), std::make_pair(initTime, endTime));
+            ChChDiskTimes chChDiskTimes;
+            chChDiskTimes.times.timeStart = initTime;
+            chChDiskTimes.times.timeEnd = endTime;
+            chChDiskTimes.diskName = std::string(dir_name->cstr());
+
+            m_chFileDiskTimes[line] = chChDiskTimes;
         }
         idxFile.close();
         logD(channelcheck, _func_, "read successful, idxfile: ", path.c_str());
@@ -111,12 +176,63 @@ ChannelChecker::getChannelExistence()
     TimeChecker tc;tc.Start();
 
     cleanCache();
-    updateLastRecordInCache();
+    updateCache(true);
+
+    m_mutex.lock();
+
+    ChannelFileTimes chFileTimes;
+    ChannelFileDiskTimes::iterator it;
+    chFileTimes.reserve(m_chFileDiskTimes.size());
+    for(it = m_chFileDiskTimes.begin(); it != m_chFileDiskTimes.end(); ++it)
+    {
+        ChChTimes chChTimes;
+        chChTimes.timeStart = (*it).second.times.timeStart;
+        chChTimes.timeEnd = (*it).second.times.timeEnd;
+        chFileTimes.push_back(chChTimes);
+    }
+
+
+    if(chFileTimes.size() >= 2)
+    {
+        ChannelFileTimes::iterator it = chFileTimes.begin();
+        std::advance (it,1);
+
+        while(1)
+        {
+            if (it == chFileTimes.end())
+                break;
+
+            std::vector<ChChTimes>::iterator it1 = it;
+            std::advance (it1,-1);
+            if ((it->timeStart - (it1)->timeEnd) < CONCAT_INTERVAL)
+            {
+                ChChTimes chChTimes;
+                chChTimes.timeStart = (it1)->timeStart;
+                chChTimes.timeEnd = (it)->timeEnd;
+
+                std::vector<ChChTimes>::iterator prev = it;
+                std::advance (prev,-1);
+                std::vector<ChChTimes>::iterator prevPrev = it;
+                std::advance (prevPrev,-2);
+
+                chFileTimes.erase(it);
+                chFileTimes.erase(prev);
+                std::vector<ChChTimes>::iterator prevPrev1 = prevPrev;
+                std::advance (prevPrev1,1);
+                chFileTimes.insert(prevPrev1, chChTimes);
+                it = chFileTimes.begin();
+                std::advance (it,1);
+            }
+            else ++it;
+        }
+    }
+
+    m_mutex.unlock();
 
     Time t;tc.Stop(&t);
     logD(channelcheck, _func_,"getChannelExistence exectime = [", t, "]");
 
-    return m_chTimes;
+    return chFileTimes;
 }
 
 ChannelChecker::ChannelFileDiskTimes
@@ -127,12 +243,54 @@ ChannelChecker::getChannelFileDiskTimes ()
     TimeChecker tc;tc.Start();
 
     cleanCache();
-    updateLastRecordInCache();
+    updateCache(true);
 
     Time t;tc.Stop(&t);
     logD(channelcheck, _func_,"getChannelFileDiskTimes exectime = [", t, "]");
 
     return m_chFileDiskTimes;
+}
+
+ChannelChecker::DiskSizes
+ChannelChecker::getDiskSizes ()
+{
+    DiskSizes diskSizes;
+
+    std::string curPath = m_recpathConfig->GetNextPath();
+    while(curPath.length() != 0)
+    {
+        Uint64 size = 0;
+
+        StRef<String> strRecDir = st_makeString(curPath.c_str());
+        Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
+        NvrFileIterator file_iter;
+        file_iter.init (vfs, m_channel_name->mem(), 0);
+        StRef<String> path = file_iter.getNext();
+        if(path != NULL && !path->isNullString()) // if <strRecDir>/<channel_name> folder exist (and it is non empty)
+        {
+#ifdef __linux__
+            StRef<String> fullRecDir;
+            char ch = *curPath.rbegin();
+            if(ch != '/')
+                fullRecDir = st_makeString(curPath.c_str(), "/", m_channel_name, "/");
+            else
+                fullRecDir = st_makeString(curPath.c_str(), "/", m_channel_name);
+            size = get_dir_space(fullRecDir->cstr()); // in bytes
+#else
+            size = 0; // TODO: implement
+#endif
+        }
+        else
+        {
+            size = 0;
+        }
+
+        diskSizes[curPath] = size;
+
+        curPath = m_recpathConfig->GetNextPath(curPath);
+    }
+
+    return diskSizes;
 }
 
 ChannelChecker::ChannelFileSummary
@@ -143,9 +301,12 @@ ChannelChecker::getChFileSummary(const std::string & dirname)
     ChannelFileSummary chFileSummary;
     for(ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin(); itr != m_chFileDiskTimes.end(); itr++)
     {
-        if(itr->second.first.compare(dirname) == 0)
+        if(itr->second.diskName.compare(dirname) == 0)
         {
-            chFileSummary[itr->first] = std::make_pair(itr->second.second.first, itr->second.second.second);
+            ChChTimes chChTimes;
+            chChTimes.timeStart = itr->second.times.timeStart;
+            chChTimes.timeEnd = itr->second.times.timeEnd;
+            chFileSummary[itr->first] = chChTimes;
         }
     }
 
@@ -157,7 +318,25 @@ ChannelChecker::initCache()
 {
     logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
+    TimeChecker tc;tc.Start();
+
     m_mutex.lock();
+
+    initCacheFromIdx();
+    completeCache();
+
+    m_mutex.unlock();
+
+    Time t;tc.Stop(&t);
+    logD(channelcheck, _func_,"ChannelChecker.initCache exectime = [", t, "]");
+
+    return CheckResult_Success;
+}
+
+ChannelChecker::CheckResult
+ChannelChecker::initCacheFromIdx()
+{
+    logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
     TimeChecker tc;tc.Start();
 
@@ -168,23 +347,19 @@ ChannelChecker::initCache()
 
         readIdx(strRecDir, m_channel_name);
 
-        curPath = m_recpathConfig->GetNextPath(curPath.c_str());
+        curPath = m_recpathConfig->GetNextPath(curPath);
     }
 
     if(!m_chFileDiskTimes.empty()) // if cache is not empty, then we add only new records
     {
         ChannelFileDiskTimes::reverse_iterator itr = m_chFileDiskTimes.rbegin();
         StRef<String> strLastfile = st_makeString(itr->first.c_str());
-        StRef<String> strRecDir = st_makeString(itr->second.first.c_str());
+        StRef<String> strRecDir = st_makeString(itr->second.diskName.c_str());
         addRecordInCache(strLastfile, strRecDir, true);
     }
 
-    recreateExistence();
-    concatenateSuccessiveIntervals();
-
     Time t;tc.Stop(&t);
-    logD(channelcheck, _func_,"ChannelChecker.initCache exectime = [", t, "]");
-    m_mutex.unlock();
+    logD(channelcheck, _func_,"ChannelChecker.initCacheFromIdx exectime = [", t, "]");
 
     return CheckResult_Success;
 }
@@ -201,44 +376,111 @@ ChannelChecker::DeleteFromCache(const std::string & dirName, const std::string &
     StRef<String> strRecDir = st_makeString(dirName.c_str());
     writeIdx(chFileSummary, strRecDir, m_channel_name);
 
-    recreateExistence();
-    concatenateSuccessiveIntervals();
-
-    m_mutex.unlock();
-
-    return true;
-}
-
-bool
-ChannelChecker::updateLastRecordInCache()
-{
-    logD(channelcheck, _func_);
-
-    m_mutex.lock();
-
-    ChannelFileDiskTimes::reverse_iterator itr = m_chFileDiskTimes.rbegin();
-
-    if(itr != m_chFileDiskTimes.rend())
-    {
-        StRef<String> strRecDir = st_makeString(itr->second.first.c_str());
-        StRef<String> path = st_makeString(itr->first.c_str());
-        addRecordInCache(path, strRecDir, true);
-
-        recreateExistence();
-        concatenateSuccessiveIntervals();
-    }
-
     m_mutex.unlock();
 
     return true;
 }
 
 ChannelChecker::CheckResult
-ChannelChecker::completeCache(bool bUpdate)
+ChannelChecker::updateCache(bool bForceUpdate)
 {
-    logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
+    CheckResult rez = CheckResult_Success;
+
+    logD(channelcheck, _func_);
 
     m_mutex.lock();
+
+    ChannelFileDiskTimes::reverse_iterator itr = m_chFileDiskTimes.rbegin();
+
+    if(itr != m_chFileDiskTimes.rend()) // if last recorded file exists
+    {
+        std::string lastfile = itr->first;
+        StRef<String> const strlastfile = st_makeString(lastfile.c_str());
+        std::string lastdir = itr->second.diskName;
+        StRef<String> const strlastdir = st_makeString(lastdir.c_str());
+
+        Time timeOfRecord = 0;
+        StRef<String> const flv_filename = st_makeString (lastfile.c_str(), ".flv");
+        FileNameToUnixTimeStamp().Convert(flv_filename, timeOfRecord);
+        timeOfRecord = timeOfRecord / 1000000000LL;
+
+        bool bNewerFile = false; // false - last recorded file is recording file now, true - there is newer file
+        std::string curPath = m_recpathConfig->GetNextPath();
+        while(curPath.length() != 0)
+        {
+            NvrFileIterator file_iter;
+            StRef<String> strRecDir = st_makeString(curPath.c_str());
+            Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
+            file_iter.init (vfs, m_channel_name->mem(), timeOfRecord);
+            StRef<String> path = file_iter.getNext();
+            // here path is last recorded file (if it is the same disk as for last recorded file)
+            // or just some old last file (if it is not the same disk as for last recorded file)
+            // or NULL (if current disk(curPath) doesnt contain files)
+            // OR "" (if current disk(curPath) didnt contain files and now has one recording file)
+            if(path != NULL)
+            {
+                StRef<String> pathNext = file_iter.getNext();
+                // pathNext is new recording file
+                // or NULL (if nvr writes on other disk or last recorded file is recording now)
+                if(pathNext != NULL && !pathNext->isNullString())
+                {
+                    ChannelFileSummary files_existence;
+                    // update duration for last recorded file
+                    addRecordInCache(strlastfile, strlastdir, true);
+                    files_existence = getChFileSummary(lastdir);
+                    writeIdx(files_existence, strlastdir, m_channel_name);
+
+                    // add new recording file in cache
+                    addRecordInCache(pathNext, strRecDir, false);
+                    files_existence = getChFileSummary(curPath);
+                    writeIdx(files_existence, strRecDir, m_channel_name);
+
+                    bNewerFile = true;
+                    break; // recording file is only one for one source
+                }
+            }
+            curPath = m_recpathConfig->GetNextPath(curPath);
+        }
+        if(!bNewerFile)
+        {
+            ChannelFileSummary files_existence;
+            // update duration for last recorded file
+            addRecordInCache(strlastfile, strlastdir, bForceUpdate);
+            files_existence = getChFileSummary(lastdir);
+            writeIdx(files_existence, strlastdir, m_channel_name);
+        }
+    }
+    else // no one records exist
+    {
+        std::string curPath = m_recpathConfig->GetNextPath();
+        while(curPath.length() != 0)
+        {
+            NvrFileIterator file_iter;
+            StRef<String> strRecDir = st_makeString(curPath.c_str());
+            Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
+            file_iter.init (vfs, m_channel_name->mem(), 0);
+            StRef<String> path = file_iter.getNext();
+            if(path != NULL && !path->isNullString()) // if it is not null, then it is recording file
+            {
+                ChannelFileSummary files_existence;
+                addRecordInCache(path, strRecDir, false);
+                files_existence = getChFileSummary(curPath);
+                writeIdx(files_existence, strRecDir, m_channel_name);
+                break; // recording file is only one for one source
+            }
+            curPath = m_recpathConfig->GetNextPath(curPath);
+        }
+    }
+
+    m_mutex.unlock();
+
+    return rez;
+}
+
+ChannelChecker::CheckResult
+ChannelChecker::completeCache()
+{
+    logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
     TimeChecker tc;tc.Start();
 
@@ -264,31 +506,18 @@ ChannelChecker::completeCache(bool bUpdate)
         StRef<String> path = file_iter.getNext();
         while(path != NULL && !path->isNullString())
         {
-            StRef<String> pathNext = file_iter.getNext();
-            if (pathNext != NULL)
-            {
-                rez = addRecordInCache(path, strRecDir, true);
-            }
-            else
-            {
-                rez = addRecordInCache(path, strRecDir, bUpdate);
-            }
-            path = st_makeString(pathNext);
+            rez = addRecordInCache(path, strRecDir, true);
+            path = file_iter.getNext();
         }
 
         files_existence = getChFileSummary(curPath);
         writeIdx(files_existence, strRecDir, m_channel_name);
 
-        curPath = m_recpathConfig->GetNextPath(curPath.c_str());
+        curPath = m_recpathConfig->GetNextPath(curPath);
     }
-
-    recreateExistence();
-    concatenateSuccessiveIntervals();
 
     Time t;tc.Stop(&t);
     logD (channelcheck, _func_,"ChannelChecker.completeCache exectime = [", t, "]");
-
-    m_mutex.unlock();
 
     return rez;
 }
@@ -308,7 +537,6 @@ ChannelChecker::cleanCache()
 
     TimeChecker tc;tc.Start();
 
-    bool bNeedRecreateExistence = false;
     std::string curPath = m_recpathConfig->GetNextPath();
     while(curPath.length() != 0)
     {
@@ -332,9 +560,9 @@ ChannelChecker::cleanCache()
             ChannelFileDiskTimes::iterator it = m_chFileDiskTimes.begin();
             while(it != m_chFileDiskTimes.end())
             {
-                if(it->second.first.compare(curPath) == 0)
+                if(it->second.diskName.compare(curPath) == 0)
                 {
-                    logD(channelcheck, _func_,"file [", it->first.c_str(), ",{", it->second.second.first, ",", it->second.second.second, "}]");
+                    logD(channelcheck, _func_,"file [", it->first.c_str(), ",{", it->second.times.timeStart, ",", it->second.times.timeEnd, "}]");
                     Time timeOfRecord = 0;
                     StRef<String> const flv_filename = st_makeString ((*it).first.c_str(), ".flv");
                     FileNameToUnixTimeStamp().Convert(flv_filename, timeOfRecord);
@@ -345,8 +573,6 @@ ChannelChecker::cleanCache()
                     {
                         logD(channelcheck, _func_,"clean it!");
                         m_chFileDiskTimes.erase(it++);
-
-                        bNeedRecreateExistence = true;
                     }
                     else
                     {
@@ -367,7 +593,7 @@ ChannelChecker::cleanCache()
             ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin();
             while(itr != m_chFileDiskTimes.end())
             {
-                if(itr->second.first.compare(curPath) == 0)
+                if(itr->second.diskName.compare(curPath) == 0)
                 {
                     m_chFileDiskTimes.erase(itr++);
                 }
@@ -376,19 +602,12 @@ ChannelChecker::cleanCache()
                     itr++;
                 }
             }
-            bNeedRecreateExistence = true;
         }
 
         ChannelFileSummary files_existence = getChFileSummary(curPath);
         writeIdx(files_existence, strRecDir, m_channel_name);
 
-        curPath = m_recpathConfig->GetNextPath(curPath.c_str());
-    }
-
-    if(bNeedRecreateExistence)
-    {
-        recreateExistence();
-        concatenateSuccessiveIntervals();
+        curPath = m_recpathConfig->GetNextPath(curPath);
     }
 
     Time t;tc.Stop(&t);
@@ -397,46 +616,6 @@ ChannelChecker::cleanCache()
     m_mutex.unlock();
 
     return CheckResult_Success;
-}
-
-ChannelChecker::CheckResult
-ChannelChecker::recreateExistence()
-{
-    m_chTimes.clear();
-    std::vector<std::pair<int,int>>().swap(m_chTimes);
-
-    ChannelFileDiskTimes::iterator it;
-    m_chTimes.reserve(m_chFileDiskTimes.size());
-    for(it = m_chFileDiskTimes.begin(); it != m_chFileDiskTimes.end(); ++it)
-    {
-        m_chTimes.push_back(std::make_pair((*it).second.second.first,(*it).second.second.second));
-    }
-}
-
-void
-ChannelChecker::concatenateSuccessiveIntervals()
-{
-    if(m_chTimes.size() < 2)
-        return;
-
-    std::vector<std::pair<int,int>>::iterator it = m_chTimes.begin() + 1;
-    while(1)
-    {
-        if (it == m_chTimes.end())
-            break;
-
-        if ((it->first - (it-1)->second) < 6)
-        {
-            std::pair<int,int> concatenated = std::make_pair<int,int>((int)(it-1)->first, (int)it->second);
-            std::vector<std::pair<int,int>>::iterator prev = it-1;
-            std::vector<std::pair<int,int>>::iterator prevPrev = it-2;
-            m_chTimes.erase(it);
-            m_chTimes.erase(prev);
-            m_chTimes.insert(prevPrev+1, concatenated);
-            it = m_chTimes.begin() + 1;
-        }
-        else ++it;
-    }
 }
 
 ChannelChecker::CheckResult
@@ -460,8 +639,11 @@ ChannelChecker::addRecordInCache(StRef<String> path, StRef<String> strRecDir, bo
         int const unixtime_timestamp_end = unixtime_timestamp_start + (int)fileReader.GetDuration();
         logD(channelcheck, _func_,"(int)fileReader.GetDuration() = [", (int)fileReader.GetDuration(), "]");
 
-        m_chFileDiskTimes[std::string(path->cstr())] = std::make_pair(std::string(strRecDir->cstr()),
-                                                                      std::make_pair(unixtime_timestamp_start, unixtime_timestamp_end));
+        ChChDiskTimes chChDiskTimes;
+        chChDiskTimes.times.timeStart = unixtime_timestamp_start;
+        chChDiskTimes.times.timeEnd = unixtime_timestamp_end;
+        chChDiskTimes.diskName = std::string(strRecDir->cstr());
+        m_chFileDiskTimes[std::string(path->cstr())] = chChDiskTimes;
     }
 
     Time t;tc.Stop(&t);
@@ -478,7 +660,7 @@ ChannelChecker::refreshTimerTick (void * const _self)
     logD (channelcheck, _func_);
 
     self->cleanCache();
-    self->completeCache(false);
+    self->updateCache(false);
 }
 
 mt_const void
@@ -495,7 +677,7 @@ ChannelChecker::init (Timers * const mt_nonnull timers, RecpathConfig * recpathC
     m_timers = timers;
 
     m_timer_key = m_timers->addTimer (CbDesc<Timers::TimerCallback> (refreshTimerTick, this, this),
-                      5    /* time_seconds */,
+                      TIMER_TICK,
                       true /* periodical */,
                       false /* auto_delete */);
 }
@@ -506,17 +688,11 @@ void ChannelChecker::dumpData()
 
     m_mutex.lock();
 
-    logD(channelcheck, _func_, "File times:");
-    for(int i = 0; i < m_chTimes.size(); i++)
-    {
-        logD(channelcheck, _func_,"time interval = {", m_chTimes[i].first, ",", m_chTimes[i].second, "}");
-    }
-
     logD(channelcheck, _func_, "File summary:");
     for(ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin(); itr != m_chFileDiskTimes.end(); ++itr)
     {
-        logD(channelcheck, _func_,"file [", itr->first.c_str(), " on ", itr->second.first.c_str(), "] = {",
-             itr->second.second.first, ",", itr->second.second.second, "}");
+        logD(channelcheck, _func_,"file [", itr->first.c_str(), " on ", itr->second.diskName.c_str(), "] = {",
+             itr->second.times.timeStart, ",", itr->second.times.timeEnd, "}");
     }
 
     m_mutex.unlock();

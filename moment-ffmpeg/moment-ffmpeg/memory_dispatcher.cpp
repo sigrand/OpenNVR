@@ -8,6 +8,10 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
+#define FREESPACELIMIT 1024 * 100
+#define BITRATE 1024 * 8
+#define LIVETIMECACHE 5 * 60
+
 static LogGroup libMary_logGroup_memdisp ("mod_ffmpeg.memory_dispatcher", LogLevel::E);
 
 StateMutex MemoryDispatcher::g_mutexMemoryDispatcher;
@@ -97,7 +101,7 @@ MemoryDispatcher& MemoryDispatcher::Instance()
     return theSingleInstance;
 }
 
-static bool len_compare(std::string a, std::string b)
+static bool len_compare(const std::string a, const std::string b)
 {
     return (a.length() < b.length());
 }
@@ -115,10 +119,14 @@ unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, cons
         return 0;
     }
 
-    unsigned long nThreshold = 1024 * 100; // 100MB
-    unsigned long nBitrate = 1024 * 8; // 8Mb/s
-    time_t liveTimeInCache = 5 * 60; // 5 minutes
+    unsigned long nThreshold = FREESPACELIMIT;
+    unsigned long nBitrate = BITRATE;
+    time_t liveTimeInCache = LIVETIMECACHE;
     logD(memdisp, _func_, "liveTimeInCache = [", liveTimeInCache, "]");
+
+    std::string pathToFile;
+    size_t found = fileName.rfind("/");
+    pathToFile = fileName.substr(0, found);
 
     unsigned long requiredSize = (nBitrate / 8) * nDuration; // in KBytes
     unsigned long freeSize = -1;
@@ -195,9 +203,10 @@ unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, cons
     while(it != pStreams->end())
     {
         logD(memdisp, _func_, "filename = [", it->first.c_str(), "]");
-        logD(memdisp, _func_, "timeCreation = [", it->second.second.first, "]");
-        logD(memdisp, _func_, "timeUpdate = [", it->second.second.second, "]");
-        if(curTime - it->second.second.second > liveTimeInCache)
+        
+        logD(memdisp, _func_, "timeCreation = [", it->second.fileTimes.timeStart, "]");
+        logD(memdisp, _func_, "timeUpdate = [", it->second.fileTimes.timeUpdate, "]");
+        if(curTime - it->second.fileTimes.timeUpdate > liveTimeInCache)
         {
             // expired record
             logD(memdisp, _func_, "erase expired file = [", it->first.c_str(), "]");
@@ -205,20 +214,36 @@ unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, cons
         }
         else
         {
-            reservedSizeByStreams += it->second.first.first;
-            actualSizeOfStreams   += it->second.first.second;
+            reservedSizeByStreams += it->second.fileSizes.reservedSize;
+            actualSizeOfStreams   += it->second.fileSizes.actualSize;
             ++it;
         }
     }
     logD(memdisp, _func_, "reservedSizeByStreams = [", reservedSizeByStreams, "]");
-    logD(memdisp, _func_, "reservedSizeByStreams = [", actualSizeOfStreams, "]");
+    logD(memdisp, _func_, "actualSizeOfStreams = [", actualSizeOfStreams, "]");
+    logD(memdisp, _func_, "requiredSize = [", requiredSize, "]");
+    logD(memdisp, _func_, "nThreshold = [", nThreshold, "]");
 
-    bool bRes = (freeSize + actualSizeOfStreams - reservedSizeByStreams - requiredSize) > nThreshold;
+    Int64 intres = Int64(freeSize) + Int64(actualSizeOfStreams) - Int64(reservedSizeByStreams) - Int64(requiredSize);
+    bool bRes = intres > Int64(nThreshold);
 
     if(bRes)
     {
         logD(memdisp, _func_, "add record");
-        pStreams->insert(std::make_pair(fileName, std::make_pair(std::make_pair(requiredSize, 0), std::make_pair(curTime, curTime))));
+
+        FileSizes fileSizes;
+        fileSizes.reservedSize = requiredSize;
+        fileSizes.actualSize = 0;
+
+        FileTimes fileTimes;
+        fileTimes.timeStart = curTime;
+        fileTimes.timeUpdate = curTime;
+
+        FileInfo fileInfo;
+        fileInfo.fileSizes = fileSizes;
+        fileInfo.fileTimes = fileTimes;
+
+        pStreams->insert(std::make_pair(fileName, fileInfo));
     }
     else
     {
@@ -259,7 +284,6 @@ bool MemoryDispatcher::Notify(const std::string & fileName, bool bDone, unsigned
         {
             logD(memdisp, _func_, "itr->first = ", itr->first.c_str());
             vec.push_back(itr->first);
-            itr++;
         }
     }
     std::string strDisk = "";
@@ -281,8 +305,7 @@ bool MemoryDispatcher::Notify(const std::string & fileName, bool bDone, unsigned
     }
     else
     {
-        FilesInfo::iterator it;
-        it = pFilesInfo->find(fileName);
+        FilesInfo::iterator it = pFilesInfo->find(fileName);
         for(FilesInfo::iterator itr1 = pFilesInfo->begin(); itr1 != pFilesInfo->end(); itr1++)
         {
             logD(memdisp, _func_, "fileName in pFilesInfo[", itr1->first.c_str(), "]");
@@ -293,8 +316,8 @@ bool MemoryDispatcher::Notify(const std::string & fileName, bool bDone, unsigned
             gettimeofday(&tv, NULL);
             time_t curTime = tv.tv_sec;
 
-            it->second.first.second = size / 1024; // from Bytes to KB
-            it->second.second.second = curTime; // update time
+            it->second.fileSizes.actualSize = size / 1024; // from Bytes to KB
+            it->second.fileTimes.timeUpdate = curTime; // update time
         }
         else
         {

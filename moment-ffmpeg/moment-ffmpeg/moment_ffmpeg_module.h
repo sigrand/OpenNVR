@@ -41,11 +41,54 @@ namespace MomentFFmpeg {
 using namespace M;
 using namespace Moment;
 
+
 class MomentFFmpegModule : public Object,
                         public MediaSourceProvider
 {
 private:
-    StateMutex mutex;
+    StateMutex m_mutex;
+
+    enum DiskInfoRetVal
+    {
+        NOERR = 0,
+        ERR,
+        NOTIMPLEMENTED
+    };
+
+    struct DiskSizes
+    {
+        unsigned long allSize;
+        unsigned long freeSize;
+        unsigned long usedSize;
+    };
+
+    struct TimeInterval
+    {
+        TimeInterval():timeStart(0),timeEnd(0){}
+        time_t timeStart;
+        time_t timeEnd;
+    };
+
+    struct SourceState
+    {
+        SourceState():isAlive(false),isRestr(false),isWrite(false){}
+        bool isAlive;   // true, if source exist
+        bool isRestr;   // true, if source is restreaming
+        bool isWrite;   // true, if source is writing on disk
+    };
+
+    struct SourceTimes
+    {
+        std::vector<TimeInterval> live;    // times of source's existence
+        std::vector<TimeInterval> restr;   // times of source's restreaming
+        std::vector<TimeInterval> write;   // times of source's writing
+    };
+
+    struct SourceStateTimes
+    {
+        SourceState state;
+        SourceTimes times;
+    };
 
     class ChannelEntry : public HashEntry<>
     {
@@ -95,33 +138,35 @@ private:
 		  MemoryComparator<> >
 	    RecorderEntryHash;
 
-    mt_const MomentServer *moment;
-    mt_const Timers *timers;
-    mt_const PagePool *page_pool;
-    mt_const StRef<String> confd_dir;
-    mt_const StRef<String> recpath_conf;
+    mt_const MomentServer *m_pMoment;
+    mt_const Timers *m_pTimers;
+    mt_const PagePool *m_pPage_pool;
+    mt_const StRef<String> m_confd_dir;
+    mt_const StRef<String> m_recpath_conf;
     RecpathConfig m_recpath_config;
+    Uint64 m_nDownloadLimit;
 
-    mt_const bool serve_playlist_json;
-    mt_const StRef<String> playlist_json_protocol;
+    mt_const bool m_bServe_playlist_json;
 
-    mt_const Ref<ChannelOptions> default_channel_opts;
+    mt_const Ref<ChannelOptions> m_default_channel_opts;
 
-    mt_mutex (mutex) ChannelEntryHash channel_entry_hash;
-    mt_mutex (mutex) RecorderEntryHash recorder_entry_hash;
+    mt_mutex (mutex) ChannelEntryHash m_channel_entry_hash;
+    mt_mutex (mutex) RecorderEntryHash m_recorder_entry_hash;
 
-    ChannelSet channel_set;
+    ChannelSet m_channel_set;
 
     std::map<std::string, WeakRef<FFmpegStream> > m_streams;
 
-    std::map<std::string, Ref<ChannelChecker> > m_channel_checkers;
-    mt_const Ref<MediaViewer>     media_viewer;
+    mt_const Ref<MediaViewer>     m_media_viewer;
 
     // statistics stuff
-    Timers::TimerKey timer_keyStat;
+    Timers::TimerKey m_timer_keyStat;
+    Timers::TimerKey m_timer_updateTimes;
     StatMeasurer m_statMeasurer;
 
-    std::map<time_t, StatMeasure> statPoints;
+    std::map<time_t, StatMeasure> m_statPoints;
+
+    std::map<std::string, SourceStateTimes> m_sourceStateTimes;
 
     bool CreateStatPoint();
 
@@ -134,6 +179,10 @@ private:
     void clearEmptyChannels();
 
     static void refreshTimerTickStat (void *_self);
+
+    bool UpdateSourceTimes();
+
+    static void refreshTimerSourceTimes (void *_self);
     //
 
     bool removeVideoFiles(StRef<String> const channel_name,
@@ -152,7 +201,7 @@ private:
 			       ChannelEntry           *channel_entry);
 
     static StRef<String>  channelExistenceToJson (
-            std::vector<std::pair<int,int>> * const mt_nonnull existence);
+            ChannelChecker::ChannelFileTimes * const mt_nonnull existence);
 
     static StRef<String>  channelFilesExistenceToJson (
             ChannelChecker::ChannelFileDiskTimes * const mt_nonnull chFileDiskTimes);
@@ -199,7 +248,7 @@ private:
 				ConstMemory channel_name,
 				ConstMemory filename_prefix);
 
-    static int getDiskInfo(std::map<std::string, std::vector<int> > & diskInfo);
+    static int getDiskInfo(std::map<std::string, DiskSizes > & diskInfo);
 
     static bool getDiskInfo (std::string & json_respond);
 

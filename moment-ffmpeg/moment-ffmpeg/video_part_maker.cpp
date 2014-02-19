@@ -17,7 +17,7 @@ VideoPartMaker::VideoPartMaker()
     nCurFileStartTime = 0;
     nCurFileShift = 0;
     nEndTime = 0;
-    bIsInit = false;
+    m_bIsInit = false;
 }
 
 VideoPartMaker::~VideoPartMaker()
@@ -28,13 +28,13 @@ VideoPartMaker::~VideoPartMaker()
 bool
 VideoPartMaker::tryOpenNextFile ()
 {
-    if (m_itr == m_channelFileDiskTimes.end())
+    if (m_itr == m_pChannelFileDiskTimes->end())
     {
         logD(vpm, _func_, "end of files");
         return false;
     }
 
-    StRef<String> cur_filename = st_makeString(m_itr->second.first.c_str(), "/", m_itr->first.c_str(), ".flv");
+    StRef<String> cur_filename = st_makeString(m_itr->second.diskName.c_str(), "/", m_itr->first.c_str(), ".flv");
 
     m_itr++;
 
@@ -68,14 +68,16 @@ VideoPartMaker::tryOpenNextFile ()
     }
     else
     {
+        logE_(_func_, "fail to convert to time ", cur_filename);
         return false;
     }
 
+    logD(vpm, _func_, "file is found ", cur_filename);
     return true;
 }
 
 static int g_fileNum = 0;
-bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes & channelFileDiskTimes,
+bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes * channelFileDiskTimes,
                            std::string & channel_name,
                             Time          const start_unixtime_sec,
                             Time          const end_unixtime_sec,
@@ -84,7 +86,7 @@ bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes & channelFileDis
     logD(vpm, _func_);
     this->nStartTime = start_unixtime_sec;
     this->nEndTime = end_unixtime_sec;
-    m_channelFileDiskTimes = channelFileDiskTimes;
+    m_pChannelFileDiskTimes = channelFileDiskTimes;
 
     if(nStartTime >= nEndTime)
     {
@@ -93,12 +95,12 @@ bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes & channelFileDis
     }
 
     bool bFileIsFound = false;
-    for(m_itr = m_channelFileDiskTimes.begin(); m_itr != m_channelFileDiskTimes.end(); m_itr++)
+    for(m_itr = m_pChannelFileDiskTimes->begin(); m_itr != m_pChannelFileDiskTimes->end(); m_itr++)
     {
-        if(m_itr->second.second.first <= nStartTime && m_itr->second.second.second > nStartTime)
+        if(m_itr->second.times.timeStart <= nStartTime && m_itr->second.times.timeEnd > nStartTime)
         {
             bFileIsFound = true;
-            m_filepath = st_makeString(m_itr->second.first.c_str(), "/", channel_name.c_str(),
+            m_filepath = st_makeString(m_itr->second.diskName.c_str(), "/", channel_name.c_str(),
                                        "/", channel_name.c_str(), "_", g_fileNum++, ".mp4");
             filePathOut = m_filepath->cstr();
             break; // file is found
@@ -126,19 +128,20 @@ bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes & channelFileDis
     }
 
     int res = m_nvrData.Init(m_fileReader.GetFormatContext(), NULL, m_filepath->cstr(), NULL, end_unixtime_sec - start_unixtime_sec);
+    m_bIsInit = (res == 0);
 
-    return (res == 0);
+    return m_bIsInit;
 }
 
 bool VideoPartMaker::IsInit()
 {
-    return bIsInit;
+    return m_bIsInit;
 }
 
 bool
 VideoPartMaker::Process ()
 {
-    if(!bIsInit)
+    if(!m_bIsInit)
     {
         logE_(_func_, "is not inited");
         return false;

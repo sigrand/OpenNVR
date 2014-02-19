@@ -526,7 +526,7 @@ bool FileReader::ReadFrame(Frame & readframe)
             {
                 char errmsg[4096] = {};
                 av_strerror (err, errmsg, 4096);
-                logE_(_func_, "Error while av_read_frame: ", errmsg);
+                logD (frames, "Error while av_read_frame: ", errmsg);
                 return false;
             }
         }
@@ -709,7 +709,7 @@ MediaReader::tryOpenNextFile ()
         return false;
     }
 
-    StRef<String> cur_filename = st_makeString(m_itr->second.first.c_str(), "/", m_itr->first.c_str(), ".flv");
+    StRef<String> cur_filename = st_makeString(m_itr->second.diskName.c_str(), "/", m_itr->first.c_str(), ".flv");
     logD (reader, _func, "new filename: ", cur_filename);
 
     m_itr++;
@@ -1014,7 +1014,7 @@ MediaReader::init (PagePool    * const mt_nonnull page_pool,
     bool bFileIsFound = false;
     for(m_itr = m_channelFileDiskTimes.begin(); m_itr != m_channelFileDiskTimes.end(); m_itr++)
     {
-        if(m_itr->second.second.first <= start_unixtime_sec && m_itr->second.second.second > start_unixtime_sec)
+        if(m_itr->second.times.timeStart <= start_unixtime_sec && m_itr->second.times.timeEnd > start_unixtime_sec)
         {
             bFileIsFound = true;
             break; // file is found

@@ -29,15 +29,16 @@ namespace MomentFFmpeg {
 using namespace M;
 using namespace Moment;
 
+
 mt_unsafe class NvrFileIterator
 {
 private:
-    Ref<Vfs> vfs;
-    StRef<String> stream_name;
+    Ref<Vfs> m_vfs;
+    StRef<String> m_stream_name;
 
-    bool got_first;
+    bool m_got_first;
     // year/month/day/hour/minute/seconds
-    unsigned cur_pos [4];
+    unsigned m_cur_pos [4];
 
     static StRef<String> makePathForDepth (ConstMemory  stream_name,
                                            unsigned     depth,
@@ -60,7 +61,7 @@ public:
                Time         start_unixtime_sec);
 
     NvrFileIterator ()
-        : got_first (false)
+        : m_got_first (false)
     {}
 };
 

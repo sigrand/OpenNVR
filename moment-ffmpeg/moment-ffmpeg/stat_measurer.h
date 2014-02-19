@@ -136,7 +136,7 @@ private:
 
     static void refreshTimerTickCPURAM (void *_self);
 
-	void flushAll();
+    void resetAll();
 
 };
 

@@ -41,7 +41,8 @@ static LogGroup libMary_logGroup_timer    ("mod_ffmpeg.timer",    LogLevel::E);
 static LogGroup libMary_logGroup_ffmpeg   ("mod_ffmpeg.ffmpeg",   LogLevel::E);
 static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::E); // E is the default
 
-
+#define MAX_AGE 120 // in minutes
+#define FILE_DURATION 3600 // in seconds
 
 #define AV_RB32(x)									\
         (((Uint32)((const Byte*)(x))[0] << 24) |	\
@@ -254,8 +255,9 @@ ffmpegStreamData::ffmpegStreamData(void)
 
     m_bRecordingState = false;
     m_bRecordingEnable = false;
+    m_bIsRecording = false;
     m_bGotFirstFrame = false;
-    m_recpathConfig = NULL;
+    m_pRecpathConfig = NULL;
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
@@ -307,11 +309,35 @@ void ffmpegStreamData::Deinit()
 
     m_bRecordingState = false;
     m_bRecordingEnable = false;
+    m_bIsRecording = false;
     m_bGotFirstFrame = false;
-    m_recpathConfig = NULL;
+    m_pRecpathConfig = NULL;
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
+}
+
+static int get_bit_rate(AVCodecContext *ctx)
+{
+    int bit_rate;
+    int bits_per_sample;
+
+    switch (ctx->codec_type) {
+    case AVMEDIA_TYPE_VIDEO:
+    case AVMEDIA_TYPE_DATA:
+    case AVMEDIA_TYPE_SUBTITLE:
+    case AVMEDIA_TYPE_ATTACHMENT:
+        bit_rate = ctx->bit_rate;
+        break;
+    case AVMEDIA_TYPE_AUDIO:
+        bits_per_sample = av_get_bits_per_sample(ctx->codec_id);
+        bit_rate = bits_per_sample ? ctx->sample_rate * ctx->channels * bits_per_sample : ctx->bit_rate;
+        break;
+    default:
+        bit_rate = 0;
+        break;
+    }
+    return bit_rate;
 }
 
 Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
@@ -320,6 +346,12 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     if(!uri || !uri[0])
     {
         logD(stream, _func_, "ffmpegStreamData Init failed");
+        return Result::Failure;
+    }
+
+    if(std::string(uri).find("rtsp") != 0)
+    {
+        logE(stream, _func_, "ffmpegStreamData Init failed, uri is not rtsp");
         return Result::Failure;
     }
 
@@ -365,19 +397,72 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
 
     if(res == Result::Success)
     {
+        m_sourceInfo.sourceName = channel_name;
+        m_sourceInfo.uri = uri;
+
         // Find the first video and audio stream
         for(int i = 0; i < format_ctx->nb_streams; i++)
         {
+            stStreamInfo si;
+            const char *codec_type = NULL;
+            const char *codec_name = NULL;
+            const char *profile = NULL;
+            const AVCodec *p;
+            codec_type = av_get_media_type_string(format_ctx->streams[i]->codec->codec_type);
+            codec_name = avcodec_get_name(format_ctx->streams[i]->codec->codec_id);
+            if (format_ctx->streams[i]->codec->profile != FF_PROFILE_UNKNOWN)
+            {
+                if (format_ctx->streams[i]->codec->codec)
+                    p = format_ctx->streams[i]->codec->codec;
+                else
+                    p = 0 ? avcodec_find_encoder(format_ctx->streams[i]->codec->codec_id) :
+                                avcodec_find_decoder(format_ctx->streams[i]->codec->codec_id);
+                if (p)
+                    profile = av_get_profile_name(p, format_ctx->streams[i]->codec->profile);
+            }
+            si.streamType = codec_type? codec_type: "UNKNOWN";
+            si.codecName = codec_name ? codec_name: "UNKNOWN";
+            si.profile = profile ? profile: "UNKNOWN";
+
             if(video_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
             {
                 if(format_ctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264)
                     video_stream_idx = i;
                 else
                     logE_(_func_, "video stream is not h264");
+
+                stVideoStream vs;
+                vs.streamInfo = si;
+
+                double dFps = 0.;
+                if(format_ctx->streams[i]->avg_frame_rate.den && format_ctx->streams[i]->avg_frame_rate.num)
+                {
+                    dFps = av_q2d(format_ctx->streams[i]->avg_frame_rate);
+                    vs.fps = dFps;
+                }
+                vs.width = format_ctx->streams[i]->codec->width;
+                vs.height = format_ctx->streams[i]->codec->height;
+
+                m_sourceInfo.videoStreams.push_back(vs);
             }
             else if(audio_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
             {
                 audio_stream_idx = i;
+
+                stAudioStream as;
+                as.streamInfo = si;
+
+                if(format_ctx->streams[i]->codec->sample_rate)
+                {
+                    as.sampleRate = format_ctx->streams[i]->codec->sample_rate;
+                }
+                m_sourceInfo.audioStreams.push_back(as);
+            }
+            else
+            {
+                stOtherStream os;
+                os.streamInfo = si;
+                m_sourceInfo.otherStreams.push_back(os);
             }
         }
 
@@ -386,29 +471,30 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
             logE_(_func_,"didn't find a video stream");
             res = Result::Failure;
         }
-    }
-    if(format_ctx)
-    {
-        m_vecPts.resize(format_ctx->nb_streams, Int64_Min);
-        m_vecDts.resize(format_ctx->nb_streams, Int64_Min);
-    }
 
-    if(m_absf_ctx == NULL)
-    {
-        m_absf_ctx = av_bitstream_filter_init("aac_adtstoasc");
-        if (!m_absf_ctx)
+        if(format_ctx)
         {
-            logE_(_func_, "No available 'aac_adtstoasc' bitstream filter");
+            m_vecPts.resize(format_ctx->nb_streams, Int64_Min);
+            m_vecDts.resize(format_ctx->nb_streams, Int64_Min);
+        }
+
+        if(m_absf_ctx == NULL)
+        {
+            m_absf_ctx = av_bitstream_filter_init("aac_adtstoasc");
+            if (!m_absf_ctx)
+            {
+                logE_(_func_, "No available 'aac_adtstoasc' bitstream filter");
+            }
         }
     }
 
     // reading configs
 
-    m_recpathConfig = recpathConfig;
+    m_pRecpathConfig = recpathConfig;
     ConstMemory record_dir;
     ConstMemory confd_dir;
-    Uint64 max_age_minutes = 120;
-    m_file_duration_sec = 3600;
+    Uint64 max_age_minutes = MAX_AGE;
+    m_file_duration_sec = FILE_DURATION;
 
     // writing on/off
     {
@@ -461,23 +547,23 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         logD(stream, _func_, opt_name, ": [", confd_dir, "]");
     }
 
-    if(m_recpathConfig == 0)
+    if(m_pRecpathConfig == 0 || !m_pRecpathConfig->IsInit())
         m_bRecordingEnable = false;
 
     if(m_bRecordingEnable)
     {
-        if(m_recpathConfig->IsEmpty())
+        if(m_pRecpathConfig->IsEmpty())
         {
             m_recordDir = st_makeString("");
         }
         else
         {
-            m_recordDir = st_makeString(m_recpathConfig->GetNextPath().c_str());
+            m_recordDir = st_makeString(m_pRecpathConfig->GetNextPath().c_str());
         }
 
         m_channelName = st_makeString(channel_name);
         m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
-        m_nvr_cleaner->init (timers, m_recpathConfig, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
+        m_nvr_cleaner->init (timers, m_pRecpathConfig, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
 
         bool bDisableRecord = false;
         StRef<String> st_confd_dir = st_makeString(confd_dir);
@@ -491,10 +577,15 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
             while ( std::getline (channelPath, line) )
             {
                 logD(stream, _func_, "got line: [", line.c_str(), "]");
-                if(line.compare("disable_record") == 0)
+                if(line.find("disable_record") == 0)
                 {
-                    logD(stream, _func_, "FOUND disable_record");
-                    bDisableRecord = true;
+                    std::string strLower = line;
+                    std::transform(strLower.begin(), strLower.end(), strLower.begin(), ::tolower);
+                    if(strLower.find("true") != std::string::npos)
+                    {
+                        logD(stream, _func_, "DISABLE RECORDING");
+                        bDisableRecord = true;
+                    }
                 }
             }
             channelPath.close();
@@ -690,6 +781,7 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
         }
 
         // write to file
+        bool bRecordingSuccess = false;
         if(m_bRecordingEnable)
         {
             if(m_bRecordingState)
@@ -720,7 +812,13 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
 
                     int res = m_nvrData.WritePacket(format_ctx, packet);
                     if(res == ERR_NOSPACE)
+                    {
                         bNeedNextPath = true;
+                    }
+                    else
+                    {
+                        bRecordingSuccess = true;
+                    }
 
                     logD(frames, _func_, "NvrData.WritePacket res = ", res);
 
@@ -730,14 +828,14 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
                     Time tInNvr;tcInNvr.Stop(&tInNvr);
                     pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
                 }
-                if(!m_recpathConfig->IsPathExist(m_recordDir->cstr()))
+                if(!m_pRecpathConfig->IsPathExist(m_recordDir->cstr()))
                 {
                     bNeedNextPath = true;
                 }
                 if(bNeedNextPath)
                 {
-                    if(!m_recpathConfig->IsEmpty())
-                        m_recordDir = st_makeString(m_recpathConfig->GetNextPath(m_recordDir->cstr()).c_str());
+                    if(!m_pRecpathConfig->IsEmpty())
+                        m_recordDir = st_makeString(m_pRecpathConfig->GetNextPath(m_recordDir->cstr()).c_str());
                     else
                         m_recordDir = st_makeString("");
                     logD(frames,_func_, "next m_recordDir = [", m_recordDir, "]");
@@ -751,6 +849,7 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
                     m_nvrData.Deinit();
             }
         }
+        m_bIsRecording = bRecordingSuccess;
 
         // Free the packet that was allocated by av_read_frame
         av_free_packet(&packet);
@@ -766,16 +865,26 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
     return media_found;
 }
 
-int ffmpegStreamData::SetChannelState(bool const bState)
+int ffmpegStreamData::SetRecordingState(bool const bState)
 {
     m_bRecordingState = bState;
     return 0;
 }
 
-int ffmpegStreamData::GetChannelState(bool & bState)
+int ffmpegStreamData::GetRecordingState(bool & bState)
 {
     bState = m_bRecordingState;
     return 0;
+}
+
+bool ffmpegStreamData::IsRecording()
+{
+    return m_bIsRecording;
+}
+
+stSourceInfo ffmpegStreamData::GetSourceInfo()
+{
+    return m_sourceInfo;
 }
 
 nvrData::nvrData(void)
@@ -785,7 +894,6 @@ nvrData::nvrData(void)
     m_out_format_ctx = NULL;
 
     m_bIsInit = false;
-    m_bWriteTrailer = false;
 }
 
 nvrData::~nvrData(void)
@@ -930,11 +1038,6 @@ void nvrData::Deinit()
 
     if(m_out_format_ctx)
     {
-        if(m_bWriteTrailer)
-        {
-            av_write_trailer(m_out_format_ctx);
-        }
-
         ffmpegStreamData::CloseCodecs(m_out_format_ctx);
 
         int ret = avio_close(m_out_format_ctx->pb);
@@ -945,7 +1048,6 @@ void nvrData::Deinit()
     }
 
     m_bIsInit = false;
-    m_bWriteTrailer = false;
 
     logD(stream, _func_, "Deinit succeed");
 }
@@ -976,8 +1078,6 @@ int nvrData::WriteHeader()
 
     if (ret < 0)
         logE_(_func_, "Error occurred when opening output file, ret = ", ret);
-    else
-        m_bWriteTrailer = true;
 
     return ret;
 }
@@ -1028,14 +1128,24 @@ int nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & pac
     return nres;
 }
 
-int FFmpegStream::SetChannelState(bool const bState)
+int FFmpegStream::SetRecordingState(bool const bState)
 {
-    return m_ffmpegStreamData.SetChannelState(bState);
+    return m_ffmpegStreamData.SetRecordingState(bState);
 }
 
-int FFmpegStream::GetChannelState(bool & bState)
+int FFmpegStream::GetRecordingState(bool & bState)
 {
-    return m_ffmpegStreamData.GetChannelState(bState);
+    return m_ffmpegStreamData.GetRecordingState(bState);
+}
+
+bool FFmpegStream::IsRecording()
+{
+    return m_ffmpegStreamData.IsRecording();
+}
+
+bool FFmpegStream::IsRestreaming()
+{
+    return m_bIsRestreaming;
 }
 
 int FFmpegStream::WriteB8ToBuffer(Int32 b, MemoryEx & memory)
@@ -1369,13 +1479,13 @@ FFmpegStream::beginPushPacket()
 
     mutex.unlock ();
 
-    while(m_bIsPlaying)
+    while(m_bIsRestreaming)
     {
         if(!m_ffmpegStreamData.PushMediaPacket(this))
         {
             logD(stream, _func_, "EOS");
 
-            m_bIsPlaying = false;
+            m_bIsRestreaming = false;
 
             eos_pending = true;
 
@@ -1404,7 +1514,7 @@ FFmpegStream::createSmartPipelineForUri ()
     logD(pipeline, _func, "uri: ", playback_item->stream_spec);
 
     while(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(),
-            channel_opts->channel_name->cstr(), this->config, this->timers, this->m_recpathConfig) != Result::Success)
+            channel_opts->channel_name->cstr(), this->config, this->timers, this->m_pRecpathConfig) != Result::Success)
     {
         m_ffmpegStreamData.Deinit();
         logD(pipeline, _func_, "wait for 1 sec and init ffmpegStreamData again");
@@ -1423,7 +1533,7 @@ FFmpegStream::createSmartPipelineForUri ()
     if (!ffmpeg_thread->spawn (true /* joinable */))
         logE_ (_func, "Failed to spawn ffmpeg thread: ", exc->toString());
 
-    m_bIsPlaying = true;
+    m_bIsRestreaming = true;
 
     logD(pipeline, _func, "all ok");
     goto _return;
@@ -1456,7 +1566,7 @@ FFmpegStream::doReleasePipeline ()
 
     logD(pipeline, _func_);
 
-    m_bIsPlaying = false;
+    m_bIsRestreaming = false;
 
 //    bool const join = (tlocal != libMary_getThreadLocal());
 
@@ -1477,7 +1587,7 @@ FFmpegStream::doReleasePipeline ()
 
 
     reportStatusEvents ();
-    logD(pipeline, _func_, "released, m_bIsPlaying is false");
+    logD(pipeline, _func_, "released, m_bIsRestreaming is false");
 }
 
 void
@@ -2296,6 +2406,12 @@ FFmpegStream::GetStatMeasure()
     return m_statMeasurer.GetStatMeasure();
 }
 
+Ref<ChannelChecker>
+FFmpegStream::GetChannelChecker()
+{
+    return m_channel_checker;
+}
+
 mt_const void
 FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
                  Timers            * const timers,
@@ -2307,7 +2423,8 @@ FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
                  ChannelOptions    * const channel_opts,
                  PlaybackItem      * const playback_item,
                  MConfig::Config   * const config,
-                 RecpathConfig     * const recpathConfig)
+                 RecpathConfig     * const recpathConfig,
+                 ChannelChecker    * const channel_checker)
 {
     logD (pipeline, _this_func_);
 
@@ -2327,7 +2444,8 @@ FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
         initial_seek_complete = true;
 
     this->config = config;
-    this->m_recpathConfig = recpathConfig;
+    this->m_pRecpathConfig = recpathConfig;
+    this->m_channel_checker = channel_checker;
 
     std::string channel_name = this->channel_opts->channel_name->cstr();
 
@@ -2343,6 +2461,18 @@ FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
         if (!workqueue_thread->spawn (true /* joinable */))
             logE_ (_func, "Failed to spawn workqueue thread: ", exc->toString());
     }
+}
+
+bool
+FFmpegStream::IsClosed()
+{
+    return stream_closed;
+}
+
+stSourceInfo
+FFmpegStream::GetSourceInfo()
+{
+    return m_ffmpegStreamData.GetSourceInfo();
 }
 
 FFmpegStream::FFmpegStream ()
@@ -2407,9 +2537,9 @@ FFmpegStream::FFmpegStream ()
       rx_video_bytes (0),
 
       tlocal (NULL),
-      m_bIsPlaying(false),
+      m_bIsRestreaming(false),
       m_bReleaseCalled(false),
-      m_recpathConfig(NULL)
+      m_pRecpathConfig(NULL)
 {
     logD (pipeline, _this_func_);
 

@@ -18,6 +18,26 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
+struct FileSizes
+{
+    FileSizes():reservedSize(0),actualSize(0){};
+    unsigned long reservedSize;
+    unsigned long actualSize;
+};
+
+struct FileTimes
+{
+    FileTimes():timeStart(0),timeUpdate(0){};
+    time_t timeStart;
+    time_t timeUpdate;
+};
+
+struct FileInfo
+{
+    FileSizes fileSizes;
+    FileTimes fileTimes;
+};
+
 class MemoryDispatcher
 {
 public:
@@ -39,10 +59,9 @@ private:
     bool _isInit;
 
     static StateMutex g_mutexMemoryDispatcher;
-    typedef std::pair <unsigned long, unsigned long> FileSizes;                 // [reservedSize, actualSize]
-    typedef std::pair <time_t, time_t> FileTimes;                               // [timeStart, timeUpdate]
-    typedef std::map <std::string, std::pair <FileSizes, FileTimes> > FilesInfo; // [FileName, [FileSizes, FileTimes]]
-    typedef std::map <std::string, FilesInfo> DiskFiles;                         // [DiskName, FilesInfo]
+	
+    typedef std::map <std::string, FileInfo > FilesInfo; // [FileName, FileInfo]
+    typedef std::map <std::string, FilesInfo> DiskFiles; // [DiskName, FilesInfo]
 
     DiskFiles _diskFiles;
 };
