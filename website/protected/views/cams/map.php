@@ -4,6 +4,9 @@
 <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
 <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
 
+<link rel="stylesheet" href="/css/MarkerCluster.Default.css" />
+<link rel="stylesheet" href="/css/MarkerCluster.css" />
+<script src="/js/leaflet/leaflet.markercluster-src.js"></script>
 
 <div style="display:none;">
 <div id="MyPlayer_div" style="width:300px;height:168px;">
@@ -148,6 +151,31 @@
 
 	$(document).ready(function(){
 		var mypopup = L.popup(document.getElementById("MyPlayer_div"));
+var LeafIcon = L.Icon.extend({
+	options: {
+	shadowUrl: '/images/shadow.png',
+	iconSize:     [40, 41],
+	shadowSize:   [51, 37],
+	iconAnchor:   [20,20],
+	shadowAnchor: [20, 20],
+	popupAnchor:  [0, -10]
+	}
+});
+var cam_icon = new LeafIcon({iconUrl: '/images/cam_icon.png'});
+LeafIcon = L.Icon.extend({
+	options: {
+	shadowUrl: '/images/shadow.png',
+	iconSize:     [30, 41],
+	shadowSize:   [51, 37],
+	iconAnchor:   [15,20],
+	shadowAnchor: [15, 20],
+	popupAnchor:  [0, -10]
+	}
+});
+var buildind_icon = new LeafIcon({iconUrl: '/images/building_icon.png'});
+
+var markers_cluster = new L.MarkerClusterGroup();
+
 		<?php
 			foreach ($myCams as $cam) {
 		?>
@@ -156,8 +184,9 @@
 				if ($cam->coordinates != "") {
 		?>
 				cams_markers.push(L.latLng(<?php echo "$cam->coordinates"; ?>));
-				var marker = L.marker([<?php echo "$cam->coordinates"; ?>]);
+				var marker = L.marker([<?php echo "$cam->coordinates"; ?>], {icon:cam_icon});
 				markers[<?php echo "\"$cam->id\""; ?>] = marker;
+				markers_cluster.addLayer(marker);
 				m[<?php echo "\"$cam->id\""; ?>] = marker.on('click', function() {
 					cam_id = <?php echo "$cam->id"; ?>;
 				});
@@ -166,6 +195,7 @@
 			}
 		?>
 		console.log(markers);
+
 
 		$(window).on('load resize',function(){
 			$(".carousel_players").css("height", Math.round($(".carousel_players").width()*9/16));
@@ -181,8 +211,9 @@
 					attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
 				}).addTo(map);
 				$.each(markers, function(key, val) {
-					val.addTo(map).bindPopup(document.getElementById("MyPlayer_div"));
+					val.bindPopup(document.getElementById("MyPlayer_div"));
 				});
+				map.addLayer(markers_cluster);
 			}
 			map.fitBounds(L.latLngBounds(cams_markers));
 		});
