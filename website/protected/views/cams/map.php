@@ -18,7 +18,7 @@
                 <param name="bgcolor" value="#000000"/>
                 <param name="allowFullScreen" value="true"/>
                 <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
-                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3"
+                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3&show_buttons=true"
                 src="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"
                 bgcolor="#000000"
                 width="100%"
