@@ -10,7 +10,7 @@ font-size: 30px;
 }
 #menu {
 	z-index:1000;
-	background: url('/cv/images/bgtop.png')#148ba9;
+	background: url('/images/bgtop.png')#148ba9;
 	border:0px;
 	border-radius: 0px;
 }
@@ -18,7 +18,7 @@ font-size: 30px;
 	color:white;
 	background:none;
 	text-decoration:none;
-	font-family:arial narrow;
+	font-family:arial;
 	font-size:1.2em;
 	color:#ffffff;
 	text-shadow: 1px 1px 1px #000;
