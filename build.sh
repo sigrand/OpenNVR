@@ -224,10 +224,13 @@ momentPath="${DST}/moment"
 
     mkdir "${momentPath}/records"
     mkdir "${momentPath}/conf.d"
-    mkdir "${momentPath}/recordingState"
     if [ ! -f "${momentPath}/moment.conf" ]; then
         cp "${SC_DIR}/moment.conf" "${momentPath}"
+        cp "${SC_DIR}/recpath.conf" "${momentPath}"
+        cp "${SC_DIR}/watchdog.py" "${momentPath}/bin"
         sed -i "s@/opt/nvr@$momentPath@g" "${momentPath}/moment.conf" || checkErr "Config edit failed"
+        sed -i "s@/opt/nvr@$momentPath@g" "${momentPath}/recpath.conf" || checkErr "RecpathConfig edit failed"
+        sed -i "s@/opt/nvr/moment@$momentPath@g" "${momentPath}/bin/watchdog.py" || checkErr "RecpathConfig edit failed"
     fi
 
     # export

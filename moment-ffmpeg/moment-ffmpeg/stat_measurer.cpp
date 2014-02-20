@@ -39,6 +39,9 @@ std::vector<std::string> split(const std::string &s, char delim) {
 bool
 getTotalCPU(Time * totalCPU)
 {
+    if(totalCPU == NULL)
+        return false;
+	
     std::ifstream procFile;
     procFile.open("/proc/stat", std::ios::in);
     std::string lineRaw;
@@ -70,18 +73,12 @@ getTotalCPU(Time * totalCPU)
     std::vector<std::string> tokens = split(line, ' ');
 
     size_t n = tokens.size();
-    long * nums = new long [n];
-    for(int i=0;i<n;++i)
-    {
-        nums[i] = atoi(tokens[i].c_str());
-    }
+	
     unsigned long long res = 0;
-    for(int i=0;i<n;++i)
+	for(int i=0;i<n;++i)
     {
-        res += nums[i];
+        res += atoi(tokens[i].c_str());
     }
-
-    delete [] nums;
 
     *totalCPU = res;
 
@@ -91,6 +88,9 @@ getTotalCPU(Time * totalCPU)
 bool
 getCurProcCPU(Time * utime)
 {
+    if(utime == NULL)
+        return false;
+	
     clock_t ct0;
     struct tms tms0;
 
@@ -103,7 +103,7 @@ getCurProcCPU(Time * utime)
 }
 
 void
-StatMeasurer::flushAll()
+StatMeasurer::resetAll()
 {
     m_minInOut = std::numeric_limits<int64_t>::max();
     m_maxInOut = 0;
@@ -321,7 +321,7 @@ StatMeasure StatMeasurer::GetStatMeasure()
     else
         stm.user_util_avg = 0;
 
-    flushAll();
+    resetAll();
 
     return stm;
 }
@@ -339,7 +339,7 @@ StatMeasurer::refreshTimerTickCPURAM (void * const _self)
 mt_const void
 StatMeasurer::Init (Timers * const mt_nonnull timers, int time_seconds)
 {
-    flushAll();
+    resetAll();
 
     this->timers = timers;
 
@@ -375,25 +375,7 @@ StatMeasurer::Init (Timers * const mt_nonnull timers, int time_seconds)
 
 StatMeasurer::StatMeasurer(): timers(this /* coderef_container */), timer_keyCPURAM (NULL)
 {
-    m_minInOut = std::numeric_limits<int64_t>::max();
-    m_maxInOut = 0;
-    m_allInOut = 0;
-    m_packetAmountInOut = 0;
-
-    m_minInNvr = std::numeric_limits<int64_t>::max();
-    m_maxInNvr = 0;
-    m_allInNvr = 0;
-    m_packetAmountInNvr = 0;
-
-    m_minRAM = std::numeric_limits<int64_t>::max();
-    m_maxRAM = 0;
-    m_allRAM = 0;
-    m_RAMCount = 0;
-
-    m_user_util_min = std::numeric_limits<int64_t>::max();
-    m_user_util_max = 0;
-    m_user_util_all = 0;
-    m_user_util_count = 0;
+    resetAll();
 
     m_user_time_prev = 0;
     m_all_proc_time_prev = 0;

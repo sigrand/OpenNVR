@@ -19,7 +19,7 @@ public:
     VideoPartMaker();
     ~VideoPartMaker();
 
-    bool Init(ChannelChecker::ChannelFileDiskTimes & channelFileDiskTimes,
+    bool Init(ChannelChecker::ChannelFileDiskTimes * channelFileDiskTimes,
               std::string & channel_name,
               Time          const start_unixtime_sec,
               Time          const end_unixtime_sec,
@@ -35,10 +35,12 @@ private:
 
     FileReader      m_fileReader;
     nvrData         m_nvrData;
-    ChannelChecker::ChannelFileDiskTimes m_channelFileDiskTimes;
+    // const?
+    ChannelChecker::ChannelFileDiskTimes * m_pChannelFileDiskTimes;
+    // const?
     ChannelChecker::ChannelFileDiskTimes::iterator m_itr;
 
-    bool bIsInit;
+    bool m_bIsInit;
     StRef<String>   m_filepath;
     Time nStartTime;
     Time nCurFileStartTime;

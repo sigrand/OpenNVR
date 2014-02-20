@@ -168,6 +168,7 @@ public:
 
     Time          no_video_timeout;
     Time          min_playlist_duration_sec;
+    bool          disable_record;
   mt_end
 
     void dump ()
@@ -183,7 +184,8 @@ public:
                      "    connect_on_demand: ", connect_on_demand, "\n"
                      "    connect_on_demand_timeout: ", connect_on_demand_timeout, "\n"
                      "    no_video_timeout: ", no_video_timeout, "\n"
-                     "    min_playlist_duration_sec: ", min_playlist_duration_sec, "\n");
+                     "    min_playlist_duration_sec: ", min_playlist_duration_sec, "\n"
+                     "    disable_record: ", disable_record, "\n");
         logUnlock ();
     }
 
@@ -202,7 +204,8 @@ public:
           connect_on_demand_timeout (60),
 
           no_video_timeout (60),
-          min_playlist_duration_sec (10)
+          min_playlist_duration_sec (10),
+          disable_record(false)
     {
     }
 };

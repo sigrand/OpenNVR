@@ -10,26 +10,36 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
+struct ConfigParam
+{
+    ConfigParam():quota(0),write_mode(0){}
+    int quota;
+    int write_mode; // 0 - read-write, 1 - read only
+};
+
 class RecpathConfig
 {
-    typedef std::map<std::string, std::vector<int> > ConfigMap; // [config_path, [quota, write_mode]], write_mode: 0 - readonly, 1 - read-write
+    typedef std::map<std::string, ConfigParam > ConfigMap;
 
 public:
     RecpathConfig();
     ~RecpathConfig();
 
-    bool LoadConfig(std::string path_to_config);
+    bool LoadConfig(const std::string & path_to_config);
 
     std::string GetConfigJson();
 
-    std::string GetNextPath(const char * prev_path = 0);
+    std::string GetNextPath();
+    std::string GetNextPath(const std::string & prev_path);
 
-    bool IsPathExist(const char * path);
+    bool IsPathExist(const std::string & path);
 
+    bool IsInit();
     bool IsEmpty();
 
 private:
     bool m_bIsEmpty;
+    bool m_bIsInit;
 
     ConfigMap m_configs;
     std::string m_configJson;

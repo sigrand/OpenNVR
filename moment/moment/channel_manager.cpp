@@ -18,6 +18,8 @@
 
 #include <stdio.h>
 #include <fstream>
+#include <algorithm>
+#include <string>
 
 #include <libmary/types.h>
 #include <cctype>
@@ -208,18 +210,37 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
         }
         else
         {
-            FILE *fp;
-            fp = fopen( path->cstr(), "w");
-            if(fp == NULL)
+            bool bDisableRecord = false;
+            std::ifstream file (path->cstr());
+            if (file.good())
             {
-                logE_ (_func, "could not open file [", path->cstr(),"]\n");
+                std::string line;
+                while ( std::getline(file, line) )
+                {
+                    size_t beg = line.find("disable_record = \"");
+                    if(beg == std::string::npos)
+                        continue;
+                    beg += strlen("disable_record = \"");
+                    size_t end = line.rfind("\"");
+                    std::string strDisableRecord = line.substr(beg, end - beg);
+                    std::transform(strDisableRecord.begin(), strDisableRecord.end(), strDisableRecord.begin(), ::tolower);
+                    if(strDisableRecord.compare("true") == 0)
+                    {
+                        bDisableRecord = true;
+                    }
+                }
             }
-            else
+
+            std::ofstream ofs;
+            ofs.open(path->cstr(), std::ofstream::out);
+            if(ofs.good())
             {
-                StRef<String> const content = st_makeString ("title = \"", item_title.c_str(),
-                                                             "\"\nuri = \"", item_uri.c_str(), "\"\n");
-                fprintf(fp, content->cstr());
-                fclose(fp);
+                std::string strDisableRecord = bDisableRecord ? "true" : "false";
+                StRef<String> content = st_makeString ("title = \"", item_title.c_str(),
+                                                       "\"\nuri = \"", item_uri.c_str(),
+                                                       "\"\ndisable_record = \"", strDisableRecord.c_str(), "\"\n");
+                ofs << content->cstr();
+                ofs.close();
             }
         }
 

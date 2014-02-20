@@ -102,6 +102,7 @@ parseChannelConfig (MConfig::Section * const mt_nonnull section,
     char const opt_name__sync_to_clock[]             = "sync_to_clock";
     char const opt_name__send_metadata[]             = "send_metadata";
     char const opt_name__enable_prechunking[]        = "enable_prechunking";
+    char const opt_name__disable_record[]            = "disable_record";
 // TODO resize and transcoding settings
 #if 0
     char const opt_name__width[]                     = "width";
@@ -196,6 +197,16 @@ parseChannelConfig (MConfig::Section * const mt_nonnull section,
         return Result::Failure;
     }
     logD_ (_func, opt_name__keep_video_stream, ": ", keep_video_stream);
+
+    bool disable_record = default_opts->disable_record;
+    if (!configSectionGetBoolean (section,
+                                  opt_name__disable_record,
+                                  &disable_record,
+                                  disable_record))
+    {
+        return Result::Failure;
+    }
+    logD_ (_func, opt_name__disable_record, ": ", disable_record);
 
     bool continuous_playback = default_opts->continuous_playback;
     if (!configSectionGetBoolean (section,
@@ -351,6 +362,8 @@ parseChannelConfig (MConfig::Section * const mt_nonnull section,
 
     opts->no_video_timeout = no_video_timeout;
     opts->min_playlist_duration_sec = min_playlist_duration;
+
+    opts->disable_record  = disable_record;
 
     item->stream_spec = st_grab (new (std::nothrow) String (stream_spec));
     item->spec_kind = spec_kind;

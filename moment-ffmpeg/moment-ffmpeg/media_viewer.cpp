@@ -373,14 +373,22 @@ MediaViewer::rtmpStartWatching (ConstMemory        const stream_name,
 
     StRef<String> str_stream_name = st_makeString(stream_name);
     std::string streamName = std::string(str_stream_name->cstr());
-    std::map<std::string, Ref<ChannelChecker> >::iterator itr = self->m_channel_checkers->find(streamName);
-    if(itr == self->m_channel_checkers->end())
+
+    self->m_pMutex->lock();
+
+    std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_pStreams->find(streamName);
+    if(itFFStream == self->m_pStreams->end())
     {
-        logE(viewer, _func_, "there is no channel [", stream_name, "] in m_channel_checkers");
+        self->m_pMutex->unlock();
+        logE(viewer, _func_, "there is no channel [", stream_name, "] in m_pStreams");
         return false;
     }
 
-    ChannelChecker::ChannelFileDiskTimes channelFileDiskTimes = itr->second->getChannelFileDiskTimes();
+    Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
+
+    self->m_pMutex->unlock();
+
+    ChannelChecker::ChannelFileDiskTimes channelFileDiskTimes = channelChecker->getChannelFileDiskTimes();
 
     session->media_reader.init (self->page_pool,
                                 channelFileDiskTimes,
@@ -411,9 +419,10 @@ MediaViewer::rtmpStartStreaming (ConstMemory     const stream_name,
 
 void
 MediaViewer::init (MomentServer * const mt_nonnull moment,
-                   std::map<std::string, Ref<ChannelChecker> > * channel_checkers)
+                   std::map<std::string, WeakRef<FFmpegStream> > * streams, StateMutex * pMutex)
 {
-    m_channel_checkers = channel_checkers;
+    m_pStreams = streams;
+    m_pMutex = pMutex;
 
     page_pool = moment->getPagePool();
 
@@ -427,7 +436,7 @@ MediaViewer::init (MomentServer * const mt_nonnull moment,
 MediaViewer::MediaViewer ()
     : page_pool (this /* coderef_container */),
       timers    (this /* coderef_container */),
-      m_channel_checkers(NULL)
+      m_pStreams(NULL),m_pMutex(NULL)
 {
 }
 

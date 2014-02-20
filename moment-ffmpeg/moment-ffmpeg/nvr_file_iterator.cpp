@@ -55,7 +55,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
                               unsigned            const depth,
                               bool                const parent_pos_match)
 {
-    unsigned target = (parent_pos_match ? cur_pos [depth] : 0);
+    unsigned target = (parent_pos_match ? m_cur_pos [depth] : 0);
 
     logD (file_iter, _func, "depth: ", depth, ", parent_dir_name: ", parent_dir_name, ", target: ", target, " pp_match: ", parent_pos_match);
 
@@ -138,12 +138,12 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
                 continue;
 
             StRef<String> const dir_name = st_makeString (parent_dir_name, "/", fmt, number);
-            Ref<Vfs::VfsDirectory> const dir = vfs->openDirectory (dir_name->mem());
+            Ref<Vfs::VfsDirectory> const dir = m_vfs->openDirectory (dir_name->mem());
             if (dir) {
                 if (StRef<String> const str =
                             getNext_rec (dir, dir_name->mem(), depth + 1, (target == number && parent_pos_match)))
                 {
-                    cur_pos [depth] = number;
+                    m_cur_pos [depth] = number;
                     return str;
                 }
             }
@@ -170,12 +170,12 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
                 continue;
             } else
             if (number == target) {
-                if (got_first && parent_pos_match) {
+                if (m_got_first && parent_pos_match) {
                     logD (file_iter, _func, "number == target; got_first && parent_pos_match");
                     continue;
                 }
             }
-            else if(!got_first && parent_pos_match && got_prv_number) // seeking case
+            else if(!m_got_first && parent_pos_match && got_prv_number) // seeking case
             {
                 number = prv_number_saved;
             }
@@ -184,7 +184,7 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
             break;
         }
 
-        if (!got_number && !got_first && parent_pos_match && got_prv_number) {
+        if (!got_number && !m_got_first && parent_pos_match && got_prv_number) {
             number = prv_number;
             got_number = true;
         }
@@ -192,8 +192,8 @@ NvrFileIterator::getNext_rec (Vfs::VfsDirectory * const mt_nonnull parent_dir,
         if (got_number) {
             logD (file_iter, _func, "match: ", number);
 
-            got_first = true;
-            cur_pos [depth] = number;
+            m_got_first = true;
+            m_cur_pos [depth] = number;
 
             Format fmt;
             fmt.min_digits = 6;
@@ -225,14 +225,25 @@ NvrFileIterator::getNext ()
     TimeChecker tc;tc.Start();
 
     logD (file_iter, _func_);
-    ConstMemory streamNameMem = stream_name->mem();
-    Ref<Vfs::VfsDirectory> const dir = vfs->openDirectory (streamNameMem);
+    ConstMemory streamNameMem = m_stream_name->mem();
+    Ref<Vfs::VfsDirectory> const dir = m_vfs->openDirectory (streamNameMem);
     if (!dir) {
-        logD (file_iter, _func, "vfs->openDirectory() failed: ", stream_name->mem(), ": ", exc->toString());
+        logD (file_iter, _func, "vfs->openDirectory() failed: ", m_stream_name->mem(), ": ", exc->toString());
         return NULL;
     }
 
-    StRef<String> const filename = getNext_rec (dir, stream_name->mem(), 0, true /* parent_pos_match */);
+    StRef<String> filename = getNext_rec (dir, m_stream_name->mem(), 0, true /* parent_pos_match */);
+    if(filename != NULL)
+    {
+        std::string sFilename = filename->cstr();
+        size_t found = sFilename.rfind("/");
+        std::string sSecondsName = sFilename.substr(found);
+        size_t found2 = sSecondsName.rfind("_");
+        if(found2 == std::string::npos)
+        {
+            filename = st_makeString("");
+        }
+    }
     logD (file_iter, _func, "filename: ", filename);
 
     Time t;tc.Stop(&t);
@@ -249,16 +260,16 @@ NvrFileIterator::doSetCurPos (Time const start_unixtime_sec)
     struct tm tm;
     if (!unixtimeToStructTm (start_unixtime_sec, &tm)) {
         logE (file_iter, _func, "unixtimeToStructTm() failed");
-        memset (cur_pos, 0, sizeof (cur_pos));
+        memset (m_cur_pos, 0, sizeof (m_cur_pos));
         return;
     }
 
-    cur_pos [0] = tm.tm_year + 1900;
-    cur_pos [1] = tm.tm_mon + 1;
-    cur_pos [2] = tm.tm_mday;
-    cur_pos [3] = tm.tm_hour * 100 * 100 + tm.tm_min * 100 + tm.tm_sec;
+    m_cur_pos [0] = tm.tm_year + 1900;
+    m_cur_pos [1] = tm.tm_mon + 1;
+    m_cur_pos [2] = tm.tm_mday;
+    m_cur_pos [3] = tm.tm_hour * 100 * 100 + tm.tm_min * 100 + tm.tm_sec;
 
-    logD (file_iter, _func, "cur_pos (", start_unixtime_sec,"): ", makePathForDepth ("", 3, cur_pos));
+    logD (file_iter, _func, "cur_pos (", start_unixtime_sec,"): ", makePathForDepth ("", 3, m_cur_pos));
 }
 
 void
@@ -266,7 +277,7 @@ NvrFileIterator::reset (Time const start_unixtime_sec)
 {
     logD (file_iter, _func_);
     doSetCurPos (start_unixtime_sec);
-    got_first = false;
+    m_got_first = false;
 }
 
 void
@@ -274,8 +285,8 @@ NvrFileIterator::init (Vfs         * const mt_nonnull vfs,
                        ConstMemory   const stream_name,
                        Time          const start_unixtime_sec)
 {
-    this->vfs = vfs;
-    this->stream_name = st_grab (new (std::nothrow) String (stream_name));
+    this->m_vfs = vfs;
+    this->m_stream_name = st_grab (new (std::nothrow) String (stream_name));
     doSetCurPos (start_unixtime_sec);
 }
 

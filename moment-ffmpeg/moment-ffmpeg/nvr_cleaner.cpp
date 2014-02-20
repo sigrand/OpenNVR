@@ -104,7 +104,7 @@ NvrCleaner::cleanupTimerTick (void * const _self)
         }
     }
 
-        curPath = self->m_recpathConfig->GetNextPath(curPath.c_str());
+        curPath = self->m_recpathConfig->GetNextPath(curPath);
     }
 
     Time t;tc.Stop(&t);
