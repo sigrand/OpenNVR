@@ -10,7 +10,7 @@
 	<title><?php echo CHtml::encode($this->pageTitle); ?></title>
 </head>
 <body>
-	<nav class="navbar navbar-default navbar-inverse" role="navigation" style="z-index:10000">
+	<nav id="menu" class="navbar navbar-default navbar-inverse" role="navigation" style="z-index:10000">
 		<div class="container">
 			<div class="navbar-header">
 				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
@@ -22,8 +22,7 @@
 			</div>
 			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 				<ul class="nav navbar-nav">
-					<li><?php echo CHtml::link(Yii::t('menu', 'Главная'), $this->createUrl('/')); ?></li>
-					<li><?php echo CHtml::link(Yii::t('menu', 'О нас'), $this->createUrl('site/about')); ?></li>
+					<li><?php echo CHtml::link("<img src='".Yii::app()->request->baseUrl."/images/logo.png'>", $this->createUrl('/')); ?></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<?php if(!Yii::app()->user->isGuest) { ?>
@@ -31,7 +30,7 @@
 					<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Админка <b class="caret"></b></a>
 					<ul class="dropdown-menu">
-						<li><?php echo CHtml::link(Yii::t('menu', 'Статистика сервера'), $this->createUrl('admin/stat')); ?></li>
+						<li><?php echo CHtml::link(Yii::t('menu', 'Статистика сервера'), $this->createUrl('admin/stat'); ?></li>
 						<li><?php echo CHtml::link(Yii::t('menu', 'Публичные камеры'), $this->createUrl('admin/cams')); ?></li>
 						<li><?php echo CHtml::link(Yii::t('menu', 'Пользователи'), $this->createUrl('admin/users')); ?></li>
 						<li><?php echo CHtml::link(Yii::t('menu', 'Логи'), $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>

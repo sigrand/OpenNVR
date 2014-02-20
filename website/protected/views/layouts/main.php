@@ -3,14 +3,14 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/bootstrap.min.css" media="all" />            
-	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/style.css" media="all" />                          
+	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/bootstrap.min.css" media="all" />
+	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/style.css" media="all" />
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-	<script type="text/javascript" src="<?php echo Yii::app()->request->baseUrl; ?>/js/bootstrap.min.js"></script>   
+	<script type="text/javascript" src="<?php echo Yii::app()->request->baseUrl; ?>/js/bootstrap.min.js"></script>
 	<title><?php echo CHtml::encode($this->pageTitle); ?></title>
 </head>
 <body>
-	<nav class="navbar navbar-default navbar-inverse" role="navigation" style="z-index:1000">
+	<nav id="menu" class="navbar navbar-default navbar-inverse" role="navigation">
 		<div class="container">
 			<div class="navbar-header">
 				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
@@ -22,8 +22,7 @@
 			</div>
 			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 				<ul class="nav navbar-nav">
-					<li><?php echo CHtml::link(Yii::t('menu', 'Главная'), $this->createUrl('/')); ?></li>
-					<li><?php echo CHtml::link(Yii::t('menu', 'О нас'), $this->createUrl('site/about')); ?></li>
+					<li><?php echo CHtml::link("<img src='".Yii::app()->request->baseUrl."/images/logo.png'>", $this->createUrl('/'), array("id" => "logo")); ?></li>
 				</ul>
 				<ul class="nav navbar-nav navbar-right">
 					<li>

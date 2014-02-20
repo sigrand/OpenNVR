@@ -8,3 +8,50 @@ font-size: 30px;
 .navbar {
 	margin-bottom: 5px;
 }
+#menu {
+	z-index:1000;
+	background: url('/cv/images/bgtop.png')#148ba9;
+	border:0px;
+	border-radius: 0px;
+}
+.navbar-inverse .navbar-nav>li>a {
+	color:white;
+	background:none;
+	text-decoration:none;
+	font-family:arial narrow;
+	font-size:1.2em;
+	color:#ffffff;
+	text-shadow: 1px 1px 1px #000;
+	font-weight:500;
+}
+.navbar-inverse .navbar-nav>li>a:hover{
+	background:#016577;
+	border-radius:10px;
+}
+.navbar-inverse .navbar-nav>li>a:active{
+	background:#016577;
+	border-radius:10px;
+}
+.navbar-inverse .navbar-nav>.open>a, .navbar-inverse .navbar-nav>.open>a:hover, .navbar-inverse .navbar-nav>.open>a:focus {
+	background:#016577;
+	border-radius:10px;
+	background-color:"";
+}
+.navbar-inverse .navbar-collapse, .navbar-inverse .navbar-form {
+	background-color:transparent;
+}
+#logo {
+	padding: 10px;
+}
+#logo:hover {
+	background-color:transparent;
+}
+.panel-default {
+	border-color:#00aed1;
+}
+.panel-default>.panel-heading {
+	background-color:#00aed1;
+}
+body {
+	background: url('/images/bg.png');
+}
