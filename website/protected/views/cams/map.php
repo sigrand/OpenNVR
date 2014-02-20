@@ -120,7 +120,7 @@
 	<a id="left_button" class="carousel-control left" href="#myCarousel" data-slide="prev">‹</a>
 	<a id="right_button" class="carousel-control right" href="#myCarousel" data-slide="next">›</a>
 </div>
-				<div class="cols-sm-12" id="map" style="width:100%;height:1000px;"></div>
+				<div class="cols-sm-12" id="map_div" style="width:100%;height:1000px;"></div>
 	</div>
 	<script>
 
@@ -174,9 +174,9 @@
 				$("#on_MyPlayer"+ii).css("width", $("#MyPlayer"+ii+" embed").width());
 				$("#on_MyPlayer"+ii).css("height", $("#MyPlayer"+ii+" embed").height());
 			}
-			$("#map").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-17)+"px");
+			$("#map_div").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-17)+"px");
 			if (!map) {
-				map = L.map('map', {closePopupOnClick:false});
+				map = L.map('map_div', {closePopupOnClick:false});
 				L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
 					attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
 				}).addTo(map);
