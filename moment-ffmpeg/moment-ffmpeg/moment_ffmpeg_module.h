@@ -209,6 +209,8 @@ private:
     static StRef<String>  statisticsToJson (
             std::map<time_t, StatMeasure> * const mt_nonnull statPoints);
 
+    std::string sourceInfoToJson ();
+
     StRef<String> doGetFile (ConstMemory  stream_name,
                     Time         start_unixtime_sec,
                     Time         end_unixtime_sec);

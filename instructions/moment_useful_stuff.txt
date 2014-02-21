@@ -194,3 +194,8 @@ If you want to change records paths without rebooting nvrserver
 2) do http-request
 
 http://192.168.10.21:8082/mod_nvr_admin/reload_recpath
+
+=====================================================================================
+to get information about sources
+
+http://192.168.10.21:8082/mod_nvr_admin/source_info
