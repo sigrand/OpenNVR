@@ -138,8 +138,13 @@ class SiteController extends Controller {
 		}
 		if(isset($_POST['LoginForm'])) {
 			$model->attributes=$_POST['LoginForm'];
-			if($model->validate() && $model->login())
-				$this->redirect($this->createUrl('cams/index'));
+			if($model->validate() && $model->login()) {
+				if ((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) {
+					$this->redirect($this->createUrl('cams/manage'));
+				} else {
+					$this->redirect($this->createUrl('screens/manage'));
+				}
+			}
 		}
 		$this->render('login',array('model'=>$model));
 	}
