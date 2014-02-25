@@ -30,7 +30,7 @@
 					<li class="dropdown">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Админка <b class="caret"></b></a>
 					<ul class="dropdown-menu">
-						<li><?php echo CHtml::link(Yii::t('menu', 'Статистика сервера'), $this->createUrl('admin/stat'); ?></li>
+						<li><?php echo CHtml::link(Yii::t('menu', 'Статистика сервера'), $this->createUrl('admin/stat')); ?></li>
 						<li><?php echo CHtml::link(Yii::t('menu', 'Публичные камеры'), $this->createUrl('admin/cams')); ?></li>
 						<li><?php echo CHtml::link(Yii::t('menu', 'Пользователи'), $this->createUrl('admin/users')); ?></li>
 						<li><?php echo CHtml::link(Yii::t('menu', 'Логи'), $this->createUrl('admin/logs', array('type' => 'system'))); ?></li>

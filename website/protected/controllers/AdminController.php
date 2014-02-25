@@ -30,7 +30,7 @@ class AdminController extends Controller {
 	public function actionIndex() {
 		$this->render('index', array('title' => Yii::t('admin', 'Главная страница'), 'content' => Yii::t('admin', 'Это админка<br>Ваш К.О.')));
 	}
-	public function actionStat($type) {
+	public function actionStat($type = 'disk') {
 		Yii::import('ext.moment.index', 1);
 		$momentManager = new momentManager;
 		$stat = $momentManager->stat($type);
