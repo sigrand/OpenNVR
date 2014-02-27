@@ -2,6 +2,8 @@
 # BuildScript name
 bs="buildLinuxMoment" 
 
+COPY_WEB="no"
+
 SCRIPT=`realpath $0` || { echo 'You have to install realpath.'; exit 1; }
 
 # BuildScript working directory
@@ -14,7 +16,6 @@ DST=`realpath $1 2> /dev/null`
 if [ "${DST}" == "" ]; then
     checkErr "Erroneous value for build destination [${DST}]"
 fi
-
 
 # check prerequisites
 CHECK_GLIB="`pkg-config --cflags glib-2.0`"
@@ -212,10 +213,12 @@ momentPath="${DST}/moment"
         fi  
     ProjectBuildFinish
 
-    # moment has extra folder to perform install:
-    cd "${SC_DIR}/moment/web"
-    make || checkErr "moment web make failed"
-    make install || checkErr "moment web make install failed"
+    if [ "${COPY_WEB}" == "yes" ]; then
+        # moment has extra folder to perform install:
+        cd "${SC_DIR}/moment/web"
+        make || checkErr "moment web make failed"
+        make install || checkErr "moment web make install failed"
+    fi
 
     # deliver some extra files
     if [ ! -f "${momentPath}/bin/run_moment.sh" ]; then
