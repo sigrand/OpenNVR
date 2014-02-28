@@ -140,7 +140,7 @@ class Cams extends CActiveRecord
 		$myPublicCams = $public;
 		$mySharedCams = $shared;
 		// генерим список камер для селектора id=>name
-		$select_options = array();
+		$allMyCams = array();
 		foreach ($myCams as $key => $cam) {
 			$allMyCams[$cam->id] = $cam;
 		}
