@@ -199,3 +199,18 @@ http://192.168.10.21:8082/mod_nvr_admin/reload_recpath
 to get information about sources
 
 http://192.168.10.21:8082/mod_nvr_admin/source_info
+
+=====================================================================================
+watchdog for nvrserver relaunches nvrserver when it falls
+0) you have to install python
+# sudo apt-get install python2.7
+1) open watchdog.py
+2) variables:
+  momentName - name of nvrserver's process. DO NOT CHANGE!
+  momentDir - path to folder with run_moment.sh.
+  logDir - path to folder with logs
+  momentRunner - run_moment.sh
+  logName - name of log file. DO NOT CHANGE! (it is the same as in run_moment.sh)
+  errName - name of err file. DO NOT CHANGE! (it is the same as in run_moment.sh)
+3) launch watchdog
+# python watchdog.py &

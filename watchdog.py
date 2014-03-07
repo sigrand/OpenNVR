@@ -5,7 +5,7 @@ import shutil
 import datetime
 import subprocess
 
-momentName = './moment'
+momentName = 'moment'
 momentDir = '/opt/nvr/moment/bin/'
 logDir = momentDir + 'logDir/'
 momentRunner = 'run_moment.sh'
@@ -38,9 +38,7 @@ def main():
 
         isMomentAlive = checkMoment()
 
-        if isMomentAlive:
-            time.sleep(5) # 5 secs
-        else:
+        if not isMomentAlive:
             # hide logs
             _date = datetime.datetime.now().date()
             _time = datetime.datetime.now().time()
@@ -66,6 +64,8 @@ def main():
                     print 'Nvrserver relaunched'
             except OSError as e:
                 print 'Execution failed:', e
+
+        time.sleep(5) # 5 secs
 
 
 if __name__ == "__main__":

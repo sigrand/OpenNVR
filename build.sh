@@ -222,7 +222,12 @@ momentPath="${DST}/moment"
 
     # deliver some extra files
     if [ ! -f "${momentPath}/bin/run_moment.sh" ]; then
-        cp "${SC_DIR}/run_moment.sh" "${momentPath}/bin"
+        cp "${SC_DIR}/run_moment.sh" "${momentPath}/bin/run_moment.sh"
+        sed -i "s@../moment.conf@$momentPath/moment.conf@g" "${momentPath}/bin/run_moment.sh" || checkErr "run_moment edit failed"
+        sed -i "s@./moment @$momentPath/bin/moment @g" "${momentPath}/bin/run_moment.sh" || checkErr "run_moment edit failed"
+        sed -i "s@./log.txt@$momentPath/bin/log.txt@g" "${momentPath}/bin/run_moment.sh" || checkErr "run_moment edit failed"
+        sed -i "s@./out.txt@$momentPath/bin/out.txt@g" "${momentPath}/bin/run_moment.sh" || checkErr "run_moment edit failed"
+        sed -i "s@./err.txt@$momentPath/bin/err.txt@g" "${momentPath}/bin/run_moment.sh" || checkErr "run_moment edit failed"
     fi
 
     mkdir "${momentPath}/records"
