@@ -554,17 +554,18 @@ MomentFFmpegModule::sourceInfoToJson ()
 
         Json::Value json_source;
 
-        json_source["name"] = si.sourceName.c_str();
-        json_source["uri"] = si.uri.c_str();
+        json_source["name"] = si.sourceName;
+        json_source["uri"] = si.uri;
+        json_source["title"] = si.title;
 
         // stream info
         Json::Value json_streams;
         for(int i=0;i<si.videoStreams.size();i++)
         {
             Json::Value json_stream;
-            json_stream["type"] = si.videoStreams[i].streamInfo.streamType.c_str();
-            json_stream["codec name"] = si.videoStreams[i].streamInfo.codecName.c_str();
-            json_stream["profile"] = si.videoStreams[i].streamInfo.profile.c_str();
+            json_stream["type"] = si.videoStreams[i].streamInfo.streamType;
+            json_stream["codec name"] = si.videoStreams[i].streamInfo.codecName;
+            json_stream["profile"] = si.videoStreams[i].streamInfo.profile;
             json_stream["fps"] = si.videoStreams[i].fps;
             json_stream["width"] = si.videoStreams[i].width;
             json_stream["height"] = si.videoStreams[i].height;

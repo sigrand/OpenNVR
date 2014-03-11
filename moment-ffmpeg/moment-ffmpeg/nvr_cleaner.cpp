@@ -20,8 +20,10 @@
 #include <stdio.h>
 #include <string>
 
+#include <sys/time.h>
 #include <moment-ffmpeg/nvr_file_iterator.h>
 #include <moment-ffmpeg/inc.h>
+#include <moment-ffmpeg/ffmpeg_common.h>
 #include <moment-ffmpeg/time_checker.h>
 #include <moment-ffmpeg/nvr_cleaner.h>
 
@@ -29,6 +31,8 @@ using namespace M;
 using namespace Moment;
 
 namespace MomentFFmpeg {
+
+#define DOWNLOADS_TIME_LIVE 1800 // in sec
 
 static LogGroup libMary_logGroup_cleaner ("mod_ffmpeg.nvr_cleaner", LogLevel::E);
 
@@ -69,7 +73,7 @@ NvrCleaner::cleanupTimerTick (void * const _self)
         {
             StRef<String> const filename = file_iter.getNext ();
 
-        logD (cleaner, _func_, "current filename = ", filename);
+            logD (cleaner, _func_, "current filename = ", filename);
 
             if (!filename)
                 break;
@@ -92,17 +96,54 @@ NvrCleaner::cleanupTimerTick (void * const _self)
 
             file_unixtime_sec = file_unixtime_sec / 1000000000;
 
-        if (file_unixtime_sec < cur_unixtime_sec
-            && cur_unixtime_sec - file_unixtime_sec > self->max_age_sec)
-        {
-            StRef<String> const flv_filename = st_makeString (filename, ".flv");
-            logD (cleaner, _func, "Removing ", flv_filename);
-            self->doRemoveFiles (flv_filename->mem(), vfs);
-        } else {
-            logD (cleaner, _func, "end of removing");
-            break;
+            if (file_unixtime_sec < cur_unixtime_sec
+                && cur_unixtime_sec - file_unixtime_sec > self->max_age_sec)
+            {
+                StRef<String> const flv_filename = st_makeString (filename, ".flv");
+                logD (cleaner, _func, "Removing ", flv_filename);
+                self->doRemoveFiles (flv_filename->mem(), vfs);
+            } else {
+                logD (cleaner, _func, "end of removing");
+                break;
+            }
         }
-    }
+
+        // clean <downloads> folder if exists
+        struct timeval  tv;
+        gettimeofday(&tv, NULL);
+        Time curTime = tv.tv_sec;
+
+        StRef<String> strRecdirStream = st_makeString(curPath.c_str(), "/", self->stream_name);
+        ConstMemory recdirStream_dir = strRecdirStream->mem();
+        Ref<Vfs> const vfsDownloads = Vfs::createDefaultLocalVfs (recdirStream_dir);
+        Ref<Vfs::VfsDirectory> const dir = vfsDownloads->openDirectory (DOWNLOAD_DIR);
+        if(dir)
+        {
+            Ref<String> filename;
+            dir->getNextEntry(filename);
+            while(filename != NULL)
+            {
+                std::string strFilename = filename->cstr();
+                if(strFilename.compare(".") != 0 && strFilename.compare("..") != 0)
+                {
+                    Time timeOfRecord = 0;
+                    std::string delimeter = ".";
+                    size_t ind = strFilename.rfind(delimeter);
+                    if(ind != std::string::npos)
+                    {
+                        std::string strTime = strFilename.substr(0, ind);
+                        strToUint64_safe(strTime.c_str(), &timeOfRecord);
+                        if(curTime - timeOfRecord > DOWNLOADS_TIME_LIVE)
+                        {
+                            StRef<String> stRemove = st_makeString(DOWNLOAD_DIR, "/", filename->mem());
+                            vfsDownloads->removeFile(stRemove->mem());
+                            vfsDownloads->removeSubdirsForFilename (stRemove->mem());
+                        }
+                    }
+                }
+                dir->getNextEntry(filename);
+            }
+        }
 
         curPath = self->m_recpathConfig->GetNextPath(curPath);
     }

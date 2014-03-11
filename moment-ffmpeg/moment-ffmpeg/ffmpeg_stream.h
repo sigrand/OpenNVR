@@ -87,6 +87,7 @@ struct stSourceInfo
 {
     std::string sourceName;
     std::string uri;
+    std::string title;
     std::vector<stVideoStream> videoStreams;
     std::vector<stAudioStream> audioStreams;
     std::vector<stOtherStream> otherStreams;
@@ -167,8 +168,8 @@ private /*variables*/:
     bool m_bRecordingEnable;    // the same thing, value gets from config (mod_nvr.enable and so on)
     volatile bool m_bIsRecording;        // is source really recording on disk
     bool m_bGotFirstFrame;
-    std::vector<Uint64> m_vecPts; // correction values for packets
-    std::vector<Uint64> m_vecDts; // correction value for packets
+    std::vector<Int64> m_vecPts; // correction values for packets
+    std::vector<Int64> m_vecDts; // correction value for packets
 
     nvrData m_nvrData;
     RecpathConfig * m_pRecpathConfig;
