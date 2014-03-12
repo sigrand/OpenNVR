@@ -3,11 +3,11 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/bootstrap.min.css" media="all" />            
-	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/style.css" media="all" />                          
+	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/bootstrap.min.css" media="all" />
+	<link rel="stylesheet" type="text/css" href="<?php echo Yii::app()->request->baseUrl; ?>/css/style.css" media="all" />
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 	<script type="text/javascript" src="<?php echo Yii::app()->request->baseUrl; ?>/js/swfobject.js"></script>
-	<script type="text/javascript" src="<?php echo Yii::app()->request->baseUrl; ?>/js/bootstrap.min.js"></script>   
+	<script type="text/javascript" src="<?php echo Yii::app()->request->baseUrl; ?>/js/bootstrap.min.js"></script>
 	<title><?php echo CHtml::encode($this->pageTitle); ?></title>
 	<style type="text/css">
 	body {
@@ -115,7 +115,7 @@
 		<?php if($this->showArchive) { ?>
 		<div id="menuArchive" style="width: 15%; height: 100%; background-color: #fff; border-left: 1px solid #222222; overflow: auto; position: absolute; bottom: 0px; right: 0px;">
 			<div style="padding: 1.2em; border-bottom: 5px solid #444444; vertical-align: bottom; text-align: center">
-				<span style="font-size: large; font-weight: bold; color: #777777">Архив</span>
+				<span style="font-size: large; font-weight: bold; color: #777777"><?php echo Yii::t('cams', 'Archive'); ?> </span>
 			</div>
 			<div id="menuArchiveList" style="width: 100%">
 			</div>

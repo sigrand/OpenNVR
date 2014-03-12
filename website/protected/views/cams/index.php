@@ -6,7 +6,7 @@ if(!Yii::app()->user->isGuest) {
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Мои камеры</h3>
+				<h3 class="panel-title"><?php echo Yii::t('cams', 'My cams')?></h3>
 			</div>
 			<div class="panel-body">
 				<ul class="list-group">
@@ -46,9 +46,8 @@ if(!Yii::app()->user->isGuest) {
 								</script>
 								<?php
 							} else {
-								?>
-								Камер для отображения нет.
-								<?php } ?>
+								echo Yii::t('cams', 'No cams to show.');
+							} ?>
 							</ul>
 						</div>
 					</div>
@@ -56,7 +55,7 @@ if(!Yii::app()->user->isGuest) {
 				<div class="col-sm-12">
 					<div class="panel panel-default">
 						<div class="panel-heading">
-							<h3 class="panel-title">Расшаренные для меня камеры</h3>
+							<h3 class="panel-title"><?php echo Yii::t('cams', 'Cams shared for me');?></h3>
 						</div>
 						<div class="panel-body">
 							<ul class="list-group">
@@ -101,9 +100,8 @@ if(!Yii::app()->user->isGuest) {
 									</li>
 									<?php
 								} else {
-									?>
-									Камер для отображения нет.
-									<?php } ?>
+									echo Yii::t('cams', 'No cams to show.');
+								} ?>
 								</ul>
 							</div>
 						</div>
@@ -114,7 +112,7 @@ if(!Yii::app()->user->isGuest) {
 				<div class="col-sm-12">
 					<div class="panel panel-default">
 						<div class="panel-heading">
-							<h3 class="panel-title">Публичные камеры</h3>
+							<h3 class="panel-title"><?php echo Yii::t('cams', 'Public cams'); ?></h3>
 						</div>
 						<div class="panel-body">
 							<ul class="list-group">
@@ -159,9 +157,8 @@ if(!Yii::app()->user->isGuest) {
 									</li>
 									<?php
 								} else {
-									?>
-									Камер для отображения нет.
-									<?php } ?>
+									echo Yii::t('cams', 'No cams to show.');
+								} ?>
 								</ul>
 							</div>
 						</div>

@@ -18,7 +18,7 @@ class momentManager {
 	public function add($model) {
 		$result = $this->moment->add($model->id, $model->name, $model->url);
         if($result !== true) {
-            Notify::note('Добавление камеры неудалось, проблема с моментом, http ответ: '.$result);
+            Notify::note(Yii::t('errors', 'Add cam fail, problem with moment, http response: ').$result);
             return false;
         } else {
             if(!empty($model->prev_url)) {
@@ -32,7 +32,7 @@ class momentManager {
     public function edit($model) {
         $result = $this->moment->modify($model->id, $model->name, $model->url);
         if($result !== true) {
-            Notify::note('Изменение камеры неудалось, проблема с моментом, http ответ: '.$result);
+            Notify::note(Yii::t('errors', 'Change cam fail, problem with moment, http response: ').$result);
             return false;
         } else {
             if(!empty($model->prev_url)) {
@@ -46,7 +46,7 @@ class momentManager {
    public function delete($model) {
     $result = $this->moment->delete($model->id);
     if($result !== true) {
-        Notify::note('Удаление камеры неудалось, проблема с моментом, http ответ: '.$result);
+        Notify::note(Yii::t('errors', 'Delete cam fail, problem with moment, http response: ').$result);
         return false;
     } else {
         if(!empty($model->prev_url)) {
@@ -59,7 +59,7 @@ class momentManager {
 public function playlist() {
     $result = $this->moment->playlist();
     if(!$result) {
-        Notify::note('Неудалось получить плейлист, проблема с моментом');
+        Notify::note(Yii::t('errors', 'Can not get playlist, problem with moment'));
     }
     return $result;
 }
@@ -67,7 +67,7 @@ public function playlist() {
 public function existence($stream) {
     $result = $this->moment->existence($stream);
     if(!$result) {
-        Notify::note('Неудалось получить архив, проблема с моментом');
+        Notify::note(Yii::t('errors', 'Can not get archive, problem with moment'));
     }
     return $result;
 }
@@ -75,7 +75,7 @@ public function existence($stream) {
 public function stat($type) {
     $result = $this->moment->stat($type);
     if(!$result) {
-        Notify::note('Неудалось получить статистику вида: '.$type.', проблема с моментом');
+        Notify::note(Yii::t('errors', 'Can not get statistics type: ').$type.Yii::t('errors', ', problem with moment'));
     }
     return $result;
 }
@@ -83,7 +83,7 @@ public function stat($type) {
 public function rec($mode, $id) {
     $result = $this->moment->rec($mode, $id);
     if(!$result) {
-        Notify::note('Неудалось поставить или снять запись, проблема с моментом');
+        Notify::note(Yii::t('errors', 'Record on/off fail, problem with moment'));
     }
     return $result;
 }
@@ -91,7 +91,7 @@ public function rec($mode, $id) {
 public function unixtime() {
     $result = $this->moment->unixtime();
     if(!$result) {
-        Notify::note('Неудалось получить unixtime, проблема с моментом');
+        Notify::note(Yii::t('errors', 'Unixtime get fail, problem with moment'));
     }
     return $result;
 }

@@ -3,11 +3,11 @@
 class AdminController extends Controller {
 	var $layout = 'admincolumn';
 	var $userActions = array(
-		'ban' => array(4, 'забанен'),
-		'unban' => array(1, 'разбанен'),
-		'levelup' => array(3, 'Повышен'),
-		'active' => array(1, 'активирован'),
-		'dismiss' => array(1, 'понижен'),
+		'ban' => array(4, 'banned'),
+		'unban' => array(1, 'unbanned'),
+		'levelup' => array(3, 'up'),
+		'active' => array(1, 'activated'),
+		'dismiss' => array(1, 'down'),
 		);
 	public function filters() {
 		return array(
@@ -28,14 +28,14 @@ class AdminController extends Controller {
 	}
 	
 	public function actionIndex() {
-		$this->render('index', array('title' => Yii::t('admin', 'Главная страница'), 'content' => Yii::t('admin', 'Это админка<br>Ваш К.О.')));
+		$this->render('index', array('title' => Yii::t('admin', 'Index page'), 'content' => Yii::t('admin', 'This is admins panel<br>Your CO')));
 	}
 	public function actionStat($type = 'disk') {
 		Yii::import('ext.moment.index', 1);
 		$momentManager = new momentManager;
 		$stat = $momentManager->stat($type);
 		if(empty($stat)) {
-			$this->render('stat', array('title' => Yii::t('admin', 'Статистика недоступна'), 'stat' => array()));
+			$this->render('stat', array('title' => Yii::t('admin', 'Statistics not avaiable'), 'stat' => array()));
 			Yii::app()->end();
 		}
 		switch ($type) {
@@ -76,7 +76,7 @@ class AdminController extends Controller {
 			break;
 		}
 
-		$this->render('stat/index', array('title' => Yii::t('admin', 'Статистика(100 последних измерений)'), 'stat' => $all, 'type' => $type));
+		$this->render('stat/index', array('title' => Yii::t('admin', 'Statistics(100 recent changes)'), 'stat' => $all, 'type' => $type));
 	}
 
 	function convertSize($s) {
@@ -91,7 +91,7 @@ class AdminController extends Controller {
 		} else {
 			return $s . ' B';
 		}
-		$this->render('stat', array('title' => 'Статистика(100 последних измерений)', 'stat' => $all));
+		$this->render('stat', array('title' => 'Statistics(100 recent changes)', 'stat' => $all));
 	}
 
 	public function actionCams() {
@@ -105,7 +105,7 @@ class AdminController extends Controller {
 						if($cam) {
 							$cam->public = $cam->public ? 0 : 1;
 							if($cam->save()) {
-								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Настройки камер изменены')));
+								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Cams settings successfully changed')));
 							}
 						}
 					}
@@ -185,7 +185,7 @@ class AdminController extends Controller {
 					$user->status = $value[0];
 				}
 				if($user->save()) {
-					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Пользователь(и) {action}', array('{action}' => $value[1]))));
+					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Users {action}', array('{action}' => $value[1]))));
 					return;
 				}
 			}

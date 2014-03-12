@@ -10,7 +10,7 @@
 		<?php } ?>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Админы'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Admins'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -20,8 +20,8 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllA", array ("class" => "checkAllA")); ?></th>
 							<th>#</th>
-							<th>Ник</th>
-							<th>Почта</th>
+							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
+							<th><?php echo Yii::t('admin', 'Email'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -37,15 +37,15 @@
 							?>
 							<tr>
 								<td colspan="2"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Понизить'), array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Забанить'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Down'), array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'Список админов пуст.<br/>');
+					echo Yii::t('admin', 'Admins list is empty.<br/>');
 				}
 				?>
 			</div>
@@ -54,7 +54,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Забаненные'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Operators'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -64,8 +64,8 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllZ", array ("class" => "checkAllZ")); ?></th>
 							<th>#</th>
-							<th>Ник</th>
-							<th>Почта</th>
+							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
+							<th><?php echo Yii::t('admin', 'Email'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -81,19 +81,16 @@
 							?>
 							<tr>
 								<td colspan="1"></td>
-								<td><?php echo CHtml::submitButton('Повысить', array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
-								<td><?php echo CHtml::submitButton('Понизить', array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
-								<td><?php echo CHtml::submitButton('Забанить', array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Up'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Down'), array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					?>
-					Список операторов пуст.
-					<br/>
-					<?php
+					echo Yii::t('admin', 'Operators list is empty.<br/>');
 				}
 				?>
 			</div>
@@ -102,7 +99,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Наблюдатели</h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Viewers'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -112,8 +109,8 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllZ", array ("class" => "checkAllZ")); ?></th>
 							<th>#</th>
-							<th>Ник</th>
-							<th>Почта</th>
+							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
+							<th><?php echo Yii::t('admin', 'Email'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -129,18 +126,15 @@
 							?>
 							<tr>
 								<td colspan="2"></td>
-								<td><?php echo CHtml::submitButton('Повысить', array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
-								<td><?php echo CHtml::submitButton('Забанить', array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Up'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					?>
-					Список наблюдателей пуст.
-					<br/>
-					<?php
+					echo Yii::t('admin', 'Operators list is empty.<br/>');
 				}
 				?>
 			</div>
@@ -149,7 +143,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title">Забаненные</h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Banned'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -159,8 +153,8 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllZ", array ("class" => "checkAllZ")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Ник'); ?></th>
-							<th><?php echo Yii::t('admin', 'Почта'); ?></th>
+							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
+							<th><?php echo Yii::t('admin', 'Email'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -176,9 +170,8 @@
 							?>
 							<tr>
 								<td colspan="2"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Повысить'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'разбанить'), array('name' => 'unban', 'class' => 'btn btn-primary')); ?></td>
-								<td><?php echo CHtml::submitButton('Разбанить', array('name' => 'unban', 'class' => 'btn btn-danger')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Up'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Unban'), array('name' => 'unban', 'class' => 'btn btn-danger')); ?></td>
 
 							</tr>
 							<?php echo CHtml::endForm(); ?>
@@ -186,7 +179,7 @@
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'Список забаненных пуст.<br/>');
+					echo Yii::t('admin', 'Banned list is empty.<br/');
 				}
 				?>
 			</div>
@@ -195,7 +188,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Все остальные'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'All others'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -205,9 +198,9 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAll", array ("class" => "checkAll")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Ник'); ?></th>
-							<th><?php echo Yii::t('admin', 'Почта'); ?></th>
-							<th><?php echo Yii::t('admin', 'Статус'); ?></th>
+							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
+							<th><?php echo Yii::t('admin', 'Email'); ?></th>
+							<th><?php echo Yii::t('admin', 'Status'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -218,7 +211,7 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($user->nick).'</td>
 								<td>'.CHtml::encode($user->email).'</td>
-								<td>'.($user->status == 1 ? Yii::t('admin', 'Активный') : Yii::t('admin', 'Неактивированный')).'</td>
+								<td>'.($user->status == 1 ? Yii::t('admin', 'Activated') : Yii::t('admin', 'Not activated')).'</td>
 								</tr>';
 							}
 							?>
@@ -227,22 +220,22 @@
 									<?php
 									$this->widget('CLinkPager', array(
 										'pages' => $pages,
-										'header' => Yii::t('admin', 'Перейти на страницу: '),
-										'nextPageLabel' => Yii::t('admin', 'далее'),
-										'prevPageLabel' => Yii::t('admin', 'назад'),
+										'header' => Yii::t('admin', 'Go to page: '),
+										'nextPageLabel' => Yii::t('admin', 'next'),
+										'prevPageLabel' => Yii::t('admin', 'prev'),
 										));
 										?>
 									</td>
-									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Активировать'), array('name' => 'active', 'class' => 'btn btn-primary')); ?></td>
-									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Повысить'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
-									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Забанить'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
+									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Activate'), array('name' => 'active', 'class' => 'btn btn-primary')); ?></td>
+									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Up'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
+									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 								</tr>
 								<?php echo CHtml::endForm(); ?>
 							</tbody>
 						</table>
 						<?php
 					} else {
-						echo Yii::t('admin', 'Список пользователей пуст.<br/>');
+						echo Yii::t('admin', 'Users list is empty.<br/>');
 					}
 					?>
 				</div>

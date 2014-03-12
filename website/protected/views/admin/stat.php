@@ -6,7 +6,7 @@
         <div class="panel-body">
             <?php
             if (empty($stat)) {
-                echo 'Статистика недоступна';
+                echo Yii::t('admin', 'Statistics not avaiable');
             } else {
                 Yii::import('ext.charts.*');
                 $chart = new Highchart();
@@ -34,7 +34,7 @@
 
                     $chart->yAxis = array(
                         'title' => array(
-                            'text' => 'Значение'
+                            'text' => Yii::t('admin', 'Value')
                         ),
                         'plotLines' => array(
                             array(

@@ -2,7 +2,7 @@
 <html style="height: 100%" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title><?php echo Yii::t('cams', 'Просмотр {cam_name}', array('{cam_name}' => $cam->name)); ?></title>
+    <title><?php echo Yii::t('cams', '{cam_name} view', array('{cam_name}' => $cam->name)); ?></title>
     <style type="text/css">
     body {
         font-family: sans-serif;
@@ -516,7 +516,7 @@ style="width: 15%; height: 100%; background-color: #fff; border-left: 1px solid 
     <span style="font-size: large; font-weight: bold; color: #777777"><?php echo $cam->name; ?></span>
 </div>
 <div style="padding: 1.2em; border-bottom: 5px solid #444444; vertical-align: bottom; text-align: center">
-    <span style="font-size: large; font-weight: bold; color: #777777"><?php echo Yii::t('cams', 'Архив'); ?></span>
+    <span style="font-size: large; font-weight: bold; color: #777777"><?php echo Yii::t('cams', 'Archive'); ?></span>
 </div>
 <div id="menuArchiveList" style="width: 100%">
 </div>
@@ -547,7 +547,7 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="rec-button" class="go-button rec-button-<?php echo !$cam->record ? 'on' : 'off'; ?>">
-                        <?php echo Yii::t('cams', 'Запись {record status}', array('{record status}' => $cam->record ? 'идет' : 'не идет')); ?>
+                        <?php echo Yii::t('cams', 'Record {record status}', array('{record status}' => $cam->record ? 'on' : 'off')); ?>
                     </td>
                 </tr>
             </table>
@@ -563,7 +563,7 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="jump-button" class="go-button">
-                        <?php echo Yii::t('cams', 'Перейти'); ?>
+                        <?php echo Yii::t('cams', 'Go to'); ?>
                     </td>
                 </tr>
             </table>
@@ -572,7 +572,7 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="download-button" class="go-button download-button">
-                        <?php echo Yii::t('cams', 'Скачать'); ?>
+                        <?php echo Yii::t('cams', 'Download'); ?>
                     </td>
                 </tr>
             </table>
@@ -581,7 +581,7 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="live-button" class="go-button live-button">
-                        <?php echo Yii::t('cams', 'Прямой эфир'); ?>
+                        <?php echo Yii::t('cams', 'Real time'); ?>
                     </td>
                 </tr>
             </table>
@@ -591,7 +591,7 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="hd-button" class="go-button hd-button">
-                        <?php echo Yii::t('cams', 'Лучшее качество'); ?>
+                        <?php echo Yii::t('cams', 'High quality'); ?>
                     </td>
                 </tr>
             </table>
@@ -601,7 +601,7 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                 <tr>
                     <td id="hd-button" class="go-button hd-button">
-                        <?php echo Yii::t('cams', 'Худшее качество'); ?>
+                        <?php echo Yii::t('cams', 'Low quality'); ?>
                     </td>
                 </tr>
             </table>
@@ -628,13 +628,13 @@ style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo 
 <?php $this->beginWidget('zii.widgets.jui.CJuiDialog',array(
     'id' => 'download-dialog',
     'options' => array(
-        'title' => Yii::t('cams', 'Выбор интервала'),
+        'title' => Yii::t('cams', 'Time interval:'),
         'height' => '350',
         'autoOpen' => false,
         ),
     ));
-echo 'Дата<br/>';
-$this->widget('zii.widgets.jui.CJuiDatePicker', 
+echo Yii::t('cams', 'Date');
+$this->widget('zii.widgets.jui.CJuiDatePicker',
     array(
         //'model'=>$model,
         //'attribute'=>'birthdate',
@@ -681,23 +681,23 @@ $this->widget('zii.widgets.jui.CJuiDatePicker',
 ); 
 ?>
 <br/><br/>
-<?php echo Yii::t('cams', 'Промежуток времени:'); ?><br/>
-<span id="mnv">00:00:00</span>-<span id="mxv">00:00:00</span><br/>(<span id="sumv">1439</span> <?php echo Yii::t('cams', 'минут'); ?>)
+<?php echo Yii::t('cams', 'Time interval:'); ?><br/>
+<span id="mnv">00:00:00</span>-<span id="mxv">00:00:00</span><br/>(<span id="sumv">1439</span> <?php echo Yii::t('cams', 'minutes'); ?>)
 <br/><br/>
 <div id="slider-range"></div>
 <br/>
 <br/>
-<input type="button" onclick="window.location.href = $('.downlink').text()" value="<?php echo Yii::t('cams', 'Скачать'); ?>"><br/>
+<input type="button" onclick="window.location.href = $('.downlink').text()" value="<?php echo Yii::t('cams', 'Download'); ?>"><br/>
 <?php $this->endWidget(); ?>
 <?php $this->beginWidget('zii.widgets.jui.CJuiDialog',array(
     'id' => 'jump-dialog',
     'options' => array(
-        'title' => Yii::t('cams', 'Выбор интервала'),
+        'title' => Yii::t('cams', 'Select interval'),
         'height' => '310',
         'autoOpen' => false,
         ),
     ));
-echo 'Дата<br/>';
+echo Yii::t('cams', 'Date:');
 $this->widget('zii.widgets.jui.CJuiDatePicker', 
     array(
         //'model'=>$model,
@@ -737,12 +737,12 @@ $this->widget('zii.widgets.jui.CJuiDatePicker',
 ); 
 ?>
 <br/><br/>
-<?php echo Yii::t('cams', 'Момент времени:'); ?><br/>
+<?php echo Yii::t('cams', 'Time:'); ?><br/>
 <span id="mnvj">00:00:00</span>
 <br/><br/>
 <div id="slider-range-jump"></div>
 <br/>
-<input type="button" onclick="jump();" value="<?php echo Yii::t('cams', 'Перейти'); ?>"><br/>
+<input type="button" onclick="jump();" value="<?php echo Yii::t('cams', 'Go'); ?>"><br/>
 <?php $this->endWidget(); ?>
 
 <script type="text/javascript">
@@ -801,7 +801,6 @@ $(document).ready(function() {
 
     function jump() {
         var time = parseInt($('.jumptime').text());
-    // setSourceSeeked есть баг, ожидает увидеть в урле nvr вместо live
     document["MyPlayer"].setSourceSeeked(window.uri.replace('live', 'nvr'), '<?php echo $low ? $cam->id.'_low' : $cam->id; ?>', time, time+1000);
     $('#jump-dialog').dialog('close');
 }

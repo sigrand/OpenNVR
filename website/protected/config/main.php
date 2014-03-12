@@ -8,7 +8,7 @@
 return array(
 	'basePath'=>dirname(__FILE__).DIRECTORY_SEPARATOR.'..',
 	'name'=>'Camflows',
-	'sourceLanguage' => 'ru',
+	'sourceLanguage' => 'en',
 	'behaviors'=>array(
 		'onBeginRequest' => array(
 			'class' => 'application.components.behaviors.BeginRequest'
@@ -87,11 +87,11 @@ return array(
 	// application-level parameters that can be accessed
 	// using Yii::app()->params['paramName']
 	'params'=>array(
-	'languages' => 
+	'languages' =>
 	array(
-		'ru'=>'Russian',
 		'en'=>'English',
-		'cn'=>'Chinese'
+		'ru'=>'Russian',
+//		'cn'=>'Chinese'
 		),
 		// this is used in contact page
 		'moment_server_protocol' => 'http',

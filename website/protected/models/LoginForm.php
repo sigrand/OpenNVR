@@ -7,7 +7,7 @@ class LoginForm extends CFormModel {
 
 	public function rules()	{
 		return array(
-			array('email, pass', 'required', 'message' => Yii::t('errors', 'Не можеть быть пустым!')),
+			array('email, pass', 'required', 'message' => Yii::t('errors', 'Can\'t be empty!')),
 			array('rememberMe', 'boolean'),
 			array('pass', 'authenticate'),
 			);
@@ -15,9 +15,9 @@ class LoginForm extends CFormModel {
 
 	public function attributeLabels() {
 		return array(
-			'email' => Yii::t('register', 'Ваш email'),
-			'rememberMe' => Yii::t('register', 'Запомнить вас?'),
-			'pass' => Yii::t('register', 'Пароль'),
+			'email' => Yii::t('register', 'Email'),
+			'rememberMe' => Yii::t('register', 'Remember me'),
+			'pass' => Yii::t('register', 'Password'),
 			);
 	}
 
@@ -27,9 +27,9 @@ class LoginForm extends CFormModel {
 			$this->_identity = new UserIdentity($this->email, $this->pass);
 			$authResult = $this->_identity->authenticate();
 			if(!$authResult) {
-				$this->addError('pass', Yii::t('errors', 'Неправильный email или пароль.'));
+				$this->addError('pass', Yii::t('errors', 'Wrong email or password.'));
 			} elseif($authResult === 2) {
-				$this->addError('pass', Yii::t('errors', 'Вы не активировали учетную запись, проверьте email.'));
+				$this->addError('pass', Yii::t('errors', 'Your account is not active. Check your email.'));
 			}
 		}
 	}

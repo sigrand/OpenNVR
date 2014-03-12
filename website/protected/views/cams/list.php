@@ -10,11 +10,11 @@
 		<?php } ?>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('cams', 'Мои камеры'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('cams', 'My cams'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
-				$addLink = CHtml::link('<img src="'.Yii::app()->request->baseUrl.'/images/add-icon.png" style="width:32px;"> '.Yii::t('cams', 'Добавить камеру'), $this->createUrl('cams/add'));
+				$addLink = CHtml::link('<img src="'.Yii::app()->request->baseUrl.'/images/add-icon.png" style="width:32px;"> '.Yii::t('cams', 'Add cam'), $this->createUrl('cams/add'));
 				if(!empty($myCams)) {
 					echo $addLink;
 					?>
@@ -22,12 +22,12 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAll", array ("class" => "checkAll")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('cams', 'Название'); ?></th>
-							<th><?php echo Yii::t('cams', 'Описание'); ?></th>
-							<th><?php echo Yii::t('cams', 'Показывать?'); ?></th>
-							<th><?php echo Yii::t('cams', 'Записывать?'); ?></th>
-							<th><?php echo Yii::t('cams', 'Редактировать'); ?></th>
-							<th><?php echo Yii::t('cams', 'Удалить'); ?></th>
+							<th><?php echo Yii::t('cams', 'Name'); ?></th>
+							<th><?php echo Yii::t('cams', 'Description'); ?></th>
+							<th><?php echo Yii::t('cams', 'Show?'); ?></th>
+							<th><?php echo Yii::t('cams', 'Record?'); ?></th>
+							<th><?php echo Yii::t('cams', 'Edit'); ?></th>
+							<th><?php echo Yii::t('cams', 'Delete'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -38,26 +38,26 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->id)), array('target' => '_blank')).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->show ? Yii::t('cams', 'Показывать') : Yii::t('cams', 'Не показывать')).'</td>
-								<td>'.($cam->record ? Yii::t('cams', 'Записывать') : Yii::t('cams', 'Не записывать')).'</td>
-								<td>'.CHtml::link(Yii::t('cams', 'Редактировать'), $this->createUrl('cams/edit', array('id' => $cam->id))).'</td>
-								<td>'.CHtml::link(Yii::t('cams', 'Удалить'), $this->createUrl('cams/delete', array('id' => $cam->id))).'</td>
+								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
+								<td>'.($cam->record ? Yii::t('cams', 'Record') : Yii::t('cams', 'Don\'t record')).'</td>
+								<td>'.CHtml::link(Yii::t('cams', 'Edit'), $this->createUrl('cams/edit', array('id' => $cam->id))).'</td>
+								<td>'.CHtml::link(Yii::t('cams', 'Delete'), $this->createUrl('cams/delete', array('id' => $cam->id))).'</td>
 								</tr>';
 							}
 							?>
 							<tr>
 								<td colspan="4"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Расшарить'), array('name' => 'share', 'class' => 'btn btn-success')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Показывать/Не показывать'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Записывать/Не записывать'), array('name' => 'record', 'class' => 'btn btn-warning')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Удалить'), array('name' => 'del', 'class' => 'btn btn-danger')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Share'), array('name' => 'share', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Record/Don\'t record'), array('name' => 'record', 'class' => 'btn btn-warning')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Delete'), array('name' => 'del', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('cams', '<br/>Список моих камер пуст.<br/>');
+					echo Yii::t('cams', '<br/>My cams list is empty.<br/>');
 				}
 				echo $addLink;
 				?>
@@ -67,7 +67,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('cams', 'Расшаренные для меня камеры'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('cams', 'Cams shared for me'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -77,11 +77,11 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllSh", array ("class" => "checkAllSh")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('cams', 'Название'); ?></th>
-							<th><?php echo Yii::t('cams', 'Хозяин'); ?></th>
-							<th><?php echo Yii::t('cams', 'Описание'); ?></th>
-							<th><?php echo Yii::t('cams', 'Показывать?'); ?></th>
-							<th><?php echo Yii::t('cams', 'Удалить'); ?></th>
+							<th><?php echo Yii::t('cams', 'Name'); ?></th>
+							<th><?php echo Yii::t('cams', 'Owner'); ?></th>
+							<th><?php echo Yii::t('cams', 'Description'); ?></th>
+							<th><?php echo Yii::t('cams', 'Show?'); ?></th>
+							<th><?php echo Yii::t('cams', 'Delete'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -93,22 +93,22 @@
 								<td>'.CHtml::link(CHtml::encode($cam->cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->cam->id)), array('target' => '_blank')).'</td>
 								<td>'.CHtml::encode($cam->owner->nick).'</td>
 								<td>'.CHtml::encode($cam->cam->desc).'</td>
-								<td>'.($cam->show ? Yii::t('cams', 'Показывать') : Yii::t('cams', 'Не показывать')).'</td>
-								<td>'.CHtml::link(Yii::t('cams', 'Удалить'), $this->createUrl('cams/delete', array('id' => $cam->id, 'type' => 'share'))).'</td>
+								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
+								<td>'.CHtml::link(Yii::t('cams', 'Delete'), $this->createUrl('cams/delete', array('id' => $cam->id, 'type' => 'share'))).'</td>
 								</tr>';
 							}
 							?>
 							<tr>
 								<td colspan="5"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Показывать/Не показывать'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Удалить'), array('name' => 'del', 'class' => 'btn btn-danger')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Delete'), array('name' => 'del', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('cams', 'Список расшареных, для меня камер пуст.<br/>');
+					echo Yii::t('cams', 'List cams shared for me is empty.<br/>');
 				}
 				?>
 			</div>
@@ -117,7 +117,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('cams', 'Публичные камеры'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('cams', 'Public cams'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -128,10 +128,10 @@
 							<tr>
 								<th><?php echo CHtml::activeCheckBox($form, "checkAllP", array ("class" => "checkAllP")); ?></th>
 								<th>#</th>
-								<th><?php echo Yii::t('cams', 'Название'); ?></th>
-								<th><?php echo Yii::t('cams', 'Хозяин'); ?></th>
-								<th><?php echo Yii::t('cams', 'Описание'); ?></th>
-								<th><?php echo Yii::t('cams', 'Показывать?'); ?></th>
+								<th><?php echo Yii::t('cams', 'Name'); ?></th>
+								<th><?php echo Yii::t('cams', 'Owner'); ?></th>
+								<th><?php echo Yii::t('cams', 'Description'); ?></th>
+								<th><?php echo Yii::t('cams', 'Show?'); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -151,20 +151,20 @@
 								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->id)), array('target' => '_blank')).'</td>
 								<td>'.CHtml::encode($cam->owner->nick).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->show ? Yii::t('cams', 'Показывать') : Yii::t('cams', 'Не показывать')).'</td>
+								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
 								</tr>';
 							}
 							?>
 							<tr>
 								<td colspan="5"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Показывать/Не показывать'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('cams', 'Список публичных камер пуст.<br/>');
+					echo Yii::t('cams', 'Public cams list is empty.<br/>');
 				}
 				?>
 			</div>

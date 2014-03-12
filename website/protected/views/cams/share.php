@@ -4,7 +4,7 @@
 <div class="col-md-offset-2 col-md-7">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><?php echo Yii::t('cams', 'Выберите кому камеры шарить'); ?></h3>
+			<h3 class="panel-title"><?php echo Yii::t('cams', 'Specify the users for whom you want to share cams'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php
@@ -38,7 +38,7 @@
 				</div>
 				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
-						<?php echo CHtml::submitButton(Yii::t('cams', 'Расшарить'), array('class' => 'btn btn-primary')); ?>
+						<?php echo CHtml::submitButton(Yii::t('cams', 'Share'), array('class' => 'btn btn-primary')); ?>
 					</div>
 				</div>
 				<?php $this->endWidget(); ?>

@@ -48,7 +48,7 @@ class Cams extends CActiveRecord
 			array('user_id, show, public, record', 'numerical', 'integerOnly'=>true),
 			array('url, prev_url', 'length', 'max'=>2000),
 			array('time_offset', 'length', 'max'=>4),
-			array('coordinates', 'match', 'pattern'=>'/^-?[0-9]{1,3}.[0-9]+, -?[0-9]{1,3}.[0-9]+$/u', 'message'=>'Координаты должны быть в виде: "xxx.xxx, yyy.yyy"'),
+			array('coordinates', 'match', 'pattern'=>'/^-?[0-9]{1,3}.[0-9]+, -?[0-9]{1,3}.[0-9]+$/u', 'message'=>Yii::t('cams', 'Coordinates must be "xxx.xxx, yyy.yyy"')),
 			array('desc', 'safe'),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
@@ -78,15 +78,15 @@ class Cams extends CActiveRecord
 		return array(
 			'id' => 'ID',
 			'user_id' => 'User',
-			'name' => 'Название',
-			'desc' => 'Описание',
-			'url' => 'Url',
-			'prev_url' => 'Url картинки предпросмотра',
-			'show' => 'Показывать на главной?',
-			'public' => 'Public',
-			'time_offset' => 'Часовой пояс',
-			'coordinates' => 'Координаты',
-			'record' => 'Вести запись?'
+			'name' => Yii::t('cams', 'Name'),
+			'desc' => Yii::t('cams', 'Description'),
+			'url' => 'URL',
+			'prev_url' => Yii::t('cams', 'Low quality stream URL'),
+			'show' => Yii::t('cams', 'Show on main page'),
+			'public' => Yii::t('cams', 'Public'),
+			'time_offset' => Yii::t('cams', 'Time zone'),
+			'coordinates' => Yii::t('cams', 'Coordinates'),
+			'record' => Yii::t('cams', 'Enable record')
 		);
 	}
 
@@ -139,7 +139,6 @@ class Cams extends CActiveRecord
 		$myCams = Cams::model()->findAllByAttributes(array('user_id' => $id));
 		$myPublicCams = $public;
 		$mySharedCams = $shared;
-		// генерим список камер для селектора id=>name
 		$allMyCams = array();
 		foreach ($myCams as $key => $cam) {
 			$allMyCams[$cam->id] = $cam;

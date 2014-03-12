@@ -10,7 +10,7 @@
 		<?php } ?>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Мои камеры'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'My cams'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -20,9 +20,9 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAll", array ("class" => "checkAll")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Название'); ?></th>
-							<th><?php echo Yii::t('admin', 'Описание'); ?></th>
-							<th><?php echo Yii::t('admin', 'Статус'); ?></th>
+							<th><?php echo Yii::t('admin', 'Name'); ?></th>
+							<th><?php echo Yii::t('admin', 'Description'); ?></th>
+							<th><?php echo Yii::t('admin', 'Status'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -33,20 +33,20 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? Yii::t('admin', 'Публичная') : Yii::t('admin', 'Не публичная')).'</td>
+								<td>'.($cam->public ? Yii::t('admin', 'Public') : Yii::t('admin', 'Not public')).'</td>
 								</tr>';
 							}
 							?>
 							<tr>
 								<td colspan="4"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Опубликовать/Скрыть'), array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Public/Not public'), array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'Список моих камер пуст.<br/>');
+					echo Yii::t('admin', 'My cams list is empty.<br/>');
 				}
 				?>
 			</div>
@@ -55,7 +55,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Публичные камеры'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Public cams'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -65,9 +65,9 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllSh", array ("class" => "checkAllSh")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Название'); ?></th>
-							<th><?php echo Yii::t('admin', 'Описание'); ?></th>
-							<th><?php echo Yii::t('admin', 'Статус'); ?></th>
+							<th><?php echo Yii::t('admin', 'Name'); ?></th>
+							<th><?php echo Yii::t('admin', 'Description'); ?></th>
+							<th><?php echo Yii::t('admin', 'Status'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -78,20 +78,20 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? Yii::t('admin', 'Публичная') : Yii::t('admin', 'Не публичная')).'</td>
+								<td>'.($cam->public ? Yii::t('admin', 'Public') : Yii::t('admin', 'Not public')).'</td>
 								</tr>';
 							}
 							?>
 							<tr>
 								<td colspan="4"></td>
-								<td><?php echo CHtml::submitButton('Опубликовать/Скрыть', array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton('Public/Not public', array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'Список публичных камер пуст.<br/>');
+					echo Yii::t('admin', 'Public cams list is empty.<br/>');
 				}
 				?>
 			</div>
@@ -100,7 +100,7 @@
 	<div class="col-sm-12">
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Все остальные камеры'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Other cams'); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php
@@ -110,9 +110,9 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllP", array ("class" => "checkAllP")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Название'); ?></th>
-							<th><?php echo Yii::t('admin', 'Описание'); ?></th>
-							<th><?php echo Yii::t('admin', 'Статус'); ?></th>
+							<th><?php echo Yii::t('admin', 'Name'); ?></th>
+							<th><?php echo Yii::t('admin', 'Description'); ?></th>
+							<th><?php echo Yii::t('admin', 'Status'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -123,7 +123,7 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? Yii::t('admin', 'Публичная') : Yii::t('admin', 'Не публичная')).'</td>
+								<td>'.($cam->public ? Yii::t('admin', 'Public') : Yii::t('admin', 'Not public')).'</td>
 								</tr>';
 							}
 							?>
@@ -132,21 +132,21 @@
 									<?php
 									$this->widget('CLinkPager', array(
 										'pages' => $pages,
-										'header' => Yii::t('admin', 'Перейти на страницу: '),
-										'nextPageLabel' => Yii::t('admin', 'далее'),
-										'prevPageLabel' => Yii::t('admin', 'назад'),
+										'header' => Yii::t('admin', 'Go to page: '),
+										'nextPageLabel' => Yii::t('admin', 'next'),
+										'prevPageLabel' => Yii::t('admin', 'prev'),
 										));
 										?>
 									</td>
 									<td></td>
-									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Опубликовать/Скрыть'), array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
+									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Public/Not public'), array('name' => 'public', 'class' => 'btn btn-success')); ?></td>
 								</tr>
 								<?php echo CHtml::endForm(); ?>
 							</tbody>
 						</table>
 						<?php
 					} else {
-						echo Yii::t('admin', 'Список камер пуст.<br/>');
+						echo Yii::t('admin', 'Cams list is empty.<br/>');
 					}
 					?>
 				</div>

@@ -5,7 +5,7 @@
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><?php echo Yii::t('register', 'Введите email и пароль'); ?></h3>
+			<h3 class="panel-title"><?php echo Yii::t('register', 'Password recovery'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php
@@ -21,26 +21,26 @@
 			);
 			?>
 			<div class="form-group">
-				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Введите Ник:'); ?></label>
+				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Enter your nick:'); ?></label>
 				<div class="col-sm-8">
 					<input type="text" name="nick" value="" class="form-control">
 				</div>
 			</div>
 			<div class="form-group">
 				<div class="col-sm-offset-4 col-sm-8">
-					<input type="submit" value="<?php echo Yii::t('register', 'Восстановить'); ?>" class="btn btn-primary">
+					<input type="submit" value="<?php echo Yii::t('register', 'Send recovery message'); ?>" class="btn btn-primary">
 				</div>
 			</div>
-			<?php echo Yii::t('register', 'или'); ?><br/><br/>
+			<?php echo Yii::t('register', 'or'); ?><br/><br/>
 			<div class="form-group">
-				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Введите email:'); ?></label>
+				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Enter your email:'); ?></label>
 				<div class="col-sm-8">
 					<input type="text" name="email" value="" class="form-control">
 				</div>
 			</div>
 			<div class="form-group">
 				<div class="col-sm-offset-4 col-sm-8">
-					<input type="submit" value="<?php echo Yii::t('register', 'Восстановить'); ?>" class="btn btn-primary">
+					<input type="submit" value="<?php echo Yii::t('register', 'Send recovery message'); ?>" class="btn btn-primary">
 				</div>
 			</div>
 			<?php $this->endWidget(); ?><br/>
@@ -49,14 +49,14 @@
 	</div>
 </div>
 <?php } elseif($code == 1) { 
-	echo Yii::t('register', 'Такого пользователя нет.');
+	echo Yii::t('register', 'There is no such user.');
 } elseif($code == 2) { 
-	echo Yii::t('register', 'Неправильный код.');
+	echo Yii::t('register', 'Wrong code.');
 } elseif($code == 3 || $code == 4 || $code == 5) { ?>
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><?php echo Yii::t('register', 'Изменение пароля'); ?></h3>
+			<h3 class="panel-title"><?php echo Yii::t('register', 'Change password'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php
@@ -72,33 +72,33 @@
 			);
 			?>
 			<div class="form-group">
-				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Введите пароль:'); ?></label>
+				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Enter password:'); ?></label>
 				<div class="col-sm-8">
 					<input type="text" name="pass" value="" class="form-control">
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Подтвердите пароль:'); ?></label>
+				<label class="col-sm-4 control-label"><?php echo Yii::t('register', 'Enter password again:'); ?></label>
 				<div class="col-sm-8">
 					<input type="text" name="pass2" value="" class="form-control">
 				</div>
 			</div>
 			<div class="form-group">
 				<div class="col-sm-offset-4 col-sm-8">
-					<input type="submit" value="Изменить" class="btn btn-primary">
+					<input type="submit" value="<?php echo Yii::t('register', 'Change'); ?>" class="btn btn-primary">
 				</div>
 			</div>
 			<?php $this->endWidget(); ?><br/>
 			<?php  if($code == 4) {
-				echo Yii::t('register', 'Пароли не совпадают!');
+				echo Yii::t('register', 'Passwords not equal!');
 			} if($code == 5) {
-				echo Yii::t('register', 'Пароль не может быть пустым.');
+				echo Yii::t('register', 'Password can\'t be empty.');
 			} ?>
 		</div>
 	</div>
 </div>
 <?php
 } elseif($code == 6) {
-	echo Yii::t('register', 'Ваш пароль успешно изменен.');
+	echo Yii::t('register', 'Your password was successfully changed.');
 }
 ?>

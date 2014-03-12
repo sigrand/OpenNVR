@@ -4,10 +4,10 @@
 <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
 <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
 
-<div class="col-md-offset-3 col-md-5">
+<div class="col-sm-12">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><?php echo $model->isNewRecord ? Yii::t('cams', 'Заполните поля. * - помечены обязательные') : Yii::t('cams', 'Редактирование'); ?></h3>
+			<h3 class="panel-title"><?php echo $model->isNewRecord ? Yii::t('cams', 'Fields marked with an * are required') : Yii::t('cams', 'Edit'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php $form = $this->beginWidget('CActiveForm', array(
@@ -73,7 +73,7 @@
 					</div>
 				</div>
 				<div class="form-group">
-					<div class="col-sm-16" id="map" style="height:200px;">
+					<div class="col-sm-16" id="map" style="height:400px;">
 					</div>
 				</div>
 				<div class="form-group">
@@ -98,7 +98,7 @@
 				</div>
 				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
-						<?php echo CHtml::submitButton($model->isNewRecord ? Yii::t('cams', 'Добавить') : Yii::t('cams', 'Сохранить'), array('class' => 'btn btn-primary')); ?>
+						<?php echo CHtml::submitButton($model->isNewRecord ? Yii::t('cams', 'Add') : Yii::t('cams', 'Save'), array('class' => 'btn btn-primary')); ?>
 					</div>
 				</div>
 				<?php $this->endWidget(); ?>
@@ -108,7 +108,7 @@
 		if(Yii::app()->user->hasFlash('notify')) {
 		$notify = Yii::app()->user->getFlash('notify');
 		?>
-		<div class="alert alert-<?php echo $notify['type']; ?>"><?php echo $notify['message']; ?>. <?php echo Yii::t('cams', 'Перейти в {user CP}', array('{user CP}')); ?> <?php echo CHtml::link(Yii::t('cams', 'личный кабинет'), $this->createUrl('cams/manage')); ?>?</div>
+		<div class="alert alert-<?php echo $notify['type']; ?>"><?php echo $notify['message']; ?>. <?php echo Yii::t('cams', 'Go to {user CP}', array('{user CP}')); ?> <?php echo CHtml::link(Yii::t('cams', 'personal cabinet'), $this->createUrl('cams/manage')); ?>?</div>
 		<?php } ?>
 	</div>
 

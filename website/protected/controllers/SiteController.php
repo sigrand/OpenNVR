@@ -8,7 +8,7 @@ class SiteController extends Controller {
 
 	public function actionAbout() {
 		//Notify::note('Кто то посетил about');
-		$this->render('info', array('title' => Yii::t('app', 'О нас'), 'content' => Yii::t('app', 'О нас...')));
+		$this->render('info', array('title' => Yii::t('app', 'About us'), 'content' => Yii::t('app', 'About us...')));
 	}
 
 	public function actionRegister() {
@@ -88,22 +88,22 @@ class SiteController extends Controller {
 		} elseif(!isset($_POST['nick']) || !isset($_POST['email'])) {
 			$this->render('recovery', array('result' => ''));
 		} else {
-			$answer = Yii::t('register', 'Нет такого пользователя');
+			$answer = Yii::t('register', 'There is no such user');
 			if(isset($_POST['nick']) && !empty($_POST['nick'])) {
 				$user = Users::model()->findByAttributes(array('nick' => $_POST['nick']));
 				if(!$user) {
-					$answer = Yii::t('register', 'Нет такого пользователя');
+					$answer = Yii::t('register', 'There is no such user');
 				} else {
 					$mail = 1;
-					$answer = Yii::t('register', 'Письмо с данными для восстановления отправлено на ваш email');
+					$answer = Yii::t('register', 'Letter for password recovery was sended to your email');
 				}
 			} elseif(isset($_POST['email']) && !empty($_POST['email'])) {
 				$user = Users::model()->findByAttributes(array('email' => $_POST['email']));
 				if(!$user) {
-					$answer = Yii::t('register', 'Нет такого пользователя');
+					$answer = Yii::t('register', 'There is no such user');
 				} else {
 					$mail = 1;
-					$answer = Yii::t('register', 'Письмо с данными для восстановления отправлено на ваш email');
+					$answer = Yii::t('register', 'Letter for password recovery was sended to your email');
 				}
 			}
 			if(isset($mail) && $mail) {
@@ -112,10 +112,9 @@ class SiteController extends Controller {
 				$mail = new YiiMailer();
 				$mail->setFrom('recovery@camshot.ru');
 				$mail->setTo($user->email);
-				$mail->setSubject(Yii::t('register', 'Восстановление пароля'));
+				$mail->setSubject(Yii::t('register', 'Password recovery'));
 				$mail->setBody(
-					Yii::t('register', 
-						"\r\nСсылка для восстановления: {link}\r\n",
+					Yii::t('register',"Recovery link: {link}",
 						array('{link}' => Yii::app()->createAbsoluteUrl('site/recovery', array('user' => $user->nick, 'code' => $code)))
 						)
 					);

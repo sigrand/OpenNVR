@@ -17,6 +17,7 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'О нас' => '',
-  'О нас...' => '',
+  'About us' => 'О нас',
+  'About us...' => 'О нас...',
+  'Index page' => 'Главная страница',
 );

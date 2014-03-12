@@ -13,10 +13,10 @@ $creators = array('0' => 'sys');
 			<div class="panel-heading">
 				<ul class="nav nav-tabs">
 					<li <?php echo $type == 'system' ? 'class="active"' : ''; ?>>
-						<?php echo CHtml::link(Yii::t('admin', 'Системные логи'), $this->createUrl('admin/logs', array('type' => 'system'))); ?>
+						<?php echo CHtml::link(Yii::t('admin', 'System logs'), $this->createUrl('admin/logs', array('type' => 'system'))); ?>
 					</li>
 					<li <?php echo $type != 'system' ? 'class="active"' : ''; ?>>
-						<?php echo CHtml::link(Yii::t('admin', 'Пользовательские логи'), $this->createUrl('admin/logs', array('type' => 'user'))); ?>
+						<?php echo CHtml::link(Yii::t('admin', 'User logs'), $this->createUrl('admin/logs', array('type' => 'user'))); ?>
 					</li>
 				</ul>
 			</div>
@@ -27,10 +27,10 @@ $creators = array('0' => 'sys');
 					<table class="table table-striped">
 						<thead>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Кто'); ?></th>
-							<th><?php echo Yii::t('admin', 'Кому'); ?></th>
-							<th><?php echo Yii::t('admin', 'Сообщение'); ?></th>
-							<th><?php echo Yii::t('admin', 'Время'); ?></th>
+							<th><?php echo Yii::t('admin', 'From'); ?></th>
+							<th><?php echo Yii::t('admin', 'To'); ?></th>
+							<th><?php echo Yii::t('admin', 'Message'); ?></th>
+							<th><?php echo Yii::t('admin', 'Time'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -45,8 +45,8 @@ $creators = array('0' => 'sys');
 								}
 								echo '<tr>
 								<td>'.($key+1).'</td>
-								<td>'.CHtml::encode($log->creator_id == 0 ? 'Система' : $creators[$log->creator_id]).'</td>
-								<td>'.CHtml::encode($log->dest_id == 0 ? 'Система' : $creators[$log->dest_id]).'</td>
+								<td>'.CHtml::encode($log->creator_id == 0 ? Yii::t('admin', 'System') : $creators[$log->creator_id]).'</td>
+								<td>'.CHtml::encode($log->dest_id == 0 ? Yii::t('admin', 'System') : $creators[$log->dest_id]).'</td>
 								<td>'.CHtml::encode($log->msg).'</td>
 								<td>'.CHtml::encode(date('d-m-Y H:i:s', $log->time)).'</td>
 								</tr>';
@@ -56,7 +56,7 @@ $creators = array('0' => 'sys');
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'логи пусты');
+					echo Yii::t('admin', 'logs empty');
 				}
 				?>
 			</div>

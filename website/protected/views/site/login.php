@@ -8,7 +8,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><? echo Yii::t('register', 'Введите email и пароль');?></h3>
+			<h3 class="panel-title"><?php echo Yii::t('register', 'Login form'); ?></h3>
 		</div>
 		<div class="panel-body">
 			<?php
@@ -53,11 +53,11 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 			</div>
 			<div class="form-group">
 				<div class="col-sm-offset-2 col-sm-10">
-					<?php echo CHtml::submitButton(Yii::t('register', 'Войти'), array('class' => 'btn btn-primary')); ?>
+					<?php echo CHtml::submitButton(Yii::t('register', 'Login'), array('class' => 'btn btn-primary')); ?>
 				</div>
 			</div>
-			<a class="links" href="<?php echo $this->createUrl('site/register'); ?>"><?php echo Yii::t('register', 'Регистрация');?></a><br/>
-			<a class="links" href="<?php echo $this->createUrl('site/recovery'); ?>"><?php echo Yii::t('register', 'Восстановление пароля');?></a>
+			<a class="links" href="<?php echo $this->createUrl('site/register'); ?>"><?php echo Yii::t('register', 'Registration');?></a><br/>
+			<a class="links" href="<?php echo $this->createUrl('site/recovery'); ?>"><?php echo Yii::t('register', 'Password recovery');?></a>
 			<?php $this->endWidget(); ?>
 		</div>
 	</div>

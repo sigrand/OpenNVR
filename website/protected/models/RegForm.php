@@ -18,10 +18,10 @@ class RegForm extends CFormModel {
 	public function rules()	{
 		return array(
 			// name, email, subject and body are required
-			array('email, pass, nick', 'required', 'message' => Yii::t('errors', 'Не может быть пустым')),
-			array('email', 'unique', 'attributeName' => 'email', 'className' => 'Users', 'message' => Yii::t('errors', 'На этот email, уже зарегестрирован пользователь')),
-			array('nick', 'unique', 'attributeName' => 'nick', 'className' => 'Users', 'message' => Yii::t('errors', 'Такой Ник, уже занят')),
-			array('email', 'email', 'message' => Yii::t('errors', 'Неправильный формат email')),
+			array('email, pass, nick', 'required', 'message' => Yii::t('errors', 'Can\'t be empty')),
+			array('email', 'unique', 'attributeName' => 'email', 'className' => 'Users', 'message' => Yii::t('errors', 'An account with this email address already exists')),
+			array('nick', 'unique', 'attributeName' => 'nick', 'className' => 'Users', 'message' => Yii::t('errors', 'An account with this nick already exists')),
+			array('email', 'email', 'message' => Yii::t('errors', 'Wrong email')),
 			//array('email, pass, nick', 'safe'),
 			//array('verifyCode', 'captcha', 'allowEmpty'=>!CCaptcha::checkRequirements()),
 			);
@@ -40,13 +40,14 @@ class RegForm extends CFormModel {
 			$mail = new YiiMailer();
 			$mail->setFrom('register@camshot.ru');
 			$mail->setTo($user->email);
-			$mail->setSubject(Yii::t('register', 'Активация аккаунта'));
+			$mail->setSubject(Yii::t('register', 'Account activation'));
 			$mail->setBody(
 				Yii::t(
 					'register',
-					"\r\nЗдравствуйте {nick},<br/><br/>\r\n\r\n
-					Ваш код активации: {code}<br/>\r\n
-					<br/>Ссылка для активации:<br/> 
+					"Hello {nick},<br/><br/>
+
+
+					Your activation code: {code}<br/> 
 					{link}",
 					array(
 						'{nick}' => $user->nick,
@@ -64,9 +65,9 @@ class RegForm extends CFormModel {
 
 		public function attributeLabels() {
 			return array(
-				'verifyCode' => Yii::t('register', 'Код:'),
-				'pass' => Yii::t('register', 'Пароль'),
-				'nick' => Yii::t('register', 'Ник')
+				'verifyCode' => Yii::t('register', 'Code:'),
+				'pass' => Yii::t('register', 'Password'),
+				'nick' => Yii::t('register', 'Nick')
 				);
 		}
 	}

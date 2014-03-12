@@ -8,7 +8,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 <div class="col-md-offset-3 col-md-5">
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3 class="panel-title"><?php echo Yii::t('register', 'Введите ник, email и пароль'); ?></h3>
+            <h3 class="panel-title"><?php echo Yii::t('register', 'Registration form'); ?></h3>
         </div>
         <div class="panel-body">
             <?php $form=$this->beginWidget('CActiveForm', array(
@@ -48,7 +48,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2 col-sm-10">
-                        <?php echo CHtml::submitButton(Yii::t('register', 'Регистрация'), array('class' => 'btn btn-primary')); ?>
+                        <?php echo CHtml::submitButton(Yii::t('register', 'Register'), array('class' => 'btn btn-primary')); ?>
                     </div>
                 </div>
                 <?php $this->endWidget(); ?>
@@ -61,6 +61,6 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 <?php /* if(CCaptcha::checkRequirements() && Yii::app()->user->isGuest):?>
         <?=CHtml::activeLabelEx($model, 'verifyCode')?>
         </td><td style="padding-top:5%;">
-        <?$this->widget('CCaptcha', array('buttonOptions'=>array('class' => 'links'), 'buttonLabel' => '<br/><br/><span class="links">Обновить картинку</span><br/>'));?><br/>
+        <?$this->widget('CCaptcha', array('buttonOptions'=>array('class' => 'links'), 'buttonLabel' => '<br/><br/><span class="links">'.Yii::t('register', 'Refresh image').'</span><br/>'));?><br/>
         <?=CHtml::activeTextField($model, 'verifyCode')?>
         <?php } */ ?>

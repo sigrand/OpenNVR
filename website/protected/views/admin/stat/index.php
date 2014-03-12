@@ -3,29 +3,29 @@
         <div class="panel-heading">
             <ul class="nav nav-tabs">
                 <li <?php echo $type == 'disk' ? 'class="active"' : ''; ?>>
-                    <?php echo CHtml::link(Yii::t('admin', 'Разделы жесткого диска'), $this->createUrl('admin/stat', array('type' => 'disk'))); ?>
+                    <?php echo CHtml::link(Yii::t('admin', 'HDD pratitions'), $this->createUrl('admin/stat', array('type' => 'disk'))); ?>
                 </li>
                 <li <?php echo $type == 'load' ? 'class="active"' : ''; ?>>
-                    <?php echo CHtml::link(Yii::t('admin', 'Нагрузка ресурсов'), $this->createUrl('admin/stat', array('type' => 'load'))); ?>
+                    <?php echo CHtml::link(Yii::t('admin', 'System load'), $this->createUrl('admin/stat', array('type' => 'load'))); ?>
                 </li>
                 <li <?php echo $type == 'rtmp' ? 'class="active"' : ''; ?>>
-                    <?php echo CHtml::link(Yii::t('admin', 'RTMP Статистика'), $this->createUrl('admin/stat', array('type' => 'rtmp'))); ?>
+                    <?php echo CHtml::link(Yii::t('admin', 'RTMP statistics'), $this->createUrl('admin/stat', array('type' => 'rtmp'))); ?>
                 </li>
             </ul>
         </div>
         <div class="panel-body">
             <?php
             if (empty($stat)) {
-                echo Yii::t('admin', 'Статистика недоступна');
+                echo Yii::t('admin', 'Statistics not avaiable');
             } else {
                 switch ($type) {
                     case 'disk':
                     echo '<table class="table">
                     <thead>
-                    <th>'.Yii::t('admin', 'Раздел').'</th>
-                    <th>'.Yii::t('admin', 'Емкость').'</th>
-                    <th>'.Yii::t('admin', 'Свободно').'</th>
-                    <th>'.Yii::t('admin', 'Использованно').'</th>
+                    <th>'.Yii::t('admin', 'Partition').'</th>
+                    <th>'.Yii::t('admin', 'Size').'</th>
+                    <th>'.Yii::t('admin', 'Free').'</th>
+                    <th>'.Yii::t('admin', 'Used').'</th>
                     </thead>
                     <tbody>
                     ';
@@ -40,12 +40,12 @@
                         ';
                     }
                     echo '</tbody></table><br/>';
-                    break;   
+                    break;
 
                     case 'rtmp':
                     echo $stat;
                     break;
-                    
+
                     case 'load':
                     Yii::import('ext.charts.*');
                     $chart = new Highchart();
@@ -77,7 +77,7 @@
 
                         $chart->yAxis = array(
                             'title' => array(
-                                'text' => Yii::t('admin', 'Значение')
+                                'text' => Yii::t('admin', 'Value')
                                 ),
                             'min' => 0,
                             'plotLines' => array(

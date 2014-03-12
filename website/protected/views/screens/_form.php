@@ -15,7 +15,7 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<h3 class="panel-title">
-					<?php echo $model->isNewRecord ? 'Создание экрана' : 'Изменение экрана'; ?>
+					<?php echo $model->isNewRecord ? Yii::t('screens', 'New screen') : Yii::t('screens', 'Edit screen'); ?>
 				</h3>
 			</div>
 			<div class="panel-body">
@@ -32,17 +32,17 @@
 <?php } ?>
 
 <div class="form-group">
-	<label class="col-sm-2 control-label required" for="ProfileForm_time_offset">Название экрана</label>
+	<label class="col-sm-2 control-label required" for="ProfileForm_time_offset"><?php echo Yii::t('screens', 'Screen name'); ?></label>
 	<div class="col-sm-10">
 		<?php echo $form->textField($model,'name',array('size'=>60,'maxlength'=>100, 'class'=>'form-control')); ?>
 	</div>
 </div>
 <div class="form-group">
 	<div class="col-md-2" style="padding-top:10px;padding-bottom:10px;">
-		<a id="add_cam_a" href="#"><img id="add_cam_div" width="32px" src="<?php echo Yii::app()->baseUrl; ?>/images/add-icon.png" alt="Добавить камеру">Добавить камеру</a>
+		<a id="add_cam_a" href="#"><img id="add_cam_div" width="32px" src="<?php echo Yii::app()->baseUrl; ?>/images/add-icon.png" alt="<?php echo Yii::t('screens', 'Add cam'); ?>"><?php echo Yii::t('screens', 'Add cam'); ?></a>
 	</div>
 	<div class="col-md-2"  style="padding-top:10px;padding-bottom:10px;">
-		<?php echo CHtml::submitButton('Сохранить', array('class' => 'btn btn-primary')); ?>
+		<?php echo CHtml::submitButton(Yii::t('screens', 'Add cam'), array('class' => 'btn btn-primary')); ?>
 	</div>
 
 </div>
@@ -71,10 +71,10 @@
 
 	for ($i=1; $i <= 16; $i++) {
 	echo '<div class="cams" id="cam'.$i.'_div" style="display:none; background-color:'.$colors[$i].';">';
-		echo '<div title="Удалить" class="remove_cam_button" style="background-image:url('.Yii::app()->baseUrl.'/images/remove_button.png);';
+		echo '<div title="'.Yii::t('screens', 'Delete').'" class="remove_cam_button" style="background-image:url('.Yii::app()->baseUrl.'/images/remove_button.png);';
 		echo 'width:16px; height:16px;right:0px;position:absolute"></div>';
-		echo "Камера:".$form->dropDownList($model,'cam'.$i.'_id', $myCams, array('class'=>'form-control'));
-		echo "Описание:".$form->textField($model,'cam'.$i.'_descr',array('size'=>60,'maxlength'=>100, 'class'=>'form-control'));
+		echo Yii::t('screens', 'Cam').$form->dropDownList($model,'cam'.$i.'_id', $myCams, array('class'=>'form-control'));
+		echo Yii::t('screens', 'Descr').$form->textField($model,'cam'.$i.'_descr',array('size'=>60,'maxlength'=>100, 'class'=>'form-control'));
 		echo '<div style="display:none;">';
 			echo $form->textField($model,'cam'.$i.'_x');
 			echo $form->textField($model,'cam'.$i.'_y');

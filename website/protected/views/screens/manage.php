@@ -11,14 +11,14 @@
 		<div class="panel panel-default">
 			<div class="panel-heading">
 				<?php if (Yii::app()->user->permissions == 3) { ?>
-				<h3 class="panel-title">Мои экраны</h3>
+				<h3 class="panel-title"><?php echo Yii::t('screens', 'My screens'); ?></h3>
 				<?php } else { ?>
-				<h3 class="panel-title">Все экраны</h3>
+				<h3 class="panel-title"><?php echo Yii::t('screens', 'All screens'); ?></h3>
 				<?php } ?>
 			</div>
 			<div class="panel-body">
 				<?php
-				$addLink = CHtml::link('<img src="'.Yii::app()->request->baseUrl.'/images/add-icon.png" style="width:32px;"> Добавить экран', $this->createUrl('screens/create'));
+				$addLink = CHtml::link('<img src="'.Yii::app()->request->baseUrl.'/images/add-icon.png" style="width:32px;"> '.Yii::t('screens', 'Add screen'), $this->createUrl('screens/create'));
 				if(!empty($myscreens)) {
 					echo $addLink;
 					?>
@@ -26,11 +26,11 @@
 						<thead>
 							<th>#</th>
 							<?php if (Yii::app()->user->permissions == 3) { ?>
-							<th>ID владельца</th>
+							<th><?php echo Yii::t('screens', 'User ID'); ?></th>
 							<?php } ?>
-							<th>Название</th>
-							<th>Редактировать</th>
-							<th>Удалить</th>
+							<th><?php echo Yii::t('screens', 'Name'); ?></th>
+							<th><?php echo Yii::t('screens', 'Edit'); ?></th>
+							<th><?php echo Yii::t('screens', 'Delete'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -41,8 +41,8 @@
 								if (Yii::app()->user->permissions == 3)
 									echo '<td>'.$screen->owner_id.'</td>';
 								echo '<td>'.CHtml::link(CHtml::encode($screen->name), $this->createUrl('screens/view/', array('id' => $screen->id)), array('target' => '_blank')).'</td>
-								<td>'.CHtml::link('Редактировать', $this->createUrl('screens/update', array('id' => $screen->id))).'</td>
-								<td>'.CHtml::link('Удалить', $this->createUrl('screens/delete', array('id' => $screen->id))).'</td>
+								<td>'.CHtml::link(Yii::t('screens', 'Edit'), $this->createUrl('screens/update', array('id' => $screen->id))).'</td>
+								<td>'.CHtml::link(Yii::t('screens', 'Delete'), $this->createUrl('screens/delete', array('id' => $screen->id))).'</td>
 								</tr>';
 							}
 							?>
@@ -52,7 +52,7 @@
 				} else {
 					?>
 					<br/>
-					Список моих экранов пуст.
+					<?php echo Yii::t('screens', 'My screens list is empty.'); ?>
 					<br/>
 					<?php
 				}

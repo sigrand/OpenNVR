@@ -37,7 +37,7 @@
                 pluginspage="http://www.macromedia.com/go/getflashplayer"
                 />
             </object>
-			<a href="" target="_blank" id="open_link">Открыть в новом окне</a>
+			<a href="" target="_blank" id="open_link"><?php echo Yii::t('cams', 'open in new window'); ?></a>
 </div>
 </div>
 <div class="col-sm-12" style="padding-left:5px;padding-right:5px;">

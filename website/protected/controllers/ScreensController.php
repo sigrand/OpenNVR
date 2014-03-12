@@ -70,7 +70,7 @@ class ScreensController extends Controller
 	public function actionCreate()
 	{
 		$model=new Screens;
-		$model->name = "Название экрана";
+		$model->name = Yii::t('screens', 'Screen name');
 
 		// Uncomment the following line if AJAX validation is needed
 		// $this->performAjaxValidation($model);
@@ -81,10 +81,10 @@ class ScreensController extends Controller
 			$model->attributes=$_POST['Screens'];
 			$model->owner_id = Yii::app()->user->getId();
 			if($model->save()) {
-				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Экран успешно добавлен'));
+				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('screens', 'Screen successfully added')));
 				$this->redirect(array('manage'));
 			} else {
-				Yii::app()->user->setFlash('notify', array('type' => 'error', 'message' => 'Ошибка при добавлении экрана'));
+				Yii::app()->user->setFlash('notify', array('type' => 'error', 'message' => Yii::t('screens', 'Error add screen')));
 				$this->redirect(array('manage'));
 			}
 		}
@@ -120,7 +120,7 @@ class ScreensController extends Controller
 	{
 		$model = $this->loadModel($id);
 		if ($model) {
-		Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => 'Экран успешно удален'));
+		Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('screens', 'Screen successfully deleted')));
 		$model->delete();
 
 		// if AJAX request (triggered by deletion via admin grid view), we should not redirect the browser
