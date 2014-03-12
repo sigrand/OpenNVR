@@ -51,9 +51,9 @@ def main():
                 os.makedirs(resLogDir)
             
             if os.path.exists(momentDir + logName):
-                shutil.copyfile(momentDir + logName, resLogDir + timeStr + '_' + logName)
+                shutil.move(momentDir + logName, resLogDir + timeStr + '_' + logName)
             if os.path.exists(momentDir + errName):
-                shutil.copyfile(momentDir + errName, resLogDir + timeStr + '_' + errName)
+                shutil.move(momentDir + errName, resLogDir + timeStr + '_' + errName)
 
             print 'Logs hided'
 

@@ -135,6 +135,16 @@ typedef struct {
 #endif  // !MOMENT_CHANGE ]
 } SegmentContext;
 
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+typedef struct FLVContext {
+    int     reserved;
+    int64_t duration_offset;
+    int64_t filesize_offset;
+    int64_t duration;
+    int64_t delay;      ///< first dts delay (needed for AVC & Speex)
+} FLVContext;
+#endif  // !MOMENT_CHANGE ]
+
 static void print_csv_escaped_str(AVIOContext *ctx, const char *str)
 {
     int needs_quoting = !!str[strcspn(str, "\",\n\r")];
@@ -710,6 +720,61 @@ fail:
     return ret;
 }
 
+#ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
+int check_packet_dts(AVFormatContext *s, AVFormatContext *oc, AVPacket *pkt)
+{
+    if(oc->streams[pkt->stream_index]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+        av_log(s, AV_LOG_ERROR, "check_packet_dts video packet forbid to skip");
+        return 0;
+    }
+
+    int res = 0;
+    int64_t dts = 0;
+    FLVContext *flv = oc->priv_data;
+
+    if(flv == NULL)
+    {
+        av_log(s, AV_LOG_ERROR, "check_packet_dts fail to get flv context");
+        return -1;
+    }
+
+    if (pkt->dts != AV_NOPTS_VALUE)
+    {
+        dts = av_rescale_q(pkt->dts, s->streams[pkt->stream_index]->time_base, oc->streams[pkt->stream_index]->time_base);
+    }
+    else
+    {
+        av_log(s, AV_LOG_ERROR, "check_packet_dts pkt->dts is AV_NOPTS_VALUE");
+        return -1;
+    }
+
+    av_log(s, AV_LOG_WARNING, "check_packet_dts flv->delay = %d", flv->delay);
+    av_log(s, AV_LOG_WARNING, "check_packet_dts dts = %d", dts);
+    
+    if (flv->delay != AV_NOPTS_VALUE)
+    {
+        if (dts < -flv->delay)
+        {
+            av_log(s, AV_LOG_ERROR, "check_packet_dts HERE'S A FAIL");
+            res = 1;
+        }
+        else
+        {
+            av_log(s, AV_LOG_WARNING, "check_packet_dts HERE'S A SUCCESS");
+            res = 0;
+        }
+    }
+    else
+    {
+        av_log(s, AV_LOG_ERROR, "check_packet_dts flv->delay is AV_NOPTS_VALUE");
+        res = -1;
+    }
+
+    return res;
+}
+#endif  // !MOMENT_CHANGE ]
+
 static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
 {
     SegmentContext *seg = s->priv_data;
@@ -756,9 +821,17 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
           av_compare_ts(pkt->pts, st->time_base,
                         end_pts-seg->time_delta, AV_TIME_BASE_Q) >= 0))) {
 #ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
-    if(oc->streams && oc->streams[pkt->stream_index] && oc->streams[pkt->stream_index]->pts.den != 0)
-        ret = segment_end(s, seg->individual_header_trailer, 0);
-    else ret = 0;
+        // new file, but we need to skip all audio packet and wait for video
+        if(oc->streams[pkt->stream_index]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+        {
+            av_log(s, AV_LOG_WARNING, "skip first audio packets");
+            return 0;
+        }
+
+        if(oc->streams && oc->streams[pkt->stream_index] && oc->streams[pkt->stream_index]->pts.den != 0)
+            ret = segment_end(s, seg->individual_header_trailer, 0);
+        else
+            ret = 0;
 #else   // MOMENT_CHANGE ], [ !MOMENT_CHANGE
         ret = segment_end(s, seg->individual_header_trailer, 0);
 #endif  // !MOMENT_CHANGE ]
@@ -805,8 +878,16 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
 #ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
     if(oc->streams && oc->streams[pkt->stream_index] && oc->streams[pkt->stream_index]->pts.den != 0)
     {
-        ret = ff_write_chained(oc, pkt->stream_index, pkt, s);
-        Notify(oc->filename, 0, oc->pb->pos+1);
+        if(check_packet_dts(s, oc, pkt) <= 0)
+        {
+            ret = ff_write_chained(oc, pkt->stream_index, pkt, s);
+            Notify(oc->filename, 0, oc->pb->pos+1);
+        }
+        else
+        {
+            av_log(s, AV_LOG_ERROR, "checking failed, skip packet");
+            return 0;
+        }
     }
     else
         return ERR_STREAMERR;

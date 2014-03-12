@@ -1,4 +1,5 @@
 #include <moment-ffmpeg/inc.h>
+#include <moment-ffmpeg/ffmpeg_common.h>
 #include <moment-ffmpeg/naming_scheme.h>
 #include <moment-ffmpeg/video_part_maker.h>
 #include <moment-ffmpeg/memory_dispatcher.h>
@@ -76,7 +77,6 @@ VideoPartMaker::tryOpenNextFile ()
     return true;
 }
 
-static int g_fileNum = 0;
 bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes * channelFileDiskTimes,
                            std::string & channel_name,
                             Time          const start_unixtime_sec,
@@ -99,10 +99,17 @@ bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes * channelFileDis
     {
         if(m_itr->second.times.timeStart <= nStartTime && m_itr->second.times.timeEnd > nStartTime)
         {
-            bFileIsFound = true;
-            m_filepath = st_makeString(m_itr->second.diskName.c_str(), "/", channel_name.c_str(),
-                                       "/", channel_name.c_str(), "_", g_fileNum++, ".mp4");
+            struct timeval tv;
+            gettimeofday(&tv, NULL);
+
+            StRef<String> strRecDir = st_makeString(m_itr->second.diskName.c_str(), "/", channel_name.c_str());
+            Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
+            vfs->createDirectory(DOWNLOAD_DIR);
+            m_filepath = st_makeString(strRecDir, "/", DOWNLOAD_DIR, "/", tv.tv_sec, ".mp4");
             filePathOut = m_filepath->cstr();
+
+            bFileIsFound = true;
+
             break; // file is found
         }
     }

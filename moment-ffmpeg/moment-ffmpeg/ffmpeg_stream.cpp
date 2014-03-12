@@ -634,7 +634,7 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
         }
 
         Time t;tc.Stop(&t);
-        logD(frames, _func_, "av_read_frame exectime = [", t, "]");
+        logD(frames, _func_, m_channelName, " av_read_frame exectime = [", t, "]");
 
         if(!m_bGotFirstFrame)
         {
@@ -733,12 +733,12 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
             logD(frames, _func_, "PACKET IS NEITHER");
         }
 
-        logD(frames, _func_, "ORIGIN PACKET,indx=", packet.stream_index,
+        logD(frames, _func_, m_channelName, " ORIGIN PACKET,indx=", packet.stream_index,
                             ",pts=", packet.pts,
                             ",dts=", packet.dts,
                             ",size=", packet.size,
                             ",flags=", packet.flags);
-        logD(frames, _func_, "m_vecPts[packet.stream_index] = ", m_vecPts[packet.stream_index],
+        logD(frames, _func_, m_channelName, " m_vecPts[packet.stream_index] = ", m_vecPts[packet.stream_index],
                 ", m_vecPts[packet.stream_index] = ", m_vecDts[packet.stream_index]);
 
         if(packet.pts != AV_NOPTS_VALUE)
@@ -751,7 +751,7 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
             packet.dts -= m_vecDts[packet.stream_index];
         }
 
-        logD(frames, _func_, "PACKET,indx=", packet.stream_index,
+        logD(frames, _func_, m_channelName, " PACKET,indx=", packet.stream_index,
                             ",pts=", packet.pts,
                             ",dts=", packet.dts,
                             ",size=", packet.size,
@@ -786,61 +786,70 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
         {
             if(m_bRecordingState)
             {
-                bool bNeedNextPath = false;
-                // prepare to write in file
-                if(!m_nvrData.IsInit())
+                while(true) // check paths until we got successful writing of packet OR we checked all paths
                 {
-                    if(m_recordDir == NULL || m_recordDir->len() == 0)
+                    bool bNeedNextPath = false;
+                    // prepare to write in file
+                    if(!m_nvrData.IsInit())
                     {
-                        bNeedNextPath = true;
-                        logD(frames,_func_, "m_recordDir is 0");
-                    }
-                    else
-                    {
-                        StRef<String> filepath = st_makeString (m_recordDir, "/", m_channelName, ".flv");
-                        int nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec);
-                        if(nvrResult == 1)
+                        if(m_recordDir == NULL || m_recordDir->len() == 0)
+                        {
                             bNeedNextPath = true;
-                        logD(frames,_func_, "m_nvrData.Init = ", (nvrResult == 0) ? "Success" : "Failed");
+                            logD(frames,_func_, "m_recordDir is 0");
+                        }
+                        else
+                        {
+                            StRef<String> filepath = st_makeString (m_recordDir, "/", m_channelName, ".flv");
+                            int nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec);
+                            if(nvrResult == 1)
+                                bNeedNextPath = true;
+                            logD(frames,_func_, "m_nvrData.Init = ", (nvrResult == 0) ? "Success" : "Failed");
+                        }
                     }
-                }
 
-                // write in file
-                if(m_nvrData.IsInit())
-                {
-                    TimeChecker tc;tc.Start();
+                    // write in file
+                    if(m_nvrData.IsInit())
+                    {
+                        TimeChecker tc;tc.Start();
 
-                    int res = m_nvrData.WritePacket(format_ctx, packet);
-                    if(res == ERR_NOSPACE)
+                        int res = m_nvrData.WritePacket(format_ctx, packet);
+                        if(res == ERR_NOSPACE)
+                        {
+                            bNeedNextPath = true;
+                        }
+                        else
+                        {
+                            bRecordingSuccess = true;
+                        }
+
+                        logD(frames, _func_, "NvrData.WritePacket res = ", res);
+
+                        Time t;tc.Stop(&t);
+                        logD(frames, _func_, "NvrData.WritePacket exectime = [", t, "]");
+
+                        Time tInNvr;tcInNvr.Stop(&tInNvr);
+                        pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
+                    }
+                    if(!m_pRecpathConfig->IsPathExist(m_recordDir->cstr()))
                     {
                         bNeedNextPath = true;
                     }
-                    else
+                    if(bNeedNextPath)
                     {
-                        bRecordingSuccess = true;
+                        if(!m_pRecpathConfig->IsEmpty())
+                            m_recordDir = st_makeString(m_pRecpathConfig->GetNextPath(m_recordDir->cstr()).c_str());
+                        else
+                            m_recordDir = st_makeString("");
+                        logD(frames,_func_, "next m_recordDir = [", m_recordDir, "]");
+
+                        m_nvrData.Deinit();
                     }
 
-                    logD(frames, _func_, "NvrData.WritePacket res = ", res);
-
-                    Time t;tc.Stop(&t);
-                    logD(frames, _func_, "NvrData.WritePacket exectime = [", t, "]");
-
-                    Time tInNvr;tcInNvr.Stop(&tInNvr);
-                    pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
-                }
-                if(!m_pRecpathConfig->IsPathExist(m_recordDir->cstr()))
-                {
-                    bNeedNextPath = true;
-                }
-                if(bNeedNextPath)
-                {
-                    if(!m_pRecpathConfig->IsEmpty())
-                        m_recordDir = st_makeString(m_pRecpathConfig->GetNextPath(m_recordDir->cstr()).c_str());
-                    else
-                        m_recordDir = st_makeString("");
-                    logD(frames,_func_, "next m_recordDir = [", m_recordDir, "]");
-
-                    m_nvrData.Deinit();
+                    // if packet is successfully written OR we checked all paths and all of them have not free space
+                    if(bRecordingSuccess || m_recordDir == NULL || m_recordDir->len() == 0)
+                    {
+                        break;
+                    }
                 }
             }
             else
@@ -1116,6 +1125,12 @@ int nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & pac
     opkt.data = packet.data;
     opkt.size = packet.size;
     opkt.stream_index = packet.stream_index;
+
+    logD(frames, _func_, m_channelName, " opkt,indx=", opkt.stream_index,
+                        ",pts=", opkt.pts,
+                        ",dts=", opkt.dts,
+                        ",size=", opkt.size,
+                        ",flags=", opkt.flags);
 
     if(m_out_format_ctx->streams[packet.stream_index]->pts.den == 0)
     {
@@ -2472,7 +2487,9 @@ FFmpegStream::IsClosed()
 stSourceInfo
 FFmpegStream::GetSourceInfo()
 {
-    return m_ffmpegStreamData.GetSourceInfo();
+    stSourceInfo si = m_ffmpegStreamData.GetSourceInfo();
+    si.title = std::string(channel_opts->channel_title->cstr());
+    return si;
 }
 
 FFmpegStream::FFmpegStream ()
