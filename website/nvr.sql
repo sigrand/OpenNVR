@@ -17,6 +17,7 @@ CREATE TABLE `cams` (
   `public` tinyint(1) DEFAULT '0',
   `time_offset` varchar(4) NOT NULL DEFAULT '+0',
   `coordinates` varchar(100) DEFAULT '',
+  `view_area` text,
   `record` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;

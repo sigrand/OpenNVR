@@ -42,7 +42,7 @@
 		<a id="add_cam_a" href="#"><img id="add_cam_div" width="32px" src="<?php echo Yii::app()->baseUrl; ?>/images/add-icon.png" alt="<?php echo Yii::t('screens', 'Add cam'); ?>"><?php echo Yii::t('screens', 'Add cam'); ?></a>
 	</div>
 	<div class="col-md-2"  style="padding-top:10px;padding-bottom:10px;">
-		<?php echo CHtml::submitButton(Yii::t('screens', 'Add cam'), array('class' => 'btn btn-primary')); ?>
+		<?php echo CHtml::submitButton(Yii::t('screens', 'Save'), array('class' => 'btn btn-primary')); ?>
 	</div>
 
 </div>

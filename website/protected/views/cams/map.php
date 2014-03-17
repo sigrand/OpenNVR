@@ -3,10 +3,18 @@
 ?>
 <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
 <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+<script src="http://api-maps.yandex.ru/2.0/?load=package.map&lang=ru-RU" type="text/javascript"></script>
+<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+<script src="/js/leaflet/Google.js"></script>
+<script src="/js/leaflet/Yandex.js"></script>
 
 <link rel="stylesheet" href="/css/MarkerCluster.Default.css" />
 <link rel="stylesheet" href="/css/MarkerCluster.css" />
+
 <script src="/js/leaflet/leaflet.markercluster-src.js"></script>
+<script src="/js/leaflet/l.control.geosearch.js"></script>
+<script src="/js/leaflet/l.geosearch.provider.openstreetmap.js"></script>
+<link rel="stylesheet" href="/css/l.geosearch.css" />
 
 <div style="display:none;">
 <div id="MyPlayer_div" style="width:300px;height:168px;">
@@ -133,8 +141,10 @@
 	var cams = [];
 	var cams_markers = [];
 	var markers = {};
+	var view_areas = {};
 	var m = [];
 	var map;
+	var views = [];
 	function flashInitialized() {
 		if (cam_id != "") {
 			// for popup player;
@@ -156,8 +166,8 @@ var LeafIcon = L.Icon.extend({
 	shadowUrl: '/images/shadow.png',
 	iconSize:     [40, 41],
 	shadowSize:   [51, 37],
-	iconAnchor:   [20,20],
-	shadowAnchor: [20, 20],
+	iconAnchor:   [17, 33],
+	shadowAnchor: [17, 30],
 	popupAnchor:  [0, -10]
 	}
 });
@@ -167,7 +177,7 @@ LeafIcon = L.Icon.extend({
 	shadowUrl: '/images/shadow.png',
 	iconSize:     [30, 41],
 	shadowSize:   [51, 37],
-	iconAnchor:   [15,20],
+	iconAnchor:   [15, 20],
 	shadowAnchor: [15, 20],
 	popupAnchor:  [0, -10]
 	}
@@ -185,7 +195,9 @@ var markers_cluster = new L.MarkerClusterGroup();
 		?>
 				cams_markers.push(L.latLng(<?php echo "$cam->coordinates"; ?>));
 				var marker = L.marker([<?php echo "$cam->coordinates"; ?>], {icon:cam_icon});
+				var polygon = L.polygon([<?php echo "$cam->view_area"; ?>], {color:'#2f85cb'});
 				markers[<?php echo "\"$cam->id\""; ?>] = marker;
+				view_areas[<?php echo "\"$cam->id\""; ?>] = polygon;
 				markers_cluster.addLayer(marker);
 				m[<?php echo "\"$cam->id\""; ?>] = marker.on('click', function() {
 					cam_id = <?php echo "$cam->id"; ?>;
@@ -195,6 +207,7 @@ var markers_cluster = new L.MarkerClusterGroup();
 			}
 		?>
 		console.log(markers);
+		var osm,yndx,googleLayer;
 
 
 		$(window).on('load resize',function(){
@@ -206,14 +219,20 @@ var markers_cluster = new L.MarkerClusterGroup();
 			}
 			$("#map_div").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-17)+"px");
 			if (!map) {
+				osm = new L.TileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
+				yndx = new L.Yandex();
+				googleLayer = new L.Google('ROADMAP')
 				map = L.map('map_div', {closePopupOnClick:false});
-				L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-					attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-				}).addTo(map);
+				map.addLayer(osm);
+				map.addControl(new L.Control.Layers({'OSM':osm, "Yandex":yndx, "Google":googleLayer}));
 				$.each(markers, function(key, val) {
 					val.bindPopup(document.getElementById("MyPlayer_div"));
+					view_areas[key].addTo(map);
 				});
 				map.addLayer(markers_cluster);
+				new L.Control.GeoSearch({
+					provider: new L.GeoSearch.Provider.OpenStreetMap()
+				}).addTo(map);
 			}
 			map.fitBounds(L.latLngBounds(cams_markers));
 		});
@@ -221,8 +240,9 @@ var markers_cluster = new L.MarkerClusterGroup();
 		for (i=1;i<=4;i++) {
 			$("#on_MyPlayer"+i).click(function(){
 				cam_id = carousel_cams[this.id.substring(11)];
-				map.setView(markers[carousel_cams[this.id.substring(11)]].getLatLng(), 20, {animate:true});
-				markers[carousel_cams[this.id.substring(11)]].openPopup();
+				markers_cluster.zoomToShowLayer(markers[cam_id], function() {
+					markers[cam_id].openPopup();
+				});
 			});
 		}
 

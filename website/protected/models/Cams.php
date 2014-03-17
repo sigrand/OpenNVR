@@ -49,6 +49,7 @@ class Cams extends CActiveRecord
 			array('url, prev_url', 'length', 'max'=>2000),
 			array('time_offset', 'length', 'max'=>4),
 			array('coordinates', 'match', 'pattern'=>'/^-?[0-9]{1,3}.[0-9]+, -?[0-9]{1,3}.[0-9]+$/u', 'message'=>Yii::t('cams', 'Coordinates must be "xxx.xxx, yyy.yyy"')),
+			array('view_area', 'safe'),
 			array('desc', 'safe'),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
@@ -86,6 +87,7 @@ class Cams extends CActiveRecord
 			'public' => Yii::t('cams', 'Public'),
 			'time_offset' => Yii::t('cams', 'Time zone'),
 			'coordinates' => Yii::t('cams', 'Coordinates'),
+			'view_area' => Yii::t('cams', 'View area'),
 			'record' => Yii::t('cams', 'Enable record')
 		);
 	}
