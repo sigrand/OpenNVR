@@ -38,11 +38,12 @@ static LogGroup libMary_logGroup_pipeline ("mod_ffmpeg.pipeline", LogLevel::E);
 static LogGroup libMary_logGroup_stream   ("mod_ffmpeg.stream",   LogLevel::E);
 static LogGroup libMary_logGroup_bus      ("mod_ffmpeg.bus",      LogLevel::E);
 static LogGroup libMary_logGroup_timer    ("mod_ffmpeg.timer",    LogLevel::E);
-static LogGroup libMary_logGroup_ffmpeg   ("mod_ffmpeg.ffmpeg",   LogLevel::E);
-static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::E); // E is the default
+static LogGroup libMary_logGroup_ffmpeg   ("mod_ffmpeg.ffmpeg",   LogLevel::D);
+static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::D); // E is the default
 
 #define MAX_AGE 120 // in minutes
 #define FILE_DURATION 3600 // in seconds
+#define PTS_THRESHOLD_SEC 5 // in seconds
 
 #define AV_RB32(x)									\
         (((Uint32)((const Byte*)(x))[0] << 24) |	\
@@ -429,7 +430,9 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
                 if(format_ctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264)
                     video_stream_idx = i;
                 else
-                    logE_(_func_, "video stream is not h264");
+                    logE_(_func_, "video stream is not h264"); // TODO Handle this case!!!
+
+                m_tsCorrectors[video_stream_idx] = TsCorrector();
 
                 stVideoStream vs;
                 vs.streamInfo = si;
@@ -448,6 +451,8 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
             else if(audio_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
             {
                 audio_stream_idx = i;
+
+                m_tsCorrectors[audio_stream_idx] = TsCorrector();
 
                 stAudioStream as;
                 as.streamInfo = si;
@@ -470,12 +475,6 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         {
             logE_(_func_,"didn't find a video stream");
             res = Result::Failure;
-        }
-
-        if(format_ctx)
-        {
-            m_vecPts.resize(format_ctx->nb_streams, Int64_Min);
-            m_vecDts.resize(format_ctx->nb_streams, Int64_Min);
         }
 
         if(m_absf_ctx == NULL)
@@ -602,6 +601,54 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     return res;
 }
 
+int ffmpegStreamData::TsCorrector::CorrectPacket(AVPacket & packet)
+{
+    if(!b_Init)
+    {
+        logD(frames, _func_, "CORRECT NOT INITED");
+        return -1;
+    }
+
+    logD(frames, _func_, "CORRECT ===============");
+    logD(frames, _func_, "CORRECT packet.pts = ", packet.pts);
+
+    if(m_nShift == -1)
+    {
+        m_nShift = packet.pts;
+        logD(frames, _func_, "CORRECT first shift set = ", m_nShift);
+    }
+
+    if(m_nNextPts != -1) // has been already set
+    {
+        Int64 threshold = m_nTimeBaseDen * PTS_THRESHOLD_SEC;
+        Int64 diffPts = std::abs(packet.pts - m_nNextPts);
+
+        logD(frames, _func_, "CORRECT diffPts = ", diffPts);
+        logD(frames, _func_, "CORRECT threshold = ", threshold);
+
+        if(diffPts > threshold)
+        {
+            m_nShift = packet.pts - m_nCommonDuration;
+            logD(frames, _func_, "CORRECT DO packet.pts = ", packet.pts);
+            logD(frames, _func_, "CORRECT DO m_nCommonDuration = ", m_nCommonDuration);
+            logD(frames, _func_, "CORRECT DO NEW m_nShift = ", m_nShift);
+        }
+    }
+
+    logD(frames, _func_, "CORRECT m_nShift = ", m_nShift);
+
+    m_nNextPts = packet.pts + packet.duration; // predicted pts of next packet
+    logD(frames, _func_, "CORRECT m_nNextPts = ", m_nNextPts);
+
+    m_nCommonDuration = packet.pts - m_nShift + packet.duration; // full duration from beginning
+    logD(frames, _func_, "CORRECT m_nCommonDuration = ", m_nCommonDuration);
+
+    packet.pts = packet.dts = packet.pts - m_nShift;
+    logD(frames, _func_, "CORRECT RES packet.pts = ", packet.pts);
+
+    return 0;
+}
+
 bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
 {
     if(!format_ctx || video_stream_idx == -1)
@@ -651,21 +698,6 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
                 continue;
             }
         }
-
-        if(m_vecPts[packet.stream_index] == Int64_Min || m_vecPts[packet.stream_index] > packet.pts)
-        {
-            if(packet.pts != AV_NOPTS_VALUE)
-                m_vecPts[packet.stream_index] = packet.pts;
-        }
-
-        if(m_vecDts[packet.stream_index] == Int64_Min || m_vecDts[packet.stream_index] > packet.dts)
-        {
-            if(packet.dts != AV_NOPTS_VALUE)
-                m_vecDts[packet.stream_index] = packet.dts;
-        }
-
-        if(m_vecPts[packet.stream_index] > m_vecDts[packet.stream_index])
-            m_vecDts[packet.stream_index] = m_vecPts[packet.stream_index];        // to prevent situation when result packet.pts is less than packet.dts
 
         if(packet.stream_index == video_stream_idx)
         {
@@ -737,25 +769,22 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
                             ",pts=", packet.pts,
                             ",dts=", packet.dts,
                             ",size=", packet.size,
-                            ",flags=", packet.flags);
-        logD(frames, _func_, m_channelName, " m_vecPts[packet.stream_index] = ", m_vecPts[packet.stream_index],
-                ", m_vecPts[packet.stream_index] = ", m_vecDts[packet.stream_index]);
+                            ",flags=", packet.flags,
+                            ",duration=", packet.duration,
+                            ",timebase=", format_ctx->streams[packet.stream_index]->time_base.den);
 
-        if(packet.pts != AV_NOPTS_VALUE)
-        {
-            packet.pts -= m_vecPts[packet.stream_index];
-        }
+        if(!m_tsCorrectors[packet.stream_index].IsInit())
+            m_tsCorrectors[packet.stream_index].Init(format_ctx->streams[packet.stream_index]->time_base.den);
 
-        if(packet.dts != AV_NOPTS_VALUE)
-        {
-            packet.dts -= m_vecDts[packet.stream_index];
-        }
+        m_tsCorrectors[packet.stream_index].CorrectPacket(packet);
 
-        logD(frames, _func_, m_channelName, " PACKET,indx=", packet.stream_index,
+        logD(frames, _func_, m_channelName, " CORRECTED PACKET,indx=", packet.stream_index,
                             ",pts=", packet.pts,
                             ",dts=", packet.dts,
                             ",size=", packet.size,
-                            ",flags=", packet.flags);
+                            ",flags=", packet.flags,
+                            ",duration=", packet.duration,
+                            ",timebase=", format_ctx->streams[packet.stream_index]->time_base.den);
 
         // Is this a packet from the video or audio stream?
         if(packet.stream_index == video_stream_idx || packet.stream_index == audio_stream_idx)

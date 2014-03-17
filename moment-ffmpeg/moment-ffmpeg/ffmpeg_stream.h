@@ -128,6 +128,36 @@ class FFmpegStream;
 
 class ffmpegStreamData
 {
+    class TsCorrector
+    {
+        Int64 m_nShift;
+        Int64 m_nNextPts;
+        Int64 m_nCommonDuration;
+        Int64 m_nTimeBaseDen;
+
+        bool b_Init;
+
+    public:
+        TsCorrector():
+            m_nTimeBaseDen(-1),
+            m_nShift(-1),
+            m_nNextPts(-1),
+            m_nCommonDuration(-1),
+            b_Init(false){};
+
+        void Init(Int64 time_base_den)
+        {
+            m_nTimeBaseDen = time_base_den;
+            b_Init = true;
+        }
+
+        bool IsInit()
+        {
+            return b_Init;
+        }
+
+        int CorrectPacket(AVPacket & packet);
+    };
 
 public:
 
@@ -168,8 +198,6 @@ private /*variables*/:
     bool m_bRecordingEnable;    // the same thing, value gets from config (mod_nvr.enable and so on)
     volatile bool m_bIsRecording;        // is source really recording on disk
     bool m_bGotFirstFrame;
-    std::vector<Int64> m_vecPts; // correction values for packets
-    std::vector<Int64> m_vecDts; // correction value for packets
 
     nvrData m_nvrData;
     RecpathConfig * m_pRecpathConfig;
@@ -179,6 +207,8 @@ private /*variables*/:
     TimeChecker m_tcFFTimeout; // timer for timeout in ffmpeg blocking operations such as av_read_frame
 
     stSourceInfo m_sourceInfo;
+
+    std::map<int, TsCorrector> m_tsCorrectors; // correctors for pts/dts values [stream_index, tsCorrector]
 };
 
 class FFmpegStream : public MediaSource
