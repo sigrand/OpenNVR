@@ -48,15 +48,15 @@
 			<a href="" target="_blank" id="open_link"><?php echo Yii::t('cams', 'open in new window'); ?></a>
 </div>
 </div>
-<div class="col-sm-12" style="padding-left:5px;padding-right:5px;">
 
-<div class="carousel slide" style="padding-bottom:5px;">
-<div class="carousel-inner">
-<div class="cols-sm-12 active">
+<div class="col-sm-12" style="padding-left:5px;padding-right:5px;">
+<div class="col-sm-10" id="map_div" style="height:100%;"></div>
+	<div class="col-sm-2 carousel_players carousel_players_wrapper" style="padding-left:5px;padding-right:0px;">
+
 	<?php
 		for ($i=1; $i<=4; $i++) {
 	?>
-	<div class="col-sm-3 col-xs-6 carousel_players" style="height:174px;padding:0px">
+	<div class="col-sm-12 carousel_players" style="padding:0px" id="player_<?php echo "$i\""; ?>>
                 <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo "$i\""; ?>
                 align="middle">
                 <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
@@ -89,24 +89,17 @@
 	<?php
 		}
 	?>
-
-<?php
-	foreach ($myCams as $cam) {
-	}
-?>
-</div>
-</div>
 <style type="text/css">
 .carousel-control {
   position: absolute;
-  top: 50%;
-  left: 15px;
+  top: 5px;
+  left: 50%;
   width: 44px;
   height: 44px;
-  margin-top: -20px;
+  margin-left: -20px;
   font-size: 60px;
   font-weight: 100;
-  line-height: 30px;
+  line-height: 55px;
   color: #ffffff;
   text-align: center;
   background: #222222;
@@ -118,8 +111,14 @@
   filter: alpha(opacity=50);
 }
 .carousel-control.right {
-  left: auto;
-  right: 15px;
+  left: 50%;
+  top: auto;
+  bottom: 5px;
+  -webkit-transform: rotate(180deg);
+  -moz-transform: rotate(180deg);
+  -o-transform: rotate(180deg);
+  -ms-transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 .carousel-control:hover {
   color: #ffffff;
@@ -128,13 +127,14 @@
   filter: alpha(opacity=90);
 }
 </style>
-	<a id="left_button" class="carousel-control left" href="#myCarousel" data-slide="prev">‹</a>
-	<a id="right_button" class="carousel-control right" href="#myCarousel" data-slide="next">›</a>
-</div>
-				<div class="cols-sm-12" id="map_div" style="width:100%;height:1000px;"></div>
-	</div>
-	<script>
+	<a id="left_button" class="carousel-control left" href="#myCarousel" data-slide="prev">^</a>
+	<a id="right_button" class="carousel-control right" href="#myCarousel" data-slide="next">^</a>
 
+	</div> <!-- carousel div end-->
+
+</div> <!-- carousel and map wrapper div end -->
+
+<script>
 	var carousel_cams = [];
 	var carousel_position = 0;
 	var cam_id = "";
@@ -209,15 +209,17 @@ var markers_cluster = new L.MarkerClusterGroup();
 		console.log(markers);
 		var osm,yndx,googleLayer;
 
-
 		$(window).on('load resize',function(){
-			$(".carousel_players").css("height", Math.round($(".carousel_players").width()*9/16));
+			$(".carousel_players").css("height", Math.round(($(window).height() - $(".navbar").height()-10)/4));
+			$(".carousel_players").css("width", Math.round($(".carousel_players").height()*16/9));
+			$(".carousel_players_wrapper").css("height", "auto");
 			for (ii=1;ii<=4;ii++) {
-				$("#on_MyPlayer"+ii).offset($("#MyPlayer"+ii+" embed").offset());
-				$("#on_MyPlayer"+ii).css("width", $("#MyPlayer"+ii+" embed").width());
-				$("#on_MyPlayer"+ii).css("height", $("#MyPlayer"+ii+" embed").height());
+				$("#on_MyPlayer"+ii).offset($("#player_"+ii).offset());
+				$("#on_MyPlayer"+ii).css("width", $("#player_"+ii).width());
+				$("#on_MyPlayer"+ii).css("height", $("#player_"+ii).height());
 			}
-			$("#map_div").css("height", Math.round($(window).height() - $(".carousel_players").height() - $(".navbar").height()-17)+"px");
+			$("#map_div").css("width", Math.round($(window).width() - $(".carousel_players").width() - 20));
+			$("#map_div").css("height", Math.round($(window).height() - $(".navbar").height()-10));
 			if (!map) {
 				osm = new L.TileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
 				yndx = new L.Yandex();
@@ -266,7 +268,7 @@ var markers_cluster = new L.MarkerClusterGroup();
 			} else {
 				if (carousel_position < 0) {
 					carousel_position = cams.length - carousel_position - 1;
-					return set_carousel_cams(carousel_potition);
+					return set_carousel_cams(carousel_position);
 				} else {
 					if (carousel_position > (cams.length - 4)) {
 						if (carousel_position >= cams.length) {
@@ -288,10 +290,12 @@ var markers_cluster = new L.MarkerClusterGroup();
 		set_carousel_cams(0);
 		$("#left_button").click(function() {
 			if (set_carousel_cams(--carousel_position))
+			console.log("carousel_position="+carousel_position);
 			flashInitialized();
 		});
 		$("#right_button").click(function() {
 			if (set_carousel_cams(++carousel_position))
+			console.log("carousel_position="+carousel_position);
 			flashInitialized();
 		});
 	});
