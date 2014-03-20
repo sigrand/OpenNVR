@@ -67,9 +67,9 @@ class ShareForm extends CFormModel {
 
 	public function attributeLabels() {
 		return array(
-			'hcams'  => Yii::t('Cams, can be list of cams separated ","'),
-			'cams'   => Yii::t('Cams, can be list of cams separated ","'),
-			'emails' => Yii::t('Emails/groups, can be list separated ","')
+			'hcams'  => Yii::t('cams', 'Cams, can be list of cams separated ","'),
+			'cams'   => Yii::t('cams', 'Cams, can be list of cams separated ","'),
+			'emails' => Yii::t('cams', 'Emails/groups, can be list separated ","')
 			);
 	}
 
