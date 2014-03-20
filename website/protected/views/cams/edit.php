@@ -20,6 +20,41 @@
 				'htmlOptions' => array('class' => 'form-horizontal', 'role' => 'form')
 				)
 				); ?>
+<div class="row">
+<div class="col-sm-4">
+			<div id="MyPlayer_div">
+                <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer"
+                align="middle">
+                <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
+                <param name="allowScriptAccess" value="always"/>
+                <param name="quality" value="high"/>
+                <param name="scale" value="noscale"/>
+                <param name="salign" value="lt"/>
+                <param name="wmode" value="opaque"/>
+                <param name="bgcolor" value="#000000"/>
+                <param name="allowFullScreen" value="true"/>
+                <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
+                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3&show_buttons=true"
+                src="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"
+                bgcolor="#000000"
+                width="100%"
+                height="100%"
+                name="MyPlayer"
+                quality="high"
+                wmode="opaque"
+                align="middle"
+                scale="showall"
+                allowFullScreen="true"
+                allowScriptAccess="always"
+                type="application/x-shockwave-flash"
+                pluginspage="http://www.macromedia.com/go/getflashplayer"
+                />
+            </object>
+			<a href="" target="_blank" id="open_link"><?php echo Yii::t('cams', 'open in new window'); ?></a>
+			</div>
+</div>
+			<div class="col-sm-8">
+
 				<div class="form-group">
 					<?php echo $form->labelEx($model, 'name', array('class' => 'col-sm-4 control-label')); ?>
 					<div class="col-sm-8">
@@ -83,8 +118,15 @@
 						<?php echo $form->error($model, 'view_area'); ?>
 					</div>
 				</div>
+
+
+</div>
+
+
+			</div>
+			<div class="col-sm-12">
 				<div class="form-group">
-					<div class="col-sm-16" id="map" style="height:400px;">
+					<div id="map" style="height:400px;">
 					</div>
 				</div>
 				<div class="form-group">
@@ -114,6 +156,10 @@
 				</div>
 				<?php $this->endWidget(); ?>
 			</div>
+
+			</div>
+
+			</div>
 		</div>
 		<?php
 		if(Yii::app()->user->hasFlash('notify')) {
@@ -127,7 +173,16 @@
 	<script>
 	var cam_marker = undefined, cam_view_area = undefined;
 	var map, marker, polygon;
+
+	function flashInitialized() {
+		var cam_id = <?php echo "\"$model->id\""; ?>;
+		document['MyPlayer'].setSource(<?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>, cam_id+"_low", cam_id);
+		document.getElementById("open_link").href="/index.php/cams/fullscreen/full/1/id/"+cam_id;
+	}
+
 	$(document).ready(function(){
+		$('#MyPlayer_div embed').height($('#MyPlayer_div').width()*9/16);
+		$('#MyPlayer_div').css('padding-top', $('#MyPlayer_div').parent().parent().height() - $('#MyPlayer_div embed').height());
 		map = L.map('map').setView([<?php if ($model->coordinates == "") echo "0,0"; else echo "$model->coordinates"; ?>], 15);
 		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
 			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
