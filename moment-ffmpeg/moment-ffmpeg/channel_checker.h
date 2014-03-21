@@ -70,8 +70,8 @@ private:
      mt_const DataDepRef<Timers> m_timers;
      Timers::TimerKey m_timer_key;
 
-     bool writeIdx(const ChannelFileSummary & files_existence, StRef<String> const dir_name, StRef<String> const channel_name);
-     bool readIdx(StRef<String> const dir_name, StRef<String> const channel_name);
+     bool writeIdx(const ChannelFileSummary & files_existence, StRef<String> const dir_name, std::vector<std::string> & files_changed);
+     bool readIdx();
 
      CheckResult initCache ();
      CheckResult initCacheFromIdx ();
@@ -80,8 +80,6 @@ private:
      CheckResult updateCache(bool bForceUpdate);
      CheckResult addRecordInCache (StRef<String> path, StRef<String> record_dir, bool bUpdate);
      ChannelFileSummary getChFileSummary (const std::string & dirname);
-
-     int readTime(Byte * buffer);
 
      void dumpData();
 

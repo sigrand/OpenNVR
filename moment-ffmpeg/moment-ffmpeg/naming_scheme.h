@@ -33,8 +33,7 @@ using namespace Moment;
 struct NamingScheme : public Referenced
 {
     virtual StRef<String> getPath (ConstMemory    channel_name,
-                                   const timeval &tv,
-                                   Time          *ret_next_unixtime_sec) = 0;
+                                   const timeval &tv) = 0;
 };
 
 class DefaultNamingScheme : public NamingScheme
@@ -44,8 +43,7 @@ private:
 
 public:
     StRef<String> getPath (ConstMemory    channel_name,
-                           const timeval &tv,
-                           Time          *ret_next_unixtime_sec);
+                           const timeval &tv);
 
     DefaultNamingScheme (Time const file_duration_sec)
         : file_duration_sec (file_duration_sec)

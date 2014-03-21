@@ -38,8 +38,8 @@ static LogGroup libMary_logGroup_pipeline ("mod_ffmpeg.pipeline", LogLevel::E);
 static LogGroup libMary_logGroup_stream   ("mod_ffmpeg.stream",   LogLevel::E);
 static LogGroup libMary_logGroup_bus      ("mod_ffmpeg.bus",      LogLevel::E);
 static LogGroup libMary_logGroup_timer    ("mod_ffmpeg.timer",    LogLevel::E);
-static LogGroup libMary_logGroup_ffmpeg   ("mod_ffmpeg.ffmpeg",   LogLevel::D);
-static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::D); // E is the default
+static LogGroup libMary_logGroup_ffmpeg   ("mod_ffmpeg.ffmpeg",   LogLevel::E);
+static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::E); // E is the default
 
 #define MAX_AGE 120 // in minutes
 #define FILE_DURATION 3600 // in seconds
@@ -109,9 +109,8 @@ extern "C"
 
         struct timeval  tv;
         gettimeofday(&tv, NULL);
-        Time next_unixtime_sec;
 
-        StRef<String> const filename = DefaultNamingScheme(file_duration_sec).getPath(channelName, tv, &next_unixtime_sec);
+        StRef<String> const filename = DefaultNamingScheme(file_duration_sec).getPath(channelName, tv);
         if (filename == NULL || !filename->len())
         {
             logE_ (_func, "naming_scheme->getPath() failed");
@@ -137,8 +136,7 @@ extern "C"
 
         strcpy(fullPath, sFullPath->cstr());
 
-        logD(ffmpeg, _func_, "new fullfilename: ", fullPath, ", "
-               "next_unixtime_sec: ", next_unixtime_sec, ", cur unixtime: ", tv.tv_sec);
+        logD(ffmpeg, _func_, "new fullfilename: ", fullPath, ", cur unixtime: ", tv.tv_sec);
 
         return 0;
     }
@@ -932,6 +930,7 @@ nvrData::nvrData(void)
     m_out_format_ctx = NULL;
 
     m_bIsInit = false;
+    m_bWriteTrailer = false;
 }
 
 nvrData::~nvrData(void)
@@ -1076,6 +1075,11 @@ void nvrData::Deinit()
 
     if(m_out_format_ctx)
     {
+        if(m_bWriteTrailer)
+        {
+            av_write_trailer(m_out_format_ctx);
+        }
+
         ffmpegStreamData::CloseCodecs(m_out_format_ctx);
 
         int ret = avio_close(m_out_format_ctx->pb);
@@ -1116,6 +1120,8 @@ int nvrData::WriteHeader()
 
     if (ret < 0)
         logE_(_func_, "Error occurred when opening output file, ret = ", ret);
+    else
+        m_bWriteTrailer = true;
 
     return ret;
 }

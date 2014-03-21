@@ -122,6 +122,7 @@ private /*variables*/:
     StRef<String>       m_channelName;
 
     bool m_bIsInit;
+    bool m_bWriteTrailer;
 };
 
 class FFmpegStream;

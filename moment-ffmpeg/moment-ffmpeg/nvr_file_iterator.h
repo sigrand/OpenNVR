@@ -37,8 +37,8 @@ private:
     StRef<String> m_stream_name;
 
     bool m_got_first;
-    // year/month/day/hour/minute/seconds
-    unsigned m_cur_pos [4];
+    // year/month/day/hour/hourminuteseconds
+    unsigned m_cur_pos [5];
 
     static StRef<String> makePathForDepth (ConstMemory  stream_name,
                                            unsigned     depth,
@@ -62,6 +62,39 @@ public:
 
     NvrFileIterator ()
         : m_got_first (false)
+    {}
+};
+
+mt_unsafe class IdxFileIterator
+{
+private:
+    Ref<Vfs> m_vfs;
+    StRef<String> m_stream_name;
+
+    // year/month/day/hour/[0 or 1]
+    unsigned m_cur_pos [5];
+
+    static StRef<String> makePathForDepth (ConstMemory  stream_name,
+                                           unsigned     depth,
+                                           unsigned    * mt_nonnull pos);
+
+    StRef<String> getNext_rec (Vfs::VfsDirectory * mt_nonnull parent_dir,
+                               ConstMemory        parent_dir_name,
+                               unsigned           depth,
+                               bool               parent_pos_match);
+
+    void doSetCurPos (Time start_unixtime_sec);
+
+public:
+    StRef<String> getNext ();
+
+    void reset (Time start_unixtime_sec);
+
+    void init (Vfs         * mt_nonnull vfs,
+               ConstMemory  stream_name,
+               Time         start_unixtime_sec);
+
+    IdxFileIterator ()
     {}
 };
 
