@@ -89,7 +89,7 @@ class CamsController extends Controller {
 			);
 	}
 
-	public function actionFullscreen($id, $preview = 0, $full = 0) {
+	public function actionFullscreen($id, $preview = 0, $full = 1) {
 		if(!is_numeric($id)) { $this->redirect('/player/'.$id); }
 		//$this->layout = 'fullscreencolumn';
 		$this->layout = 'emptycolumn';
