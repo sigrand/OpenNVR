@@ -67,7 +67,7 @@ class ScreensController extends Controller
 	 * Creates a new model.
 	 * If creation is successful, the browser will be redirected to the 'view' page.
 	 */
-	public function actionCreate()
+	public function actionCreate($type='')
 	{
 		$model=new Screens;
 		$model->name = Yii::t('screens', 'Screen name');
@@ -87,11 +87,153 @@ class ScreensController extends Controller
 				Yii::app()->user->setFlash('notify', array('type' => 'error', 'message' => Yii::t('screens', 'Error add screen')));
 				$this->redirect(array('manage'));
 			}
+		} else {
+			switch ($type) {
+				case 'custom':
+				break;
+				case '1':
+					$model->cam1_x=0;
+					$model->cam1_y=0;
+					$model->cam1_w=100;
+					$model->cam1_h=100;
+				break;
+				case '2x2':
+					$model->cam1_x=0;
+					$model->cam1_y=0;
+					$model->cam1_w=50;
+					$model->cam1_h=50;
+					$model->cam2_x=50;
+					$model->cam2_y=0;
+					$model->cam2_w=50;
+					$model->cam2_h=50;
+					$model->cam3_x=0;
+					$model->cam3_y=50;
+					$model->cam3_w=50;
+					$model->cam3_h=50;
+					$model->cam4_x=50;
+					$model->cam4_y=50;
+					$model->cam4_w=50;
+					$model->cam4_h=50;
+				break;
+				case '3x3':
+					$model->cam1_x=0;
+					$model->cam1_y=0;
+					$model->cam1_w=33.333333;
+					$model->cam1_h=33.333333;
+					$model->cam2_x=0;
+					$model->cam2_y=33.333333;
+					$model->cam2_w=33.333333;
+					$model->cam2_h=33.333333;
+					$model->cam3_x=0;
+					$model->cam3_y=66.666666;
+					$model->cam3_w=33.333333;
+					$model->cam3_h=33.333333;
+					$model->cam4_x=33.333333;
+					$model->cam4_y=0;
+					$model->cam4_w=33.333333;
+					$model->cam4_h=33.333333;
+					$model->cam5_x=33.333333;
+					$model->cam5_y=33.333333;
+					$model->cam5_w=33.333333;
+					$model->cam5_h=33.333333;
+					$model->cam6_x=33.333333;
+					$model->cam6_y=66.666666;
+					$model->cam6_w=33.333333;
+					$model->cam6_h=33.333333;
+					$model->cam7_x=66.666666;
+					$model->cam7_y=0;
+					$model->cam7_w=33.333333;
+					$model->cam7_h=33.333333;
+					$model->cam8_x=66.666666;
+					$model->cam8_y=33.333333;
+					$model->cam8_w=33.333333;
+					$model->cam8_h=33.333333;
+					$model->cam9_x=66.666666;
+					$model->cam9_y=66.666666;
+					$model->cam9_w=33.333333;
+					$model->cam9_h=33.333333;
+				break;
+				case '4x4':
+					$model->cam1_x=0;
+					$model->cam1_y=0;
+					$model->cam1_w=25;
+					$model->cam1_h=25;
+					$model->cam2_x=0;
+					$model->cam2_y=25;
+					$model->cam2_w=25;
+					$model->cam2_h=25;
+					$model->cam3_x=0;
+					$model->cam3_y=50;
+					$model->cam3_w=25;
+					$model->cam3_h=25;
+					$model->cam4_x=0;
+					$model->cam4_y=75;
+					$model->cam4_w=25;
+					$model->cam4_h=25;
+
+					$model->cam5_x=25;
+					$model->cam5_y=0;
+					$model->cam5_w=25;
+					$model->cam5_h=25;
+					$model->cam6_x=25;
+					$model->cam6_y=25;
+					$model->cam6_w=25;
+					$model->cam6_h=25;
+					$model->cam7_x=25;
+					$model->cam7_y=50;
+					$model->cam7_w=25;
+					$model->cam7_h=25;
+					$model->cam8_x=25;
+					$model->cam8_y=75;
+					$model->cam8_w=25;
+					$model->cam8_h=25;
+
+					$model->cam9_x=50;
+					$model->cam9_y=0;
+					$model->cam9_w=25;
+					$model->cam9_h=25;
+					$model->cam10_x=50;
+					$model->cam10_y=25;
+					$model->cam10_w=25;
+					$model->cam10_h=25;
+					$model->cam11_x=50;
+					$model->cam11_y=50;
+					$model->cam11_w=25;
+					$model->cam11_h=25;
+					$model->cam12_x=50;
+					$model->cam12_y=75;
+					$model->cam12_w=25;
+					$model->cam12_h=25;
+
+					$model->cam13_x=75;
+					$model->cam13_y=0;
+					$model->cam13_w=25;
+					$model->cam13_h=25;
+					$model->cam14_x=75;
+					$model->cam14_y=25;
+					$model->cam14_w=25;
+					$model->cam14_h=25;
+					$model->cam15_x=75;
+					$model->cam15_y=50;
+					$model->cam15_w=25;
+					$model->cam15_h=25;
+					$model->cam16_x=75;
+					$model->cam16_y=75;
+					$model->cam16_w=25;
+					$model->cam16_h=25;
+
+				break;
+				default:
+					$this->render('select_screen_type');
+					return;
+				break;
+			}
 		}
 
 		$this->render('create',array(
 			'model'=>$model,
-			'myCams' => $this->getAvailableCams()
+			'myCams' => $this->getAvailableCams(),
+			'type' => $type
 		));
 	}
 

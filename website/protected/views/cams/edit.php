@@ -183,7 +183,7 @@
 	$(document).ready(function(){
 		$('#MyPlayer_div embed').height($('#MyPlayer_div').width()*9/16);
 		$('#MyPlayer_div').css('padding-top', $('#MyPlayer_div').parent().parent().height() - $('#MyPlayer_div embed').height());
-		map = L.map('map').setView([<?php if ($model->coordinates == "") echo "0,0"; else echo "$model->coordinates"; ?>], 15);
+		map = L.map('map').setView([<?php if ($model->coordinates == "") echo "0,0"; else echo "$model->coordinates"; ?>], 18);
 		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
 			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
 		}).addTo(map);

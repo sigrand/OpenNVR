@@ -27,7 +27,7 @@
 	'enableAjaxValidation'=>false,
 )); ?>
 
-<?php if ($model->isNewRecord) { ?>
+<?php if (($model->isNewRecord) && ($type == 'custom')) { ?>
 	<div id="new_screen" style="display:none"></div>
 <?php } ?>
 

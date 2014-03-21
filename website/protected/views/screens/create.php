@@ -17,4 +17,4 @@ $this->menu=array(
 
 <!-- <h1>Create Screens</h1> -->
 
-<?php echo $this->renderPartial('_form', array('model'=>$model, 'myCams' => $myCams)); ?>
+<?php echo $this->renderPartial('_form', array('model'=>$model, 'myCams' => $myCams, 'type' => '$type')); ?>
