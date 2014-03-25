@@ -201,7 +201,7 @@ private:
 			       ChannelEntry           *channel_entry);
 
     static StRef<String>  channelExistenceToJson (
-            ChannelChecker::ChannelFileTimes * const mt_nonnull existence);
+            ChannelChecker::ChannelTimes * const mt_nonnull existence);
 
     static StRef<String>  channelFilesExistenceToJson (
             ChannelChecker::ChannelFileDiskTimes * const mt_nonnull chFileDiskTimes);

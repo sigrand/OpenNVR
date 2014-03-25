@@ -627,7 +627,7 @@ MomentFFmpegModule::sourceInfoToJson ()
         json_source["times"] = json_times;
 
         // disk occupation
-        ChannelChecker::DiskSizes diskSizes = channelChecker->getDiskSizes ();
+        ChannelChecker::DiskSizes diskSizes = channelChecker->GetDiskSizes ();
         Json::Value json_disks;
 
         for(ChannelChecker::DiskSizes::iterator itr = diskSizes.begin(); itr != diskSizes.end(); itr++)
@@ -775,7 +775,7 @@ MomentFFmpegModule::removeVideoFiles(StRef<String> const channel_name,
 
     m_mutex.unlock();
 
-    ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = channelChecker->getChannelFileDiskTimes();
+    ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = channelChecker->GetChannelFileDiskTimes();
     ChannelChecker::ChannelFileDiskTimes::iterator itr = chFileDiskTimes.begin();
 
     for(itr; itr != chFileDiskTimes.end(); itr++)
@@ -946,7 +946,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         }
 
         Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
-        ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = channelChecker->getChannelFileDiskTimes ();
+        ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = channelChecker->GetChannelFileDiskTimes ();
 
         self->m_mutex.unlock();
 
@@ -1119,7 +1119,7 @@ _return:
 }
 
 StRef<String>
-MomentFFmpegModule::channelExistenceToJson(ChannelChecker::ChannelFileTimes * const mt_nonnull existence)
+MomentFFmpegModule::channelExistenceToJson(ChannelChecker::ChannelTimes * const mt_nonnull existence)
 {
     std::ostringstream s;
     for(int i = 0; i < existence->size(); i++)
@@ -1325,7 +1325,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
         }
 
         Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
-        ChannelChecker::ChannelFileTimes channel_existence = channelChecker->getChannelExistence ();
+        ChannelChecker::ChannelTimes channel_existence = channelChecker->GetChannelTimes ();
 
         self->m_mutex.unlock();
 
@@ -1388,7 +1388,7 @@ MomentFFmpegModule::doGetFile (ConstMemory   const channel_name,
 
     m_mutex.unlock();
 
-    ChannelChecker::ChannelFileDiskTimes chlFileDiskTimes = channelChecker->getChannelFileDiskTimes();
+    ChannelChecker::ChannelFileDiskTimes chlFileDiskTimes = channelChecker->GetChannelFileDiskTimes();
     bool bRes = vpm.Init(&chlFileDiskTimes, ch_name, start_unixtime_sec, end_unixtime_sec, filePathRes);
     if(!bRes)
     {

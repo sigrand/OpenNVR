@@ -388,7 +388,7 @@ MediaViewer::rtmpStartWatching (ConstMemory        const stream_name,
 
     self->m_pMutex->unlock();
 
-    ChannelChecker::ChannelFileDiskTimes channelFileDiskTimes = channelChecker->getChannelFileDiskTimes();
+    ChannelChecker::ChannelFileDiskTimes channelFileDiskTimes = channelChecker->GetChannelFileDiskTimes();
 
     session->media_reader.init (self->page_pool,
                                 channelFileDiskTimes,

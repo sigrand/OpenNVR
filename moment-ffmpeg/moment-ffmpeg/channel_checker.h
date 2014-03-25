@@ -25,8 +25,8 @@ struct ChChTimes
 
 struct ChChDiskTimes
 {
-    ChChTimes times;
     std::string diskName;
+    ChChTimes times;
 };
 
 class ChannelChecker : public Object
@@ -45,18 +45,21 @@ public:
         CheckMode_FileSummary
     };
 
-    typedef std::map<std::string, ChChTimes > ChannelFileSummary; // [filename, [start time, end time]]
-    typedef std::vector<ChChTimes> ChannelFileTimes; // [start time, end time]
-    typedef std::map<std::string, ChChDiskTimes> ChannelFileDiskTimes; // [filename,[diskname,[start time, end time]]]
     typedef std::map<std::string,Uint64> DiskSizes; // [diskName, size (in Kb)] - size of each diskName
+    typedef std::vector<ChChTimes> ChannelTimes; // [start time, end time]
+    typedef std::map<std::string, ChChTimes> ChannelFileTimes; // [filename,[start time, end time]]
+    typedef std::map<std::string, ChannelFileTimes> ChannelDiskFileTimes; // [diskname,[filename,[start time, end time]]]
+
+    typedef std::map<std::string, ChChDiskTimes> ChannelFileDiskTimes; // [filename,[diskname,[start time, end time]]]
 
     mt_const void init (Timers * mt_nonnull timers, RecpathConfig * recpathConfig, StRef<String> & channel_name);
 
     // return by value because ChannelFileDiskTimes should be available from different threads and relatively long time
-    ChannelFileTimes getChannelExistence ();
-    ChannelFileDiskTimes getChannelFileDiskTimes ();
-    DiskSizes getDiskSizes ();
+    ChannelTimes GetChannelTimes ();
+    ChannelFileDiskTimes GetChannelFileDiskTimes ();
+    DiskSizes GetDiskSizes ();
     bool DeleteFromCache(const std::string & dir_name, const std::string & fileName);
+
     ChannelChecker ();
     ~ChannelChecker ();
 
@@ -64,13 +67,15 @@ private:
      RecpathConfig * m_recpathConfig;
      StRef<String> m_channel_name;
 
-     ChannelFileDiskTimes m_chFileDiskTimes; // cache of all records
+     // cache of all records. it is doubled to keep different convenient(low demand cpu operations) variants for media reader and writing idx
+     ChannelDiskFileTimes m_chDiskFileTimes;
+     ChannelFileDiskTimes m_chFileDiskTimes;
 
      StateMutex m_mutex;
      mt_const DataDepRef<Timers> m_timers;
      Timers::TimerKey m_timer_key;
 
-     bool writeIdx(const ChannelFileSummary & files_existence, StRef<String> const dir_name, std::vector<std::string> & files_changed);
+     bool writeIdx(const std::string & dir_name, std::vector<std::string> & files_changed);
      bool readIdx();
 
      CheckResult initCache ();
@@ -78,8 +83,7 @@ private:
      CheckResult completeCache ();
      CheckResult cleanCache ();
      CheckResult updateCache(bool bForceUpdate);
-     CheckResult addRecordInCache (StRef<String> path, StRef<String> record_dir, bool bUpdate);
-     ChannelFileSummary getChFileSummary (const std::string & dirname);
+     CheckResult addRecordInCache (const std::string & path, const std::string & record_dir, bool bUpdate);
 
      void dumpData();
 
