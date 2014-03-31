@@ -50,7 +50,7 @@
 </div>
 
 <div class="col-sm-12" style="padding-left:5px;padding-right:5px;">
-<div class="col-sm-10" id="map_div" style="height:100%;"></div>
+<div class="col-sm-10" id="map_div" style="height:100%;z-index:0;"></div>
 	<div class="col-sm-2 carousel_players carousel_players_wrapper" style="padding-left:5px;padding-right:0px;">
 
 	<?php
