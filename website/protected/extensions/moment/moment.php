@@ -70,6 +70,7 @@ rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
         $stats = array(
             'load' => 'mod_nvr_admin/statistics',
             'disk' => 'mod_nvr_admin/disk_info',
+            'source_info' => 'mod_nvr_admin/source_info',
             'rtmp' => 'mod_rtmp/stat',
             );
         $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/{$stats[$type]}");

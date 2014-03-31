@@ -70,6 +70,10 @@ class AdminController extends Controller {
 				}
 			}
 			break;
+			case 'source_info':
+				print_r($stat);
+				return true;
+			break;
 
 			default:
 			$all = array();
