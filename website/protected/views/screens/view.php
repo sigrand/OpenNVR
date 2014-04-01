@@ -13,9 +13,22 @@
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/player/js/flowplayer-3.2.13.min.js"></script>
 <script type="text/javascript">
 
+	var hide_buttons_timer = [];
+	function hidebutton(i) {
+		$("#archive_button_"+i).hide();
+	}
 	function flashInitialized() {
 		for (i=1; i<=16; i++) {
 			document["MyPlayer"+i].setSource(<?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>, document["MyPlayer"+i].attributes.cam_id.value+"_low", document["MyPlayer"+i].attributes.cam_id.value);
+			$("#player"+i).mousemove(function() {
+				id = this.id.substring(6);
+				$("#archive_button_"+id).show();
+				if (hide_buttons_timer[id]) {
+					clearInterval(hide_buttons_timer[id]);
+					hide_buttons_timer[id] = setInterval("hidebutton("+id+");", 5000);
+				}
+			});
+			hide_buttons_timer[i] = setInterval ("hidebutton("+i+");", 5000);
 		}
 	}
 
@@ -65,7 +78,7 @@
                 <param name="bgcolor" value="#000000"/>
                 <param name="allowFullScreen" value="true"/>
                 <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
-                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3"
+                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3&auto_horizontal_mode=true&show_buttons=true"
                 src="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"
 				cam_id=<?php echo "$id"; ?>
                 bgcolor="#000000"
@@ -81,6 +94,7 @@
                 type="application/x-shockwave-flash"
                 pluginspage="http://www.macromedia.com/go/getflashplayer"
                 />
+				<?php echo CHtml::link("<img src='".Yii::app()->request->baseUrl."/images/archive.png' style='width:50px;height:50px;position:absolute;top:10px;left:10px;z-index:1'></img>", $this->createUrl('/cams/fullscreen/id/'.$id), array("id" => "archive_button_".$i, 'target' => '_blank')); ?>
             </object>
 
 <?php

@@ -23,6 +23,7 @@
 							<th><?php echo CHtml::activeCheckBox($form, "checkAll", array ("class" => "checkAll")); ?></th>
 							<th>#</th>
 							<th><?php echo Yii::t('cams', 'Name'); ?></th>
+							<th><?php echo Yii::t('cams', 'IP address'); ?></th>
 							<th><?php echo Yii::t('cams', 'Description'); ?></th>
 							<th><?php echo Yii::t('cams', 'Show?'); ?></th>
 							<th><?php echo Yii::t('cams', 'Record?'); ?></th>
@@ -33,10 +34,12 @@
 							<?php
 							echo CHtml::beginForm($this->createUrl('cams/manage'), "post");
 							foreach ($myCams as $key => $cam) {
+								preg_match('@^(?:rtsp://)(?:.+\@)?([^:/]+)@i', $cam->url, $m);
 								echo '<tr>
 								<td>'.CHtml::activeCheckBox($form, 'cam_'.$cam->id).'</td>
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->id)), array('target' => '_blank')).'</td>
+								<td>'.$m[1].'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
 								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
 								<td>'.($cam->record ? Yii::t('cams', 'Record') : Yii::t('cams', 'Don\'t record')).'</td>
@@ -46,7 +49,7 @@
 							}
 							?>
 							<tr>
-								<td colspan="4"></td>
+								<td colspan="5"></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Share'), array('name' => 'share', 'class' => 'btn btn-success')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Record/Don\'t record'), array('name' => 'record', 'class' => 'btn btn-warning')); ?></td>

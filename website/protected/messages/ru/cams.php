@@ -27,6 +27,7 @@ return array (
   'Record enabled' => 'Записывать',
   'Record/Don\'t record' => 'Записывать/Не записывать',
   'Record?' => 'Записывать?',
+  'Record' => 'Записывать',
   'Record {record status}' => 'Запись {record status}',
   'Fields marked with an * are required' => 'Заполните поля. * - помечены обязательные',
   'No cams to show.' => 'Камер для отображения нет.',
@@ -82,4 +83,5 @@ return array (
   'Cams, can be list of cams separated ","' => 'Камеры, можно неск. разделять ","',
   'Emails/groups, can be list separated ","' => 'Email`ы/Группы, можно неск. разделять ","',
   'open in new window' => 'открыть в новом окне',
+  'IP address' => 'IP адрес',
 );

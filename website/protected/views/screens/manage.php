@@ -40,7 +40,7 @@
 								<td>'.($key+1).'</td>';
 								if (Yii::app()->user->permissions == 3)
 									echo '<td>'.$screen->owner_id.'</td>';
-								echo '<td>'.CHtml::link(CHtml::encode($screen->name), $this->createUrl('screens/view/', array('id' => $screen->id)), array('target' => '_blank')).'</td>
+								echo '<td>'.CHtml::link(CHtml::encode($screen->name), $this->createUrl('screens/view/', array('id' => $screen->id, 'fullscreen' => 'true')), array('target' => '_blank')).'</td>
 								<td>'.CHtml::link(Yii::t('screens', 'Edit'), $this->createUrl('screens/update', array('id' => $screen->id))).'</td>
 								<td>'.CHtml::link(Yii::t('screens', 'Delete'), $this->createUrl('screens/delete', array('id' => $screen->id))).'</td>
 								</tr>';
