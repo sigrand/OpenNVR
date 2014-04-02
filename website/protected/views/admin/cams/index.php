@@ -33,7 +33,7 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? Yii::t('admin', 'Public') : Yii::t('admin', 'Not public')).'</td>
+								<td>'.($cam->is_public ? Yii::t('admin', 'public') : Yii::t('admin', 'Not public')).'</td>
 								</tr>';
 							}
 							?>
@@ -78,7 +78,7 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? Yii::t('admin', 'Public') : Yii::t('admin', 'Not public')).'</td>
+								<td>'.($cam->is_public ? Yii::t('admin', 'Public') : Yii::t('admin', 'Not public')).'</td>
 								</tr>';
 							}
 							?>
@@ -123,7 +123,7 @@
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($cam->name).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
-								<td>'.($cam->public ? Yii::t('admin', 'Public') : Yii::t('admin', 'Not public')).'</td>
+								<td>'.($cam->is_public ? Yii::t('admin', 'Public') : Yii::t('admin', 'Not public')).'</td>
 								</tr>';
 							}
 							?>

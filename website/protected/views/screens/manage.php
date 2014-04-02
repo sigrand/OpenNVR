@@ -18,7 +18,7 @@
 			</div>
 			<div class="panel-body">
 				<?php
-				$addLink = CHtml::link('<img src="'.Yii::app()->request->baseUrl.'/images/add-icon.png" style="width:32px;"> '.Yii::t('screens', 'Add screen'), $this->createUrl('screens/create'));
+				$addLink = CHtml::link(Yii::t('screens', 'Add screen'), $this->createUrl('screens/create'), array('class' => 'btn btn-success'));
 				if(!empty($myscreens)) {
 					echo $addLink;
 					?>
@@ -26,7 +26,7 @@
 						<thead>
 							<th>#</th>
 							<?php if (Yii::app()->user->permissions == 3) { ?>
-							<th><?php echo Yii::t('screens', 'User ID'); ?></th>
+							<th><?php echo Yii::t('screens', 'User'); ?></th>
 							<?php } ?>
 							<th><?php echo Yii::t('screens', 'Name'); ?></th>
 							<th><?php echo Yii::t('screens', 'Edit'); ?></th>
@@ -38,11 +38,12 @@
 							foreach ($myscreens as $key => $screen) {
 								echo '<tr>
 								<td>'.($key+1).'</td>';
-								if (Yii::app()->user->permissions == 3)
-									echo '<td>'.$screen->owner_id.'</td>';
+								if (Yii::app()->user->permissions == 3) {
+									echo '<td>'.$screen->owner->nick.'</td>';
+								}
 								echo '<td>'.CHtml::link(CHtml::encode($screen->name), $this->createUrl('screens/view/', array('id' => $screen->id)), array('target' => '_blank')).'</td>
-								<td>'.CHtml::link(Yii::t('screens', 'Edit'), $this->createUrl('screens/update', array('id' => $screen->id))).'</td>
-								<td>'.CHtml::link(Yii::t('screens', 'Delete'), $this->createUrl('screens/delete', array('id' => $screen->id))).'</td>
+								<td>'.CHtml::link(Yii::t('screens', 'Edit'), $this->createUrl('screens/update', array('id' => $screen->id)), array('class' => 'btn btn-primary')).'</td>
+								<td>'.CHtml::link(Yii::t('screens', 'Delete'), $this->createUrl('screens/delete', array('id' => $screen->id)), array('class' => 'btn btn-danger')).'</td>
 								</tr>';
 							}
 							?>
@@ -61,16 +62,3 @@
 			</div>
 		</div>
 	</div>
-	<script>
-	$(document).ready(function(){
-		$(".checkAll").click(function(){
-			$('input[id*="CamsForm_cam_"]').not(this).prop('checked', this.checked);
-		});
-		$(".checkAllSh").click(function(){
-			$('input[id*="CamsForm_shcam_"]').not(this).prop('checked', this.checked);
-		});
-		$(".checkAllP").click(function(){
-			$('input[id*="CamsForm_pcam_"]').not(this).prop('checked', this.checked);
-		});
-	});
-	</script>

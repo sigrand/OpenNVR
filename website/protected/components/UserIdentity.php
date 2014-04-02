@@ -5,7 +5,7 @@ class UserIdentity extends CUserIdentity {
 	public $permissions; // 0 - inactive; 1 - viewer; 2 - operator; 3 - admin; 4 - banned;
 	public $isAdmin;
 	public $nick;
-	
+
 	public function authenticate() {
 		$nick = strtolower($this->username);
 		$user = Users::model()->find('LOWER(email)=?', array($nick));
@@ -25,6 +25,10 @@ class UserIdentity extends CUserIdentity {
 			$this->username = $user->email;
 			$this->setState('isAdmin', $user->status == 3);
 			$this->setState('permissions', $user->status);
+			$this->setState('nick', $user->nick);
+			$this->setState('session_key', md5($user->email.time().uniqid().$user->salt));
+			$this->setState('user_ip', Yii::app()->request->userHostAddress);
+			Sessions::model()->deleteAllByAttributes(array('user_id' => $user->id));
 			$this->errorCode = self::ERROR_NONE;
 		}
 		return $this->errorCode == self::ERROR_NONE;

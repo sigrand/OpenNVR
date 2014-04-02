@@ -1,16 +1,9 @@
 <?php
 
 class AdminController extends Controller {
-	var $layout = 'admincolumn';
-	var $userActions = array(
-		'ban' => array(4, 'banned'),
-		'unban' => array(1, 'unbanned'),
-		'levelup' => array(3, 'up'),
-		'active' => array(1, 'activated'),
-		'dismiss' => array(1, 'down'),
-		);
+	var $userActions = array();
 	public function filters() {
-		return array(
+		return array( 
 			'accessControl',
 			);
 	}
@@ -27,15 +20,76 @@ class AdminController extends Controller {
 			);
 	}
 	
-	public function actionIndex() {
-		$this->render('index', array('title' => Yii::t('admin', 'Index page'), 'content' => Yii::t('admin', 'This is admins panel<br>Your CO')));
+	public function actionSettings() {
+		if(isset($_POST['Settings'])) {
+			foreach ($_POST['Settings'] as $k => $model) {
+				$models[$k] = Settings::model()->findByPK($_POST['Settings'][$k]['id']);
+				$models[$k]->attributes = $_POST['Settings'][$k];
+				if($models[$k]->validate() && $models[$k]->save()) {
+					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! Settings changed')));
+				} else {
+					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Fail =\, settings not changed')));
+				}
+			}
+		} else {
+			$models = Settings::model()->findAll();
+		}
+		$this->render('settings', array('models' => $models));
 	}
-	public function actionStat($type = 'disk') {
+
+	public function actionServers() {
+		$this->render('servers/index', array('servers' => Servers::model()->findAll()));
+	}
+
+	public function actionServerAdd() {
+		$model = new Servers;
+		if(isset($_POST['Servers'])) {
+			$model->attributes = $_POST['Servers'];
+			if($model->validate() && $model->save()) {
+				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Server added')));
+				$this->redirect(array('servers'));
+			}
+		}
+		$this->render('servers/edit', array('model' => $model));
+	}
+	
+	public function actionServerEdit($id) { // TODO add check owner
+		$model = Servers::model()->findByPK($id);
+		if(!$model) {
+			$this->redirect(array('servers'));
+		}
+		if(isset($_POST['Servers'])) {
+			$model->attributes = $_POST['Servers'];
+			if($model->validate() && $model->save()) {
+				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Server changed')));
+				$this->redirect(array('servers'));
+			} else {
+				Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Server not changed')));
+				$this->redirect(array('serverEdit', 'id' => $model->id));
+			}
+		}
+		$this->render('servers/edit', array('model' => $model));
+	}
+
+	public function actionServerDelete($id) {
+		$model = Servers::model()->findByPK($id);
+		if(!$model) {
+			$this->redirect(array('servers'));
+		}
+		if($model->delete()) {
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Server deleted')));
+		} else {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Server not deleted')));
+		}
+		$this->redirect(array('servers'));
+	}
+
+	public function actionStat($type, $id) {
 		Yii::import('ext.moment.index', 1);
-		$momentManager = new momentManager;
+		$momentManager = new momentManager($id);
 		$stat = $momentManager->stat($type);
 		if(empty($stat)) {
-			$this->render('stat', array('title' => Yii::t('admin', 'Statistics not avaiable'), 'stat' => array()));
+			$this->render('stat/index', array('title' => Yii::t('admin', 'Statistics not avaiable'), 'stat' => array(), 'type' => $type, 'id' => $id));
 			Yii::app()->end();
 		}
 		switch ($type) {
@@ -76,7 +130,7 @@ class AdminController extends Controller {
 			break;
 		}
 
-		$this->render('stat/index', array('title' => Yii::t('admin', 'Statistics(100 recent changes)'), 'stat' => $all, 'type' => $type));
+		$this->render('stat/index', array('title' => Yii::t('admin', 'Statistics(100 recent changes)'), 'stat' => $all, 'type' => $type, 'id' => $id));
 	}
 
 	function convertSize($s) {
@@ -103,7 +157,7 @@ class AdminController extends Controller {
 						$key = explode('_', $key);
 						$cam = Cams::model()->findByPK((int)$key[1]);
 						if($cam) {
-							$cam->public = $cam->public ? 0 : 1;
+							$cam->is_public = $cam->is_public ? 0 : 1;
 							if($cam->save()) {
 								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Cams settings successfully changed')));
 							}
@@ -113,7 +167,7 @@ class AdminController extends Controller {
 			}
 		}
 		$myCams = Cams::model()->findAllByAttributes(array('user_id' => $id));
-		$public = Cams::model()->findAllByAttributes(array('public' => 1));
+		$public = Cams::model()->findAllByAttributes(array('is_public' => 1));
 		$criteria = new CDbCriteria();
 		$criteria->addNotInCondition('id', CHtml::listData($myCams, 'id', 'id'));
 		$criteria->addNotInCondition('id', CHtml::listData($public, 'id', 'id'));
@@ -165,7 +219,6 @@ class AdminController extends Controller {
 			array(
 				'form' => new UsersForm,
 				'admins' => $admins,
-				'operators' => $operators,
 				'viewers' => $viewers,
 				'banned' => $banned,
 				'all' => $all,
@@ -175,15 +228,19 @@ class AdminController extends Controller {
 	}
 
 	private function userAction($actions, $user) {
+		$this->userActions = array(
+			'ban' => array(4, Yii::t('admin', 'banned')),
+			'unban' => array(1, Yii::t('admin', 'unbanned')),
+			'levelup' => array(3, Yii::t('admin', 'up')),
+			'active' => array(1, Yii::t('admin', 'activated')),
+			'dismiss' => array(1, Yii::t('admin', 'down')),
+			);
 		foreach ($this->userActions as $key => $value) {
 			if(isset($actions[$key])) {
 				if ($key === 'levelup') {
-					$user->status = $user->status + 1;
-				} elseif ($key === 'dismiss') {
-					$user->status = $user->status - 1;
-				} else {
-					$user->status = $value[0];
+					$user->status++;
 				}
+				$user->status = $value[0];
 				if($user->save()) {
 					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Users {action}', array('{action}' => $value[1]))));
 					return;
@@ -194,9 +251,9 @@ class AdminController extends Controller {
 
 	public function actionLogs($type) {
 		if($type == 'system') {
-			$logs = Notifications::model()->findAllByAttributes(array('creator_id' => 0));
+			$logs = Notifications::model()->findAllByAttributes(array('creator_id' => 0), array('order' => 'time DESC'));
 		} else {
-			$logs = Notifications::model()->findAll(array('condition' => 'creator_id > 0'));
+			$logs = Notifications::model()->findAll(array('condition' => 'creator_id > 0', 'order' => 'time DESC'));
 		}
 		$this->render('logs/index', array('type' => $type, 'logs' => $logs));
 

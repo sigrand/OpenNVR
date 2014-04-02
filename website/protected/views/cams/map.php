@@ -5,16 +5,16 @@
 <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
 <script src="http://api-maps.yandex.ru/2.0/?load=package.map&lang=ru-RU" type="text/javascript"></script>
 <script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
-<script src="/js/leaflet/Google.js"></script>
-<script src="/js/leaflet/Yandex.js"></script>
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/Google.js"></script>
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/Yandex.js"></script>
 
-<link rel="stylesheet" href="/css/MarkerCluster.Default.css" />
-<link rel="stylesheet" href="/css/MarkerCluster.css" />
+<link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/MarkerCluster.Default.css" />
+<link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/MarkerCluster.css" />
 
-<script src="/js/leaflet/leaflet.markercluster-src.js"></script>
-<script src="/js/leaflet/l.control.geosearch.js"></script>
-<script src="/js/leaflet/l.geosearch.provider.openstreetmap.js"></script>
-<link rel="stylesheet" href="/css/l.geosearch.css" />
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/leaflet.markercluster-src.js"></script>
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/l.control.geosearch.js"></script>
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/l.geosearch.provider.openstreetmap.js"></script>
+<link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/l.geosearch.css" />
 
 <div style="display:none;">
 <div id="MyPlayer_div" style="width:300px;height:168px;">
@@ -137,8 +137,12 @@
 <script>
 	var carousel_cams = [];
 	var carousel_position = 0;
+	var server_ip = "";
+	var server_port = "";
 	var cam_id = "";
 	var cams = [];
+	var servers = [];
+	var ports = [];
 	var cams_markers = [];
 	var markers = {};
 	var view_areas = {};
@@ -148,13 +152,13 @@
 	function flashInitialized() {
 		if (cam_id != "") {
 			// for popup player;
-			document["MyPlayer"].setSource(<?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>, cam_id+"_low", cam_id);
-			document.getElementById("open_link").href="/index.php/cams/fullscreen/full/1/id/"+cam_id;
+			document["MyPlayer"].setSource('rtmp://' + server_ip + ':' + server_port + '/live/', cam_id+"_low", cam_id);
+			document.getElementById("open_link").href="<?php echo $this->createUrl('cams/fullscreen', array('full' => 1, 'id' => '')); ?>/"+cam_id;
 			cam_id = "";
 		} else {
 			// for carousel players
 			for (i=1;i<=4;i++) {
-				document["MyPlayer"+i].setSource(<?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>, carousel_cams[i]+"_low", carousel_cams[i]);
+				document["MyPlayer"+i].setSource('rtmp://' + servers[i] + ':' + ports[i] + '/live/', carousel_cams[i]+"_low", carousel_cams[i]);
 			}
 		}
 	}
@@ -187,9 +191,18 @@ var buildind_icon = new LeafIcon({iconUrl: '/images/building_icon.png'});
 var markers_cluster = new L.MarkerClusterGroup();
 
 		<?php
+			$servers = array();
 			foreach ($myCams as $cam) {
+				if(isset($servers[$cam->server_id])) {
+					$server = $servers[$cam->server_id];
+				} else {
+					$servers[$cam->server_id] = Servers::model()->findByPK($cam->server_id);
+					$server = $servers[$cam->server_id];
+				}
 		?>
 				cams.push(<?php echo "\"$cam->id\""; ?>);
+				servers.push("<?php echo $server->ip; ?>");
+				ports.push("<?php echo $server->l_port; ?>");
 		<?php
 				if ($cam->coordinates != "") {
 		?>
@@ -201,6 +214,8 @@ var markers_cluster = new L.MarkerClusterGroup();
 				markers_cluster.addLayer(marker);
 				m[<?php echo "\"$cam->id\""; ?>] = marker.on('click', function() {
 					cam_id = <?php echo "$cam->id"; ?>;
+					server_ip = '<?php echo $server->ip; ?>';
+					server_port = '<?php echo $server->l_port; ?>';
 				});
 		<?php
 				}
@@ -242,6 +257,8 @@ var markers_cluster = new L.MarkerClusterGroup();
 		for (i=1;i<=4;i++) {
 			$("#on_MyPlayer"+i).click(function(){
 				cam_id = carousel_cams[this.id.substring(11)];
+				server_ip = servers[i];
+				server_port = ports[i];
 				markers_cluster.zoomToShowLayer(markers[cam_id], function() {
 					markers[cam_id].openPopup();
 				});

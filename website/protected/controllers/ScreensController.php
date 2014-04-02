@@ -6,7 +6,7 @@ class ScreensController extends Controller
 	 * @var string the default layout for the views. Defaults to '//layouts/column2', meaning
 	 * using two-column layout. See 'protected/views/layouts/column2.php'.
 	 */
-	public $layout='//layouts/column2';
+	//public $layout='//layouts/column2';
 
 	/**
 	 * @return array action filters
@@ -57,6 +57,7 @@ class ScreensController extends Controller
 
 	private function getAvailableCams() {
 		$myCams = Cams::getAvailableCams();
+		$select_options = array();
 		foreach ($myCams as $key => $cam) {
 			$select_options[$cam->id] = $cam->name;
 		}
@@ -302,6 +303,7 @@ class ScreensController extends Controller
 	 */
 	public function loadModel($id)
 	{
+		//$id = (int)$id;
 		$model=Screens::model()->findByPk($id);
 		if($model===null) {
 				throw new CHttpException(404,'The requested page does not exist.');

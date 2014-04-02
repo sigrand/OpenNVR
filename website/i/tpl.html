@@ -1,0 +1,258 @@
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>{title}</title>
+	<script src="./js/jquery-1.11.0.min.js"></script>
+	<script src="./js/jquery-ui.min.js"></script>
+	<style>
+	body {
+		background: #ccc;
+	}
+
+	.header {
+		border-color: #333;
+		border-radius: 10px;
+		background: #333;
+		margin: 20px;
+		padding: 10px;
+		padding-left: 30px;
+		position: relative;
+		color: #fff;
+	}
+
+	.container {
+		border-color: #333;
+		border-radius: 10px;
+		margin: 0 20 0 20px;
+		padding: 10px;
+		background: #333;
+	}
+
+	.accordion .h {
+		font-size: 22px;
+		cursor: pointer;
+		border: 1px solid #ccc;
+		background: #fff;
+		margin: 0 5 0 5px;
+		padding: 0px;
+		padding-left: 30px;
+	}
+
+	.accordion .с {
+		background: #fefefe;
+		padding: 10px;
+		margin: 0 5 0 5px;
+		border: 1px solid #aaaaaa;
+		padding-left: 30px;
+	}
+
+	.header:after {
+		content: "";
+		position: absolute;
+		top: 100%;
+		left: 20px;
+		border-top: 20px solid black;
+		border-top-color: inherit;
+		border-left: 20px solid transparent;
+		border-right: 20px solid transparent;
+	}
+
+	.main {
+		width: 50%;
+		margin-top:10%;
+		margin-left:25%;
+	}
+
+	.status {
+		display: inline-block;
+		width: 305px !important;
+		padding: 20px;
+		margin-top: 0px;
+		margin-right: 20px;
+		color: #fff;
+	}
+
+	.info {
+		width: 30%;
+		color: #666;
+	}
+
+	#success {
+		background: #6c6;
+	}
+
+	#warning {
+		background: #c69;
+	}
+
+	#wait {
+		background: #66c;
+	}
+
+	#h_success {
+		background: #efe;
+	}
+
+	#h_warning {
+		background: #fee;
+	}
+
+	#h_wait {
+		background: #eef;
+	}
+
+	input {
+		width: 100%;
+	}	
+
+	.use {
+		width: 10%;
+	}
+
+	.footer {
+		margin: 10px;
+		margin-bottom: 0px;
+	}
+
+	.footer span {
+		width: 79%;
+		display: inline-block;
+		color: #fff;
+	}
+
+	.footer a {
+		color: #fff;
+	}
+
+	.button {
+		width:20%;
+		display: inline-block;
+		height: 50px;
+	}
+	</style>
+</head>
+<body>
+	<script>
+	$(function() {
+		$(".accordion").accordion({
+			header: ".h",
+			active: false,
+			collapsible: {collapsible}
+		});
+	});
+	</script>
+	<div class="main">
+		<div class="header">
+			<h1>{header} {app}</h1>
+		</div>
+		<div class="container">
+			<form action="" method="post">
+				<div class="accordion">
+					<div class="h" id="h_{options_status}">
+						<span class="status" id="{options_status}">{options}</span>
+						<span class="info">{options_info}</span>
+					</div>
+					<div class="с">
+						<p>
+							<div class="options_form">
+								<table width="80%">
+									<tr>
+										<td>
+											{app_name}:
+										</td>
+										<td>
+											<input type="text" name="app_name" value="{app}"/>
+										</td>
+									</tr>
+									<tr>
+										<td>
+											{install_dir}:
+										</td>
+										<td>
+											<input type="text" name="install_path" value="{install_path}"/>
+										</td>
+									</tr>
+								</table>
+								<div>{options_check_result}</div>
+							</div>
+							<div class="options_result">
+							</div>
+						</p>
+					</div>
+					<div class="h" id="h_{perms_status}">
+						<span class="status" id="{perms_status}">{perms}</span>
+						<span class="info">{perms_info}</span>
+					</div>
+					<div class="с">
+						<div>{perms_check_result}</div>
+					</div>
+					<div class="h" id="h_{files_status}">
+						<span class="status" id="{files_status}">{files}</span>
+						<span class="info">{files_info}</span>
+					</div>
+					<div class="с">
+						{files_check_result}
+					</div>
+					<div class="h" id="h_{db_status}">
+						<span class="status" id="{db_status}">{db}</span>
+						<span class="info">{db_info}</span>
+					</div>
+					<div class="с">
+						<p>
+							<table width="80%">
+								<tr>
+									<td>
+										{hostname}:
+									</td>
+									<td>
+										<input type="text" name="hostname" value="{c_hostname}"/>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										{user}:
+									</td>
+									<td>
+										<input type="text" name="user" value="{c_user}"/>
+									</td>
+								</tr>				
+								<tr>
+									<td>
+										{pass}:
+									</td>
+									<td>
+										<input type="text" name="pass" value="{c_pass}"/>
+									</td>
+								</tr>			
+								<tr>
+									<td>
+										{database}:
+									</td>
+									<td>
+										<input type="text" name="database" value="{c_database}"/>
+									</td>
+								</tr>
+							</table>
+							{db_check_result}
+						</p>
+					</div>
+				</div>
+				<div class="footer">
+					<span>{install_result}</span>
+					<input type="submit" name="install" value="{install}" class="button">
+				</div>
+			</form>
+		</div>
+	</div>
+</body>
+</html>
+<!--
+design:
+http://dribbble.com/shots/850410-Dropdown-Menu-UI?list=show&tag=web_gui
+http://dribbble.com/shots/953460-Notifications?list=76884-Practice
+rules:
+http://agiletribe.wordpress.com/2012/01/05/installer-design-principles/
+example:
+https://github.com/bazilio91/yii-install/blob/master/install.php
+wordpress
+-->

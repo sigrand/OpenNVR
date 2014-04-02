@@ -7,7 +7,7 @@ class LoginForm extends CFormModel {
 
 	public function rules()	{
 		return array(
-			array('email, pass', 'required', 'message' => Yii::t('errors', 'Can\'t be empty!')),
+			array('email, pass', 'required'),
 			array('rememberMe', 'boolean'),
 			array('pass', 'authenticate'),
 			);
@@ -15,8 +15,8 @@ class LoginForm extends CFormModel {
 
 	public function attributeLabels() {
 		return array(
-			'email' => Yii::t('register', 'Email'),
-			'rememberMe' => Yii::t('register', 'Remember me'),
+			'email' => Yii::t('register', 'Your email'),
+			'rememberMe' => Yii::t('register', 'Remember me?'),
 			'pass' => Yii::t('register', 'Password'),
 			);
 	}

@@ -3,26 +3,26 @@
         <div class="panel-heading">
             <ul class="nav nav-tabs">
                 <li <?php echo $type == 'disk' ? 'class="active"' : ''; ?>>
-                    <?php echo CHtml::link(Yii::t('admin', 'HDD pratitions'), $this->createUrl('admin/stat', array('type' => 'disk'))); ?>
+                    <?php echo CHtml::link(Yii::t('admin', 'Hard drive sections'), $this->createUrl('admin/stat', array('type' => 'disk', 'id' => $id))); ?>
                 </li>
                 <li <?php echo $type == 'load' ? 'class="active"' : ''; ?>>
-                    <?php echo CHtml::link(Yii::t('admin', 'System load'), $this->createUrl('admin/stat', array('type' => 'load'))); ?>
+                    <?php echo CHtml::link(Yii::t('admin', 'Resource load'), $this->createUrl('admin/stat', array('type' => 'load', 'id' => $id))); ?>
                 </li>
                 <li <?php echo $type == 'rtmp' ? 'class="active"' : ''; ?>>
-                    <?php echo CHtml::link(Yii::t('admin', 'RTMP statistics'), $this->createUrl('admin/stat', array('type' => 'rtmp'))); ?>
+                    <?php echo CHtml::link(Yii::t('admin', 'RTMP stat'), $this->createUrl('admin/stat', array('type' => 'rtmp', 'id' => $id))); ?>
                 </li>
             </ul>
         </div>
         <div class="panel-body">
             <?php
             if (empty($stat)) {
-                echo Yii::t('admin', 'Statistics not avaiable');
+                echo Yii::t('admin', 'Stat not available');
             } else {
                 switch ($type) {
                     case 'disk':
                     echo '<table class="table">
                     <thead>
-                    <th>'.Yii::t('admin', 'Partition').'</th>
+                    <th>'.Yii::t('admin', 'Section').'</th>
                     <th>'.Yii::t('admin', 'Size').'</th>
                     <th>'.Yii::t('admin', 'Free').'</th>
                     <th>'.Yii::t('admin', 'Used').'</th>
@@ -40,12 +40,12 @@
                         ';
                     }
                     echo '</tbody></table><br/>';
-                    break;
+                    break;   
 
                     case 'rtmp':
                     echo $stat;
                     break;
-
+                    
                     case 'load':
                     Yii::import('ext.charts.*');
                     $chart = new Highchart();

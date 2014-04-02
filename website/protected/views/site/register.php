@@ -25,7 +25,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
                         <?php echo $form->textField($model, 'nick', array('class' => 'form-control')); ?>
                     </div>
                     <div class="col-sm-offset-4 col-sm-8">
-                    <?php echo $form->error($model, 'nick'); ?>
+                        <?php echo $form->error($model, 'nick'); ?>
                     </div>
                 </div>
                 <div class="form-group">
@@ -58,9 +58,3 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
     <script type="text/javascript">
     $("#RegForm_pass").passField({});
     </script>
-<?php /* if(CCaptcha::checkRequirements() && Yii::app()->user->isGuest):?>
-        <?=CHtml::activeLabelEx($model, 'verifyCode')?>
-        </td><td style="padding-top:5%;">
-        <?$this->widget('CCaptcha', array('buttonOptions'=>array('class' => 'links'), 'buttonLabel' => '<br/><br/><span class="links">'.Yii::t('register', 'Refresh image').'</span><br/>'));?><br/>
-        <?=CHtml::activeTextField($model, 'verifyCode')?>
-        <?php } */ ?>

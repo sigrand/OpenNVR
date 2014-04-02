@@ -1,5 +1,4 @@
 <?php
-/* @var $this AdminController */
 $creators = array('0' => 'sys');
 ?>
 <div class="col-sm-12">
@@ -16,7 +15,7 @@ $creators = array('0' => 'sys');
 						<?php echo CHtml::link(Yii::t('admin', 'System logs'), $this->createUrl('admin/logs', array('type' => 'system'))); ?>
 					</li>
 					<li <?php echo $type != 'system' ? 'class="active"' : ''; ?>>
-						<?php echo CHtml::link(Yii::t('admin', 'User logs'), $this->createUrl('admin/logs', array('type' => 'user'))); ?>
+						<?php echo CHtml::link(Yii::t('admin', 'Users log'), $this->createUrl('admin/logs', array('type' => 'user'))); ?>
 					</li>
 				</ul>
 			</div>
@@ -45,8 +44,8 @@ $creators = array('0' => 'sys');
 								}
 								echo '<tr>
 								<td>'.($key+1).'</td>
-								<td>'.CHtml::encode($log->creator_id == 0 ? Yii::t('admin', 'System') : $creators[$log->creator_id]).'</td>
-								<td>'.CHtml::encode($log->dest_id == 0 ? Yii::t('admin', 'System') : $creators[$log->dest_id]).'</td>
+								<td>'.CHtml::encode($log->creator_id == 0 ? 'System' : $creators[$log->creator_id]).'</td>
+								<td>'.CHtml::encode($log->dest_id == 0 ? 'System' : $creators[$log->dest_id]).'</td>
 								<td>'.CHtml::encode($log->msg).'</td>
 								<td>'.CHtml::encode(date('d-m-Y H:i:s', $log->time)).'</td>
 								</tr>';
@@ -56,7 +55,7 @@ $creators = array('0' => 'sys');
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'logs empty');
+					echo Yii::t('admin', 'Logs empty');
 				}
 				?>
 			</div>

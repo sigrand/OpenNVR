@@ -9,7 +9,7 @@ class ShareForm extends CFormModel {
 
 	public function rules()	{
 		return array(
-			array('cams, emails, hcams', 'required', 'message' => Yii::t('errors', 'Can\'t be empty')),
+			array('cams, emails, hcams', 'required'),
 			array('hcams', 'isOwned'),
 			);
 	}
@@ -18,17 +18,20 @@ class ShareForm extends CFormModel {
 		if(parent::beforeValidate()) {
 			$cams = array_map('trim', explode(',', $this->hcams));
 			$c = count($cams);
-			$this->camBuff = Cams::model()->findAllByAttributes(array('id' => $cams));
+			foreach ($cams as $cam) {
+				$this->camBuff[] = Cams::model()->findByPK(Cams::model()->getRealId($cam));
+			}
+			$this->camBuff = array_filter($this->camBuff);
 			if(empty($this->camBuff) || count($this->camBuff) != $c) {
-				$this->addError('cams', $Yii::t('errors', 'There is no such cam'));
+				$this->addError('cams', $c > 1 ? Yii::t('errors', 'One of cam is wrong') : Yii::t('errors', 'There is no such cam'));
 				return false;
 			}
 			$emails = array_map('trim', explode(',', $this->emails));
 			$c = count($emails);
 			$this->emailBuff = Users::model()->findAllByAttributes(array('email' => $emails));
 			if(empty($this->emailBuff) || count($this->emailBuff) != $c) {
-				$this->addError('emails', $Yii::t('errors', 'There is no such user'));
-				return false;
+				$this->addError('emails', $c > 1 ? Yii::t('errors', 'One of user is wrong') : Yii::t('errors', 'There is no such user'));
+				return false;	
 			}
 			return true;
 		}
@@ -39,7 +42,7 @@ class ShareForm extends CFormModel {
 		if($this->camBuff) {
 			$c = count($this->camBuff);
 			foreach ($this->camBuff as $cam) {
-				if($cam->user_id != Yii::app()->user->getId()) { $this->addError('cams', $c > 1 ? Yii::t('errors', 'You are not owner of this cameras') : Yii::t('errors', 'You are not owner of this cameras')); return false; }
+				if($cam->user_id != Yii::app()->user->getId()) { $this->addError('cams', $c > 1 ? Yii::t('errors', 'You are not owner of this cam') : Yii::t('errors', 'You are not owner of this cam')); return false; }
 			}
 			return true;
 		}
@@ -51,15 +54,15 @@ class ShareForm extends CFormModel {
 		foreach($this->camBuff as $cam) {
 			foreach($this->emailBuff as $user) {
 				$n = new Notify;
-				$n->note(Yii::t('cams', 'You granted access to camera').' '.$cam->name, $id, $user->id);
-				$Shared = Shared::model()->findByAttributes(array('owner_id' => $id, 'user_id' => $user->id, 'cam_id' => $cam->id, 'public' => 0));
-				if(!$Shared) {
-					$Shared = new Shared;
-					$Shared->owner_id = $id;
-					$Shared->user_id = $user->id;
-					$Shared->cam_id = $cam->id;
-					$Shared->save();
+				$shared = Shared::model()->findByAttributes(array('owner_id' => $id, 'user_id' => $user->id, 'cam_id' => $cam->id, 'is_public' => 0));
+				if(!$shared) {
+					$shared = new Shared;
+					$shared->owner_id = $id;
+					$shared->user_id = $user->id;
+					$shared->cam_id = $cam->id;
+					$shared->save();
 				}
+				$n->note(Yii::t('cams', 'You granted access to camera {cam}', array('{cam}' => $cam->name)), array($id, $user->id, $shared->id));
 			}
 		}
 		return true;

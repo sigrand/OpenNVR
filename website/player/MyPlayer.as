@@ -206,20 +206,16 @@ public class MyPlayer extends Sprite
 
     private function showConnecting () : void
     {
-	if (loaderInfo.parameters ["show_conn_status"] == "true") {
-		msg_connecting.setVisible (true);
-		msg_buffering.setVisible (false);
-		msg_error.setVisible (false);
-	}
+	msg_connecting.setVisible (true);
+	msg_buffering.setVisible (false);
+	msg_error.setVisible (false);
     }
 
     private function showBuffering () : void
     {
-	if (loaderInfo.parameters ["show_conn_status"] == "true") {
-		msg_connecting.setVisible (false);
-		msg_buffering.setVisible (true);
-		msg_error.setVisible (false);
-	}
+	msg_connecting.setVisible (false);
+	msg_buffering.setVisible (true);
+	msg_error.setVisible (false);
     }
 
     private function showError () : void
@@ -489,14 +485,14 @@ public class MyPlayer extends Sprite
         } else */ {
 	    hide_buttons_timer = setInterval (hideButtonsTick, 5000);
 
-		if (loaderInfo.parameters ["show_buttons"] == "true") buttons_visible = true;
+	    buttons_visible = true;
 
 	    if (stage.displayState != "fullScreen") {
                 if (show_playlist_button)
                     playlist_button.setVisible (true);
             }
 
-		if (loaderInfo.parameters ["show_buttons"] == "true") fullscreen_button.setVisible (true);
+	    fullscreen_button.setVisible (true);
 	    horizontal_button.setVisible (!videoShouldBeHorizontal());
         }
     }
@@ -538,10 +534,8 @@ public class MyPlayer extends Sprite
         autoplay = (loaderInfo.parameters ["autoplay"] != 0);
         show_playlist_button = (loaderInfo.parameters ["playlist"] != 0);
 
-	buttons_visible = false;
+	buttons_visible = true;
 	horizontal_mode = false;
-	if (loaderInfo.parameters ["show_buttons"] == "true") buttons_visible = true;
-	if (loaderInfo.parameters ["auto_horizontal_mode"] == "true") horizontal_mode = true;
 
 	reconnect_interval = 0;
 	reconnect_timer = 0;
@@ -578,14 +572,14 @@ public class MyPlayer extends Sprite
         */
 
         if (show_playlist_button) {
-            playlist_button = createLoadedElement ("/player/playlist.png", false /* visible */);
+            playlist_button = createLoadedElement ("/player/playlist.png", true /* visible */);
             playlist_button.obj.addEventListener (MouseEvent.CLICK, togglePlaylist);
         }
 
-        fullscreen_button = createLoadedElement ("/player/fullscreen.png", false /* visible */);
+        fullscreen_button = createLoadedElement ("/player/fullscreen.png", true /* visible */);
 	fullscreen_button.obj.addEventListener (MouseEvent.CLICK, toggleFullscreen);
 
-	horizontal_button = createLoadedElement ("/player/horizontal.png", false /* visible */);
+	horizontal_button = createLoadedElement ("/player/horizontal.png", true /* visible */);
 	horizontal_button.obj.addEventListener (MouseEvent.CLICK, toggleHorizontal);
 
 	msg_connecting = createLoadedElement ("/player/connecting.png", false /* visible */);

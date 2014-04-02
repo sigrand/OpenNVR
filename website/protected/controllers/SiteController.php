@@ -3,20 +3,11 @@
 class SiteController extends Controller {
 
 	public function actionIndex() {
-		$this->render('index');
-	}
-
-	public function actionAbout() {
-		//Notify::note('Кто то посетил about');
-		$this->render('info', array('title' => Yii::t('app', 'About us'), 'content' => Yii::t('app', 'About us...')));
+		$this->redirect($this->createUrl('cams/index'));
 	}
 
 	public function actionRegister() {
 		$model = new RegForm;
-		if(isset($_POST['ajax']) && $_POST['ajax']==='reg-form') {
-			echo CActiveForm::validate($model);
-			Yii::app()->end();
-		}
 		if(isset($_POST['RegForm'])) {
 			$model->attributes = $_POST['RegForm'];
 			if($model->validate() && $model->register()) {
@@ -110,11 +101,12 @@ class SiteController extends Controller {
 				Yii::import('ext.YiiMailer.YiiMailer');
 				$code = md5(md5($user->pass.$user->email));
 				$mail = new YiiMailer();
-				$mail->setFrom('recovery@camshot.ru');
+				$mail->setFrom(Settings::model()->getValue('recovery'));
 				$mail->setTo($user->email);
 				$mail->setSubject(Yii::t('register', 'Password recovery'));
 				$mail->setBody(
-					Yii::t('register',"Recovery link: {link}",
+					Yii::t('register', 
+						"Recovery link: {link}",
 						array('{link}' => Yii::app()->createAbsoluteUrl('site/recovery', array('user' => $user->nick, 'code' => $code)))
 						)
 					);
@@ -137,13 +129,8 @@ class SiteController extends Controller {
 		}
 		if(isset($_POST['LoginForm'])) {
 			$model->attributes=$_POST['LoginForm'];
-			if($model->validate() && $model->login()) {
-				if ((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)) {
-					$this->redirect($this->createUrl('cams/manage'));
-				} else {
-					$this->redirect($this->createUrl('screens/manage'));
-				}
-			}
+			if($model->validate() && $model->login())
+				$this->redirect($this->createUrl('cams/index'));
 		}
 		$this->render('login',array('model'=>$model));
 	}

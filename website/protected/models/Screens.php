@@ -34,18 +34,21 @@ class Screens extends CActiveRecord
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
 			array('id, name, owner_id, cam1_id, cam2_id, cam3_id, cam4_id, cam5_id, cam6_id, cam7_id, cam8_id, cam9_id, cam10_id, cam11_id, cam11_x, cam11_y, cam11_w, cam11_h, cam11_descr, cam12_id, cam13_id, cam14_id, cam15_id, cam16_id', 'safe', 'on'=>'search'),
-		);
-	}
+			);
+}
 
 	/**
 	 * @return array relational rules.
 	 */
-	public function relations()
-	{
-		// NOTE: you may need to adjust the relation name and the related
-		// class name for the relations automatically generated below.
+	public function relations()	{
 		return array(
-		);
+			'owner' => array(
+				self::BELONGS_TO,
+				'Users',
+				'owner_id',
+				'select' => 'nick'
+				),
+			);
 	}
 
 	/**
@@ -153,8 +156,8 @@ class Screens extends CActiveRecord
 			'cam16_w' => 'Cam16 W',
 			'cam16_h' => 'Cam16 H',
 			'cam16_descr' => 'Cam16 Descr',
-		);
-	}
+			);
+}
 
 	/**
 	 * Retrieves a list of models based on the current search/filter conditions.
@@ -269,6 +272,6 @@ class Screens extends CActiveRecord
 
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
-		));
+			));
 	}
 }

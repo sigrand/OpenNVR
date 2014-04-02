@@ -5,19 +5,33 @@
  */
 class Controller extends CController
 {
-	/**
-	 * @var string the default layout for the controller view. Defaults to '//layouts/column1',
-	 * meaning using a single column layout. See 'protected/views/layouts/column1.php'.
-	 */
 	public $layout='//layouts/column1';
-	/**
-	 * @var array context menu items. This property will be assigned to {@link CMenu::items}.
-	 */
 	public $menu=array();
-	/**
-	 * @var array the breadcrumbs of the current page. The value of this property will
-	 * be assigned to {@link CBreadcrumbs::links}. Please refer to {@link CBreadcrumbs::links}
-	 * for more details on how to specify this property.
-	 */
 	public $breadcrumbs=array();
+
+	protected function renderJSON($data) {
+		$this->layout = false;
+		header('Content-type: application/json');
+		echo CJSON::encode($data);
+		foreach (Yii::app()->log->routes as $route) {
+			if($route instanceof CWebLogRoute) {
+				$route->enabled = false;
+			}
+		}
+		Yii::app()->end();
+	}
+
+	public function render($view, $data = NULL, $return = false) {
+		$controller = $this->getId();
+		$path = 'application.views.'.$controller.'.'.str_replace('/', '.', $view);
+		$path = Yii::getPathOfAlias($path);
+		$style = Settings::model()->getValue('style');
+		if(file_exists($path.'-'.$style.'.php')) {
+			$view = $view.'-'.$style;
+		} elseif(file_exists($path.'-default.php')) {
+			$view = $view.'-default';
+		}
+		parent::render($view, $data, $return);
+	}
+
 }

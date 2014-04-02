@@ -1,6 +1,3 @@
-<?php
-/* @var $this CamsController */
-?>
 <div class="col-sm-12">
 	<?php
 	if(Yii::app()->user->hasFlash('notify')) {
@@ -14,7 +11,7 @@
 			</div>
 			<div class="panel-body">
 				<?php
-				$addLink = CHtml::link('<img src="'.Yii::app()->request->baseUrl.'/images/add-icon.png" style="width:32px;"> '.Yii::t('cams', 'Add cam'), $this->createUrl('cams/add'));
+				$addLink = CHtml::link(Yii::t('cams', 'Add cam'), $this->createUrl('cams/add'), array('class' => 'btn btn-success'));
 				if(!empty($myCams)) {
 					echo $addLink;
 					?>
@@ -28,25 +25,24 @@
 							<th><?php echo Yii::t('cams', 'Record?'); ?></th>
 							<th><?php echo Yii::t('cams', 'Edit'); ?></th>
 							<th><?php echo Yii::t('cams', 'Delete'); ?></th>
-						</thead>
 						<tbody>
 							<?php
 							echo CHtml::beginForm($this->createUrl('cams/manage'), "post");
 							foreach ($myCams as $key => $cam) {
 								echo '<tr>
-								<td>'.CHtml::activeCheckBox($form, 'cam_'.$cam->id).'</td>
+								<td>'.CHtml::activeCheckBox($form, 'cam_'.$cam->getSessionId()).'</td>
 								<td>'.($key+1).'</td>
-								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->id)), array('target' => '_blank')).'</td>
+								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->getSessionId())), array('target' => '_blank')).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
 								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
 								<td>'.($cam->record ? Yii::t('cams', 'Record') : Yii::t('cams', 'Don\'t record')).'</td>
-								<td>'.CHtml::link(Yii::t('cams', 'Edit'), $this->createUrl('cams/edit', array('id' => $cam->id))).'</td>
-								<td>'.CHtml::link(Yii::t('cams', 'Delete'), $this->createUrl('cams/delete', array('id' => $cam->id))).'</td>
+								<td>'.CHtml::link(Yii::t('cams', 'Edit'), $this->createUrl('cams/edit', array('id' => $cam->getSessionId())), array('name' => 'show', 'class' => 'btn btn-primary')).'</td>
+								<td>'.CHtml::link(Yii::t('cams', 'Delete'), $this->createUrl('cams/delete', array('id' => $cam->getSessionId())), array('name' => 'del', 'class' => 'btn btn-danger')).'</td>
 								</tr>';
 							}
 							?>
 							<tr>
-								<td colspan="4"></td>
+								<td colspan="4"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Share'), array('name' => 'share', 'class' => 'btn btn-success')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Record/Don\'t record'), array('name' => 'record', 'class' => 'btn btn-warning')); ?></td>
@@ -90,16 +86,16 @@
 								echo '<tr>
 								<td>'.CHtml::activeCheckBox($form, 'shcam_'.$cam->id).'</td>
 								<td>'.($key + 1).'</td>
-								<td>'.CHtml::link(CHtml::encode($cam->cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->cam->id)), array('target' => '_blank')).'</td>
+								<td>'.CHtml::link(CHtml::encode($cam->cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->cam->getSessionId())), array('target' => '_blank')).'</td>
 								<td>'.CHtml::encode($cam->owner->nick).'</td>
 								<td>'.CHtml::encode($cam->cam->desc).'</td>
 								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
-								<td>'.CHtml::link(Yii::t('cams', 'Delete'), $this->createUrl('cams/delete', array('id' => $cam->id, 'type' => 'share'))).'</td>
+								<td>'.CHtml::link(Yii::t('cams', 'Delete'), $this->createUrl('cams/delete', array('id' => $cam->id, 'type' => 'share')), array('class' => 'btn btn-danger')).'</td>
 								</tr>';
 							}
 							?>
 							<tr>
-								<td colspan="5"></td>
+								<td colspan="5"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Delete'), array('name' => 'del', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
@@ -141,14 +137,13 @@
 								if(isset($cam->cam_id)) {
 									$cam = $cam->cam;
 									$cam->show = $myPublicCams[$key]->show;
-									//$cam->owner = $myPublicCams[$key]->owner->nick;
 								} else {
 									$cam->show = 1;
 								}
 								echo '<tr>
-								<td>'.CHtml::activeCheckBox($form, 'pcam_'.$cam->id).'</td>
+								<td>'.CHtml::activeCheckBox($form, 'pcam_'.$cam->getSessionId()).'</td>
 								<td>'.($key + 1).'</td>
-								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->id)), array('target' => '_blank')).'</td>
+								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->getSessionId())), array('target' => '_blank')).'</td>
 								<td>'.CHtml::encode($cam->owner->nick).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
 								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
@@ -156,7 +151,7 @@
 							}
 							?>
 							<tr>
-								<td colspan="5"></td>
+								<td colspan="5"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>

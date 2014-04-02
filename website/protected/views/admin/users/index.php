@@ -20,8 +20,8 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllA", array ("class" => "checkAllA")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
-							<th><?php echo Yii::t('admin', 'Email'); ?></th>
+							<th><?php echo Yii::t('admin', 'nick'); ?></th>
+							<th><?php echo Yii::t('admin', 'email'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -37,7 +37,7 @@
 							?>
 							<tr>
 								<td colspan="2"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Down'), array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'LevelDown'), array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
@@ -62,7 +62,7 @@
 					?>
 					<table class="table table-striped">
 						<thead>
-							<th><?php echo CHtml::activeCheckBox($form, "checkAllZ", array ("class" => "checkAllZ")); ?></th>
+							<th><?php echo CHtml::activeCheckBox($form, "checkAllO", array ("class" => "checkAllO")); ?></th>
 							<th>#</th>
 							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
 							<th><?php echo Yii::t('admin', 'Email'); ?></th>
@@ -72,7 +72,7 @@
 							echo CHtml::beginForm($this->createUrl('admin/users'), "post");
 							foreach ($operators as $key => $user) {
 								echo '<tr>
-								<td>'.CHtml::activeCheckBox($form, 'zuser_'.$user->id).'</td>
+								<td>'.CHtml::activeCheckBox($form, 'ouser_'.$user->id).'</td>
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($user->nick).'</td>
 								<td>'.CHtml::encode($user->email).'</td>
@@ -81,16 +81,16 @@
 							?>
 							<tr>
 								<td colspan="1"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Up'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Down'), array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
+								<td><?php echo CHtml::submitButton('LevelUp', array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton('LevelDown', array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
+								<td><?php echo CHtml::submitButton('Ban', array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'Operators list is empty.<br/>');
+					echo Yii::t('admin', 'Operators list is empty<br/>');
 				}
 				?>
 			</div>
@@ -107,17 +107,17 @@
 					?>
 					<table class="table table-striped">
 						<thead>
-							<th><?php echo CHtml::activeCheckBox($form, "checkAllZ", array ("class" => "checkAllZ")); ?></th>
+							<th><?php echo CHtml::activeCheckBox($form, "checkAllV", array ("class" => "checkAllV")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
-							<th><?php echo Yii::t('admin', 'Email'); ?></th>
+							<th>Ник</th>
+							<th>Почта</th>
 						</thead>
 						<tbody>
 							<?php
 							echo CHtml::beginForm($this->createUrl('admin/users'), "post");
 							foreach ($viewers as $key => $user) {
 								echo '<tr>
-								<td>'.CHtml::activeCheckBox($form, 'zuser_'.$user->id).'</td>
+								<td>'.CHtml::activeCheckBox($form, 'vuser_'.$user->id).'</td>
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode($user->nick).'</td>
 								<td>'.CHtml::encode($user->email).'</td>
@@ -126,15 +126,15 @@
 							?>
 							<tr>
 								<td colspan="2"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Up'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
+								<td><?php echo CHtml::submitButton('LevelUp', array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
+								<td><?php echo CHtml::submitButton('Ban', array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'Operators list is empty.<br/>');
+					echo Yii::t('admin', 'Viewers list is empty<br/>');
 				}
 				?>
 			</div>
@@ -153,8 +153,8 @@
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllZ", array ("class" => "checkAllZ")); ?></th>
 							<th>#</th>
-							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
-							<th><?php echo Yii::t('admin', 'Email'); ?></th>
+							<th><?php echo Yii::t('admin', 'nick'); ?></th>
+							<th><?php echo Yii::t('admin', 'email'); ?></th>
 						</thead>
 						<tbody>
 							<?php
@@ -169,17 +169,15 @@
 							}
 							?>
 							<tr>
-								<td colspan="2"></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Up'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
-								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Unban'), array('name' => 'unban', 'class' => 'btn btn-danger')); ?></td>
-
+								<td colspan="3"></td>
+								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Unban'), array('name' => 'unban', 'class' => 'btn btn-primary')); ?></td>
 							</tr>
 							<?php echo CHtml::endForm(); ?>
 						</tbody>
 					</table>
 					<?php
 				} else {
-					echo Yii::t('admin', 'Banned list is empty.<br/');
+					echo Yii::t('admin', 'Banned list is empty<br/>');
 				}
 				?>
 			</div>
@@ -222,12 +220,11 @@
 										'pages' => $pages,
 										'header' => Yii::t('admin', 'Go to page: '),
 										'nextPageLabel' => Yii::t('admin', 'next'),
-										'prevPageLabel' => Yii::t('admin', 'prev'),
+										'prevPageLabel' => Yii::t('admin', 'back'),
 										));
 										?>
 									</td>
 									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Activate'), array('name' => 'active', 'class' => 'btn btn-primary')); ?></td>
-									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Up'), array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
 									<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 								</tr>
 								<?php echo CHtml::endForm(); ?>
@@ -235,7 +232,7 @@
 						</table>
 						<?php
 					} else {
-						echo Yii::t('admin', 'Users list is empty.<br/>');
+						echo Yii::t('admin', 'Users list is empty<br/>');
 					}
 					?>
 				</div>
@@ -248,9 +245,15 @@
 			});
 			$(".checkAllA").click(function(){
 				$('input[id*="UsersForm_auser_"]').not(this).prop('checked', this.checked);
+			});		
+			$(".checkAllO").click(function(){
+				$('input[id*="UsersForm_ouser_"]').not(this).prop('checked', this.checked);
 			});
 			$(".checkAllZ").click(function(){
 				$('input[id*="UsersForm_zuser_"]').not(this).prop('checked', this.checked);
+			});			
+			$(".checkAllV").click(function(){
+				$('input[id*="UsersForm_vuser_"]').not(this).prop('checked', this.checked);
 			});
 		});
 		</script>

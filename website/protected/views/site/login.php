@@ -1,14 +1,11 @@
 <?php
-/* @var $this SiteController */
-/* @var $model LoginForm */
-/* @var $form CActiveForm  */
 Yii::app()->clientScript->registerCssFile(Yii::app()->baseUrl.'/css/passfield.min.css');
 Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.min.js');
 ?>
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><?php echo Yii::t('register', 'Login form'); ?></h3>
+			<h3 class="panel-title"><? echo Yii::t('register', 'Login form');?></h3>
 		</div>
 		<div class="panel-body">
 			<?php

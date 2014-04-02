@@ -21,12 +21,12 @@ class ProfileForm extends CFormModel {
 	public function rules()	{
 		if($this->type == 'pass') {
 			return array(
-				array('old_pass, new_pass', 'required', 'message' => Yii::t('errors', 'Can\'t be empty')),
+				array('old_pass, new_pass', 'required'),
 				array('old_pass', 'checkpass'),
 				);
 		} else {
 			return array(
-				array('time_offset', 'required', 'message' => Yii::t('errors', 'Can\'t be empty')),
+				array('time_offset', 'required'),
 				array('time_offset', 'numerical'),
 				);
 		}
@@ -44,7 +44,7 @@ class ProfileForm extends CFormModel {
 
 	public function attributeLabels() {
 		return array(
-			'time_offset' => Yii::t('user', 'Timezone'),
+			'time_offset' => Yii::t('user', 'Time zone'),
 			'new_pass' => Yii::t('user', 'New password'),
 			'old_pass' => Yii::t('user', 'Old password'),
 			'options' => Yii::t('user', 'Show archive by time:'),
