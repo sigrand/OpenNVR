@@ -8,7 +8,9 @@
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/Net/HTTPServerRequest.h>
 #include <Poco/Net/HTTPServerResponse.h>
+#include "Poco/Net/HTTPClientSession.h"
 #include <Poco/Net/HTMLForm.h>
+#include <Poco/StreamCopier.h>
 #include <Poco/Util/ServerApplication.h>
 #include <Poco/URI.h>
 #include <iostream>
@@ -16,7 +18,9 @@
 
 using namespace Poco::Net;
 using namespace Poco::Util;
+using Poco::Net::HTTPClientSession;
 using Poco::Net::HTMLForm;
+using Poco::StreamCopier;
 using Poco::URI;
 
 namespace Moment {

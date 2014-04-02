@@ -106,52 +106,45 @@ static bool len_compare(const std::string a, const std::string b)
     return (a.length() < b.length());
 }
 
-unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, const Uint64 nDuration)
+std::string MemoryDispatcher::disknameFromFilename(const std::string & filename)
 {
-    logD(memdisp, _func_);
-
-    g_mutexMemoryDispatcher.lock();
-
-    if(!_isInit)
-    {
-        logE_(_func_, "MemoryDispatcher is not inited");
-        g_mutexMemoryDispatcher.unlock();
-        return 0;
-    }
-
-    unsigned long nThreshold = FREESPACELIMIT;
-    unsigned long nBitrate = BITRATE;
-    time_t liveTimeInCache = LIVETIMECACHE;
-    logD(memdisp, _func_, "liveTimeInCache = [", liveTimeInCache, "]");
+    std::string diskname;
 
     std::string pathToFile;
-    size_t found = fileName.rfind("/");
-    pathToFile = fileName.substr(0, found);
+    size_t found = filename.rfind("/");
+    pathToFile = filename.substr(0, found);
 
-    unsigned long requiredSize = (nBitrate / 8) * nDuration; // in KBytes
-    unsigned long freeSize = -1;
-
-#ifndef PLATFORM_WIN32
     // find disk where current file is written
     std::vector<std::string> diskNames;
-    std::string diskName;
     for (DiskFiles::const_iterator itr = _diskFiles.begin(); itr != _diskFiles.end(); itr++)
     {
-        if(fileName.find(itr->first) == 0)
+        if(pathToFile.find(itr->first) == 0)
             diskNames.push_back(itr->first);
     }
     if(diskNames.size())
-        diskName = *(std::max_element(diskNames.begin(), diskNames.end(), len_compare));
+        diskname = *(std::max_element(diskNames.begin(), diskNames.end(), len_compare));
+
+    return diskname;
+}
+
+Int64 MemoryDispatcher::getFreeSize(const std::string & diskName, time_t curTime)
+{
+    Int64 resultFreeSize = 0;
+
+    Int64 freeSize = 0;
+    Int64 reservedSizeByStreams = 0;
+    Int64 actualSizeOfStreams = 0;
+
+#ifndef PLATFORM_WIN32
 
     struct statvfs info;
     if(statvfs (diskName.c_str(), &info))
     {
         logE_(_func_, "fail to get free space info");
-        g_mutexMemoryDispatcher.unlock();
-        return 0;
+        return -1;
     }
     freeSize = (info.f_bsize * info.f_bavail) / 1024; // in KBytes
-#else
+#else // broken, need to fix
     typedef BOOL (WINAPI *P_GDFSE)(LPCTSTR, PULARGE_INTEGER,
                                       PULARGE_INTEGER, PULARGE_INTEGER);
     P_GDFSE pGetDiskFreeSpaceEx = NULL;
@@ -175,38 +168,28 @@ unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, cons
                                   GetModuleHandle ("kernel32.dll"),
                                                    "GetDiskFreeSpaceExA");
     if (!pGetDiskFreeSpaceEx)
-        return 0;
+        return -1;
 
     BOOL fResult = pGetDiskFreeSpaceEx (drivePath,
                                      (PULARGE_INTEGER)&i64FreeBytesToCaller,
                                      (PULARGE_INTEGER)&i64TotalBytes,
                                      (PULARGE_INTEGER)&i64FreeBytes);
     if (!fResult)
-        return 0;
+        return -1;
 
     freeSize = i64FreeBytesToCaller / 1024; // in KBytes
 #endif
 
-    logD(memdisp, _func_, "freeSize = [", freeSize, "]");
-
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    time_t curTime = tv.tv_sec;
-
-    logD(memdisp, _func_, "curTime = [", curTime, "]");
-
-    unsigned long reservedSizeByStreams = 0;
-    unsigned long actualSizeOfStreams = 0;
-
     FilesInfo * pStreams = &_diskFiles[diskName];
     FilesInfo::iterator it = pStreams->begin();
+
     while(it != pStreams->end())
     {
         logD(memdisp, _func_, "filename = [", it->first.c_str(), "]");
-        
+
         logD(memdisp, _func_, "timeCreation = [", it->second.fileTimes.timeStart, "]");
         logD(memdisp, _func_, "timeUpdate = [", it->second.fileTimes.timeUpdate, "]");
-        if(curTime - it->second.fileTimes.timeUpdate > liveTimeInCache)
+        if(curTime - it->second.fileTimes.timeUpdate > LIVETIMECACHE)
         {
             // expired record
             logD(memdisp, _func_, "erase expired file = [", it->first.c_str(), "]");
@@ -219,13 +202,90 @@ unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, cons
             ++it;
         }
     }
+
     logD(memdisp, _func_, "reservedSizeByStreams = [", reservedSizeByStreams, "]");
     logD(memdisp, _func_, "actualSizeOfStreams = [", actualSizeOfStreams, "]");
-    logD(memdisp, _func_, "requiredSize = [", requiredSize, "]");
-    logD(memdisp, _func_, "nThreshold = [", nThreshold, "]");
+    logD(memdisp, _func_, "freeSize = [", freeSize, "]");
 
-    Int64 intres = Int64(freeSize) + Int64(actualSizeOfStreams) - Int64(reservedSizeByStreams) - Int64(requiredSize);
-    bool bRes = intres > Int64(nThreshold);
+    resultFreeSize = freeSize + actualSizeOfStreams - reservedSizeByStreams;
+
+    logD(memdisp, _func_, "resultFreeSize = [", resultFreeSize, "]");
+
+    return freeSize;
+}
+
+Int64 MemoryDispatcher::GetDiskFreeSizeFromDiskname(const std::string & diskName)
+{
+    g_mutexMemoryDispatcher.lock();
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    time_t curTime = tv.tv_sec;
+
+    // find disk where current file is written
+    std::string disknameRes = "";
+    std::vector<std::string> diskNames;
+    for (DiskFiles::const_iterator itr = _diskFiles.begin(); itr != _diskFiles.end(); itr++)
+    {
+        if(diskName.find(itr->first) == 0)
+            diskNames.push_back(itr->first);
+    }
+    if(diskNames.size())
+        disknameRes = *(std::max_element(diskNames.begin(), diskNames.end(), len_compare));
+
+    Int64 freeSize = getFreeSize(disknameRes, curTime);
+
+    g_mutexMemoryDispatcher.unlock();
+
+    return freeSize;
+}
+
+unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, const Uint64 nDuration)
+{
+    logD(memdisp, _func_);
+
+    g_mutexMemoryDispatcher.lock();
+
+    if(!_isInit)
+    {
+        logE_(_func_, "MemoryDispatcher is not inited");
+        g_mutexMemoryDispatcher.unlock();
+        return 0;
+    }
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    time_t curTime = tv.tv_sec;
+
+    logD(memdisp, _func_, "curTime = [", curTime, "]");
+
+    Int64 nThreshold = FREESPACELIMIT;
+    Int64 nBitrate = BITRATE;
+    time_t liveTimeInCache = LIVETIMECACHE;
+    logD(memdisp, _func_, "liveTimeInCache = [", liveTimeInCache, "]");
+
+    Int64 requiredSize = (nBitrate / 8) * nDuration; // in KBytes
+
+    logD(memdisp, _func_, "requiredSize = [", requiredSize, "]");
+
+    std::string diskName = disknameFromFilename(fileName);
+
+    Int64 freeSize = getFreeSize(diskName, curTime);
+
+    if(freeSize < 0)
+    {
+        g_mutexMemoryDispatcher.unlock();
+        return 0;
+    }
+
+    logD(memdisp, _func_, "freeSize = [", freeSize, "]");
+
+    Int64 intres = freeSize - requiredSize;
+
+    logD(memdisp, _func_, "nThreshold = [", nThreshold, "]");
+    logD(memdisp, _func_, "intres = [", intres, "]");
+
+    bool bRes = intres > nThreshold;
 
     if(bRes)
     {
@@ -243,6 +303,7 @@ unsigned long MemoryDispatcher::GetPermission(const std::string & fileName, cons
         fileInfo.fileSizes = fileSizes;
         fileInfo.fileTimes = fileTimes;
 
+        FilesInfo * pStreams = &_diskFiles[diskName];
         pStreams->insert(std::make_pair(fileName, fileInfo));
     }
     else

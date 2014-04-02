@@ -17,6 +17,8 @@ using namespace Moment;
 
 namespace MomentFFmpeg {
 
+class RecpathConfig;
+
 struct ChChTimes
 {
     int timeStart;
@@ -59,6 +61,9 @@ public:
     ChannelFileDiskTimes GetChannelFileDiskTimes ();
     DiskSizes GetDiskSizes ();
     bool DeleteFromCache(const std::string & dir_name, const std::string & fileName);
+
+    // helper func (for performance reason)
+    std::pair<std::string, ChChDiskTimes> GetOldestFileDiskTimes();
 
     ChannelChecker ();
     ~ChannelChecker ();

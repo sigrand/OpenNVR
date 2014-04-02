@@ -27,6 +27,7 @@
 #include <libmary/types.h>
 #include <moment/libmoment.h>
 
+#include <moment-ffmpeg/memory_dispatcher.h>
 #include <moment-ffmpeg/moment_ffmpeg_module.h>
 #include <moment-ffmpeg/video_part_maker.h>
 
@@ -1871,6 +1872,12 @@ MomentFFmpegModule::init (MomentServer * const moment)
             logD(ffmpeg_module, _func_, opt_name, ": ", m_nDownloadLimit);
     }
 
+    bool bRes = MemoryDispatcher::Instance().Init();
+    if (!bRes)
+        logE_ (_func, " fail to init MemoryDispatcher ");
+    else
+        logD(ffmpeg_module, _func_, "MemoryDispatcher is inited");
+
     ConstMemory recpath_conf_mem;
     {
         ConstMemory const opt_name = "mod_nvr/recpath_conf";
@@ -1882,7 +1889,7 @@ MomentFFmpegModule::init (MomentServer * const moment)
             logD(ffmpeg_module, _func, opt_name, ": ", recpath_conf_mem);
     }
     m_recpath_conf = st_grab (new (std::nothrow) String (recpath_conf_mem));
-    this->m_recpath_config.LoadConfig(m_recpath_conf->cstr());
+    this->m_recpath_config.Init(m_recpath_conf->cstr(), &m_streams);
 
     m_media_viewer = grab (new (std::nothrow) MediaViewer);
     m_media_viewer->init (moment, &m_streams, &m_mutex);

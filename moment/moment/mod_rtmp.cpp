@@ -1180,6 +1180,46 @@ Result clientConnected (RtmpConnection  * const mt_nonnull rtmp_conn,
 	    &rtmp_server_frontend, client_session, client_session));
     client_session->rtmp_server.setRtmpConnection (rtmp_conn);
 
+
+    // opts for validation part
+    MConfig::Config * const config = moment->getConfig();
+
+    bool bValidationOn = false;
+    {
+        ConstMemory const opt_name = "mod_rtmp/enable_validation";
+        MConfig::BooleanValue const enable = config->getBoolean (opt_name);
+        bValidationOn = (enable == MConfig::Boolean_True) ? true: false;
+    }
+
+    if(bValidationOn)
+    {
+        ConstMemory const opt_name = "mod_rtmp/validation_server_addr";
+        ConstMemory const opt_val = config->getString (opt_name);
+        if (!opt_val.isNull())
+        {
+            Ref<String> validatorAddr = grab (new (std::nothrow) String (opt_val));
+            std::string clientAddr;
+            {
+                Uint32 a1 = (client_addr.ip_addr >> 24) & 0xff;
+                Uint32 a2 = (client_addr.ip_addr >> 16) & 0xff;
+                Uint32 a3 = (client_addr.ip_addr >> 8) & 0xff;
+                Uint32 a4 = (client_addr.ip_addr >> 0) & 0xff;
+                StRef<String> sss = st_makeString(a1, ".", a2, ".", a3, ".", a4);
+                clientAddr = sss->cstr();
+            }
+            IpAddress validServerAddr;
+            if (setIpAddress (validatorAddr->mem(), &validServerAddr))
+            {
+                client_session->rtmp_server.setValidationOpts(true, validatorAddr->cstr(), clientAddr);
+                logD (mod_rtmp, _func_, "Validation is ON, validatorAddr = ", validatorAddr, ", clientAddr = ", clientAddr.c_str());
+            }
+            else
+                logE_ (_func_, "Fail set validator IpAddress: ", validatorAddr);
+        }
+        else
+            logE_ (_func_, "Invalid value for ", opt_name, ": ", opt_val);
+    }
+
     rtmp_conn->setFrontend (CbDesc<RtmpConnection::Frontend> (
 	    &rtmp_frontend, client_session, client_session));
 

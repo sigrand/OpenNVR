@@ -60,6 +60,9 @@ static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::E); 
     ((((const uint8_t*)(x))[0] << 8) |       \
       ((const uint8_t*)(x))[1])
 
+#define PROBESIZE (32768 * 10)
+#define PROBESIZEMAX PROBESIZE * 8
+
 extern "C"
 {
     extern AVOutputFormat ff_segment2_muxer;
@@ -260,6 +263,7 @@ ffmpegStreamData::ffmpegStreamData(void)
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
+    m_nProbeSize = PROBESIZE;
 }
 
 ffmpegStreamData::~ffmpegStreamData()
@@ -314,6 +318,7 @@ void ffmpegStreamData::Deinit()
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
+    m_tsCorrectors.clear();
 }
 
 static int get_bit_rate(AVCodecContext *ctx)
@@ -374,6 +379,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         g_mutexFFmpeg.lock();
 
         m_tcFFTimeout.Start();
+        format_ctx->probesize = m_nProbeSize;
         if(avformat_find_stream_info(format_ctx, NULL) >= 0)
         {
             logD(stream, _func_,"avformat_find_stream_info, success");
@@ -425,10 +431,13 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
 
             if(video_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
             {
-                if(format_ctx->streams[i]->codec->codec_id == AV_CODEC_ID_H264)
-                    video_stream_idx = i;
-                else
-                    logE_(_func_, "video stream is not h264"); // TODO Handle this case!!!
+                if(format_ctx->streams[i]->codec->codec_id != AV_CODEC_ID_H264) // work with only h264
+                {
+                    logE_(_func_, "channel_name: ", channel_name, ", video stream is not h264");
+                    break;
+                }
+
+                video_stream_idx = i;
 
                 m_tsCorrectors[video_stream_idx] = TsCorrector();
 
@@ -445,6 +454,19 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
                 vs.height = format_ctx->streams[i]->codec->height;
 
                 m_sourceInfo.videoStreams.push_back(vs);
+
+                if(format_ctx->streams[i]->codec->width == 0 ||
+                    format_ctx->streams[i]->codec->height == 0) // probably too small probesize value to retrieve w/h
+                {
+                    logE_(_func_, "channel_name: ", channel_name, ", m_nProbeSize: [", m_nProbeSize, "] is too small");
+                    if(m_nProbeSize < PROBESIZEMAX)
+                    {
+                        logE_(_func_, "channel_name: ", channel_name, ", increasing probe size");
+                        m_nProbeSize *= 2;
+                    }
+                    res = Result::Failure;
+                    break;
+                }
             }
             else if(audio_stream_idx == -1 && format_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
             {
@@ -471,10 +493,13 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
 
         if(video_stream_idx == -1)
         {
-            logE_(_func_,"didn't find a video stream");
+            logE_(_func_,"channel_name: ", channel_name, ", didn't find a video stream");
             res = Result::Failure;
         }
+    }
 
+    if(res == Result::Success)
+    {
         if(m_absf_ctx == NULL)
         {
             m_absf_ctx = av_bitstream_filter_init("aac_adtstoasc");
@@ -483,112 +508,111 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
                 logE_(_func_, "No available 'aac_adtstoasc' bitstream filter");
             }
         }
-    }
 
-    // reading configs
+        // reading configs
+        m_pRecpathConfig = recpathConfig;
+        ConstMemory record_dir;
+        ConstMemory confd_dir;
+        Uint64 max_age_minutes = MAX_AGE;
+        m_file_duration_sec = FILE_DURATION;
 
-    m_pRecpathConfig = recpathConfig;
-    ConstMemory record_dir;
-    ConstMemory confd_dir;
-    Uint64 max_age_minutes = MAX_AGE;
-    m_file_duration_sec = FILE_DURATION;
-
-    // writing on/off
-    {
-        ConstMemory const opt_name = "mod_nvr/enable";
-        StRef<String> str = st_makeString(config->getString (opt_name));
-        std::string strRecEnable = std::string(str->cstr());
-        if(strRecEnable.compare("y") == 0 || strRecEnable.compare("yes") == 0)
-            m_bRecordingEnable = true;
-    }
-
-    // get cycle time
-    {
-        ConstMemory const opt_name = "mod_nvr/max_age";
-        MConfig::GetResult const res =
-                config->getUint64_default (opt_name, &max_age_minutes, max_age_minutes);
-        if (!res)
+        // writing on/off
         {
-            logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
-            m_bRecordingEnable = false;
-        }
-        else
-            logD (stream, _func_, opt_name, ": ", max_age_minutes);
-    }
-
-    // get duration for each recorded file
-    {
-        ConstMemory const opt_name = "mod_nvr/file_duration";
-        MConfig::GetResult const res =
-                config->getUint64_default (opt_name, &m_file_duration_sec, m_file_duration_sec);
-        if (!res)
-        {
-            logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
-            m_bRecordingEnable = false;
-        }
-        else
-            logD(stream, _func_, opt_name, ": ", m_file_duration_sec);
-    }
-
-    // get path for recording
-    {
-        ConstMemory const opt_name = "moment/confd_dir"; // TODO: change mod_nvr to mod_ffmpeg?
-        bool confd_dir_is_set = false;
-        confd_dir = config->getString (opt_name, &confd_dir_is_set);
-        if (!confd_dir_is_set)
-        {
-            logE_ (_func, opt_name, " config option is not set, disabling writing");
-            // we can not write without output path
-            m_bRecordingEnable = false;
-        }
-        logD(stream, _func_, opt_name, ": [", confd_dir, "]");
-    }
-
-    if(m_pRecpathConfig == 0 || !m_pRecpathConfig->IsInit())
-        m_bRecordingEnable = false;
-
-    if(m_bRecordingEnable)
-    {
-        if(m_pRecpathConfig->IsEmpty())
-        {
-            m_recordDir = st_makeString("");
-        }
-        else
-        {
-            m_recordDir = st_makeString(m_pRecpathConfig->GetNextPath().c_str());
+            ConstMemory const opt_name = "mod_nvr/enable";
+            StRef<String> str = st_makeString(config->getString (opt_name));
+            std::string strRecEnable = std::string(str->cstr());
+            if(strRecEnable.compare("y") == 0 || strRecEnable.compare("yes") == 0)
+                m_bRecordingEnable = true;
         }
 
-        m_channelName = st_makeString(channel_name);
-        m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
-        m_nvr_cleaner->init (timers, m_pRecpathConfig, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
-
-        bool bDisableRecord = false;
-        StRef<String> st_confd_dir = st_makeString(confd_dir);
-        StRef<String> channelFullPath = st_makeString(st_confd_dir, "/", channel_name);
-        std::string line;
-        std::ifstream channelPath (channelFullPath->cstr());
-        logD(stream, _func_, "channelFullPath = ", channelFullPath);
-        if (channelPath.is_open())
+        // get cycle time
         {
-            logD(stream, _func_, "channelFullPath opened");
-            while ( std::getline (channelPath, line) )
+            ConstMemory const opt_name = "mod_nvr/max_age";
+            MConfig::GetResult const res =
+                    config->getUint64_default (opt_name, &max_age_minutes, max_age_minutes);
+            if (!res)
             {
-                logD(stream, _func_, "got line: [", line.c_str(), "]");
-                if(line.find("disable_record") == 0)
+                logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
+                m_bRecordingEnable = false;
+            }
+            else
+                logD (stream, _func_, opt_name, ": ", max_age_minutes);
+        }
+
+        // get duration for each recorded file
+        {
+            ConstMemory const opt_name = "mod_nvr/file_duration";
+            MConfig::GetResult const res =
+                    config->getUint64_default (opt_name, &m_file_duration_sec, m_file_duration_sec);
+            if (!res)
+            {
+                logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
+                m_bRecordingEnable = false;
+            }
+            else
+                logD(stream, _func_, opt_name, ": ", m_file_duration_sec);
+        }
+
+        // get path for recording
+        {
+            ConstMemory const opt_name = "moment/confd_dir"; // TODO: change mod_nvr to mod_ffmpeg?
+            bool confd_dir_is_set = false;
+            confd_dir = config->getString (opt_name, &confd_dir_is_set);
+            if (!confd_dir_is_set)
+            {
+                logE_ (_func, opt_name, " config option is not set, disabling writing");
+                // we can not write without output path
+                m_bRecordingEnable = false;
+            }
+            logD(stream, _func_, opt_name, ": [", confd_dir, "]");
+        }
+
+        if(m_pRecpathConfig == 0 || !m_pRecpathConfig->IsInit())
+            m_bRecordingEnable = false;
+
+        if(m_bRecordingEnable)
+        {
+            if(m_pRecpathConfig->IsEmpty())
+            {
+                m_recordDir = st_makeString("");
+            }
+            else
+            {
+                m_recordDir = st_makeString(m_pRecpathConfig->GetNextPathForStream().c_str());
+            }
+
+            m_channelName = st_makeString(channel_name);
+            m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
+            m_nvr_cleaner->init (timers, m_pRecpathConfig, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
+
+            bool bDisableRecord = false;
+            StRef<String> st_confd_dir = st_makeString(confd_dir);
+            StRef<String> channelFullPath = st_makeString(st_confd_dir, "/", channel_name);
+            std::string line;
+            std::ifstream channelPath (channelFullPath->cstr());
+            logD(stream, _func_, "channelFullPath = ", channelFullPath);
+            if (channelPath.is_open())
+            {
+                logD(stream, _func_, "channelFullPath opened");
+                while ( std::getline (channelPath, line) )
                 {
-                    std::string strLower = line;
-                    std::transform(strLower.begin(), strLower.end(), strLower.begin(), ::tolower);
-                    if(strLower.find("true") != std::string::npos)
+                    logD(stream, _func_, "got line: [", line.c_str(), "]");
+                    if(line.find("disable_record") == 0)
                     {
-                        logD(stream, _func_, "DISABLE RECORDING");
-                        bDisableRecord = true;
+                        std::string strLower = line;
+                        std::transform(strLower.begin(), strLower.end(), strLower.begin(), ::tolower);
+                        if(strLower.find("true") != std::string::npos)
+                        {
+                            logD(stream, _func_, "DISABLE RECORDING");
+                            bDisableRecord = true;
+                        }
                     }
                 }
+                channelPath.close();
             }
-            channelPath.close();
-        }
 
-        m_bRecordingState = ! bDisableRecord;
+            m_bRecordingState = ! bDisableRecord;
+        }
     }
 
     if(res == Result::Failure)
@@ -864,7 +888,9 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
                     if(bNeedNextPath)
                     {
                         if(!m_pRecpathConfig->IsEmpty())
-                            m_recordDir = st_makeString(m_pRecpathConfig->GetNextPath(m_recordDir->cstr()).c_str());
+                        {
+                            m_recordDir = st_makeString(m_pRecpathConfig->GetNextPathForStream().c_str());
+                        }
                         else
                             m_recordDir = st_makeString("");
                         logD(frames,_func_, "next m_recordDir = [", m_recordDir, "]");
@@ -948,7 +974,7 @@ int nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, const
         return -1;
     }
 
-    if(!MemoryDispatcher::Instance().Init())
+    if(!MemoryDispatcher::Instance().IsInit())
     {
         logE_ (_func, "fail MemoryDispatcher::Init");
         return -1;
@@ -1174,6 +1200,9 @@ int nvrData::WritePacket(const AVFormatContext * inCtx, /*const*/ AVPacket & pac
     }
 
     int nres = av_write_frame(m_out_format_ctx, &opkt);
+
+    if(nres == ERR_NOSPACE)
+        m_bWriteTrailer = false;
 
     return nres;
 }

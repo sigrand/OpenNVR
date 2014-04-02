@@ -21,8 +21,8 @@ namespace MomentFFmpeg {
 struct FileSizes
 {
     FileSizes():reservedSize(0),actualSize(0){};
-    unsigned long reservedSize;
-    unsigned long actualSize;
+    Int64 reservedSize;
+    Int64 actualSize;
 };
 
 struct FileTimes
@@ -45,10 +45,12 @@ public:
     static MemoryDispatcher& Instance();
 
     unsigned long GetPermission(const std::string & fileName, const Uint64 nDuration);
-
     bool Notify(const std::string & fileName, bool bDone, unsigned long size = 0);
 
     bool Init();
+    bool IsInit(){return _isInit;}
+
+    Int64 GetDiskFreeSizeFromDiskname(const std::string & diskName);
 
 private:
 
@@ -64,6 +66,10 @@ private:
     typedef std::map <std::string, FilesInfo> DiskFiles; // [DiskName, FilesInfo]
 
     DiskFiles _diskFiles;
+
+    Int64 getFreeSize(const std::string & diskName, time_t curTime);
+
+    std::string disknameFromFilename(const std::string & filename);
 };
 
 }
