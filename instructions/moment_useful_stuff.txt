@@ -196,9 +196,13 @@ If you want to change records paths without rebooting nvrserver
 http://192.168.10.21:8082/mod_nvr_admin/reload_recpath
 
 =====================================================================================
-to get information about sources
+to get information about all sources
 
 http://192.168.10.21:8082/mod_nvr_admin/source_info
+
+info about source
+
+http://192.168.10.21:8082/mod_nvr_admin/source_info?stream=sony
 
 =====================================================================================
 watchdog for nvrserver relaunches nvrserver when it falls
@@ -214,3 +218,5 @@ watchdog for nvrserver relaunches nvrserver when it falls
   errName - name of err file. DO NOT CHANGE! (it is the same as in run_moment.sh)
 3) launch watchdog
 # python watchdog.py &
+
+

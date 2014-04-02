@@ -18,7 +18,6 @@
 
 
 #include <cctype>
-#include <json/json.h>
 #ifndef PLATFORM_WIN32
 #include <mntent.h>
 #include <sys/statvfs.h>
@@ -537,8 +536,109 @@ MomentFFmpegModule::statisticsToJson (
                           "}\n");
 }
 
+Json::Value
+MomentFFmpegModule::sourceInfoToJson (const std::string source_name, const stSourceInfo & si, Ref<ChannelChecker> pChannelChecker)
+{
+    if(!pChannelChecker || !source_name.size())
+    {
+        return Json::Value();
+    }
+
+    Json::Value json_source;
+
+    json_source["name"] = si.sourceName;
+    json_source["uri"] = si.uri;
+    json_source["title"] = si.title;
+
+    // stream info
+    Json::Value json_streams;
+    for(int i=0;i<si.videoStreams.size();i++)
+    {
+        Json::Value json_stream;
+        json_stream["type"] = si.videoStreams[i].streamInfo.streamType;
+        json_stream["codec name"] = si.videoStreams[i].streamInfo.codecName;
+        json_stream["profile"] = si.videoStreams[i].streamInfo.profile;
+        json_stream["fps"] = si.videoStreams[i].fps;
+        json_stream["width"] = si.videoStreams[i].width;
+        json_stream["height"] = si.videoStreams[i].height;
+        json_streams.append(json_stream);
+    }
+    for(int i=0;i<si.audioStreams.size();i++)
+    {
+        Json::Value json_stream;
+        json_stream["type"] = si.audioStreams[i].streamInfo.streamType;
+        json_stream["codec name"] = si.audioStreams[i].streamInfo.codecName;
+        json_stream["profile"] = si.audioStreams[i].streamInfo.profile;
+        json_stream["sample rate"] = si.audioStreams[i].sampleRate;
+        json_streams.append(json_stream);
+    }
+    for(int i=0;i<si.otherStreams.size();i++)
+    {
+        Json::Value json_stream;
+        json_stream["type"] = si.otherStreams[i].streamInfo.streamType;
+        json_stream["codec name"] = si.otherStreams[i].streamInfo.codecName;
+        json_stream["profile"] = si.otherStreams[i].streamInfo.profile;
+        json_streams.append(json_stream);
+    }
+    json_source["stream info"] = json_streams;
+
+    // times
+    SourceStateTimes sst = m_sourceStateTimes[source_name];
+    Json::Value json_times;
+
+    Json::Value json_live_times;
+    for(int i=0;i<sst.times.live.size();i++)
+    {
+        Json::Value json_live_time;
+        json_live_time["start time"] = Json::Int(sst.times.live[i].timeStart);
+        json_live_time["end time"] = Json::Int(sst.times.live[i].timeEnd);
+        json_live_times.append(json_live_time);
+    }
+    json_times["live times"] = json_live_times;
+
+    Json::Value json_restr_times;
+    for(int i=0;i<sst.times.restr.size();i++)
+    {
+        Json::Value json_restr_time;
+        json_restr_time["start time"] = Json::Int(sst.times.restr[i].timeStart);
+        json_restr_time["end time"] = Json::Int(sst.times.restr[i].timeEnd);
+        json_restr_times.append(json_restr_time);
+    }
+    json_times["restr times"] = json_restr_times;
+
+    Json::Value json_write_times;
+    for(int i=0;i<sst.times.write.size();i++)
+    {
+        Json::Value json_write_time;
+        json_write_time["start time"] = Json::Int(sst.times.write[i].timeStart);
+        json_write_time["end time"] = Json::Int(sst.times.write[i].timeEnd);
+        json_write_times.append(json_write_time);
+    }
+    json_times["write times"] = json_write_times;
+
+    json_source["times"] = json_times;
+
+    // disk occupation
+    ChannelChecker::DiskSizes diskSizes = pChannelChecker->GetDiskSizes ();
+    Json::Value json_disks;
+
+    for(ChannelChecker::DiskSizes::iterator itr = diskSizes.begin(); itr != diskSizes.end(); itr++)
+    {
+        if(itr->second > 0)
+        {
+            Json::Value json_disk;
+            json_disk["name"] = itr->first;
+            json_disk["size"] = Json::UInt64(itr->second);
+            json_disks.append(json_disk);
+        }
+    }
+    json_source["disks"] = json_disks;
+
+    return json_source;
+}
+
 std::string
-MomentFFmpegModule::sourceInfoToJson ()
+MomentFFmpegModule::GetAllSourcesInfo ()
 {
     logD(ffmpeg_module, _func_);
 
@@ -553,97 +653,10 @@ MomentFFmpegModule::sourceInfoToJson ()
         stSourceInfo si = itFFStream->second.getRefPtr()->GetSourceInfo();
         Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
 
-        Json::Value json_source;
+        Json::Value json_source = sourceInfoToJson(itFFStream->first, si, channelChecker);
 
-        json_source["name"] = si.sourceName;
-        json_source["uri"] = si.uri;
-        json_source["title"] = si.title;
-
-        // stream info
-        Json::Value json_streams;
-        for(int i=0;i<si.videoStreams.size();i++)
-        {
-            Json::Value json_stream;
-            json_stream["type"] = si.videoStreams[i].streamInfo.streamType;
-            json_stream["codec name"] = si.videoStreams[i].streamInfo.codecName;
-            json_stream["profile"] = si.videoStreams[i].streamInfo.profile;
-            json_stream["fps"] = si.videoStreams[i].fps;
-            json_stream["width"] = si.videoStreams[i].width;
-            json_stream["height"] = si.videoStreams[i].height;
-            json_streams.append(json_stream);
-        }
-        for(int i=0;i<si.audioStreams.size();i++)
-        {
-            Json::Value json_stream;
-            json_stream["type"] = si.audioStreams[i].streamInfo.streamType;
-            json_stream["codec name"] = si.audioStreams[i].streamInfo.codecName;
-            json_stream["profile"] = si.audioStreams[i].streamInfo.profile;
-            json_stream["sample rate"] = si.audioStreams[i].sampleRate;
-            json_streams.append(json_stream);
-        }
-        for(int i=0;i<si.otherStreams.size();i++)
-        {
-            Json::Value json_stream;
-            json_stream["type"] = si.otherStreams[i].streamInfo.streamType;
-            json_stream["codec name"] = si.otherStreams[i].streamInfo.codecName;
-            json_stream["profile"] = si.otherStreams[i].streamInfo.profile;
-            json_streams.append(json_stream);
-        }
-        json_source["stream info"] = json_streams;
-
-        // times
-        SourceStateTimes sst = m_sourceStateTimes[itFFStream->first];
-        Json::Value json_times;
-
-        Json::Value json_live_times;
-        for(int i=0;i<sst.times.live.size();i++)
-        {
-            Json::Value json_live_time;
-            json_live_time["start time"] = Json::Int(sst.times.live[i].timeStart);
-            json_live_time["end time"] = Json::Int(sst.times.live[i].timeEnd);
-            json_live_times.append(json_live_time);
-        }
-        json_times["live times"] = json_live_times;
-
-        Json::Value json_restr_times;
-        for(int i=0;i<sst.times.restr.size();i++)
-        {
-            Json::Value json_restr_time;
-            json_restr_time["start time"] = Json::Int(sst.times.restr[i].timeStart);
-            json_restr_time["end time"] = Json::Int(sst.times.restr[i].timeEnd);
-            json_restr_times.append(json_restr_time);
-        }
-        json_times["restr times"] = json_restr_times;
-
-        Json::Value json_write_times;
-        for(int i=0;i<sst.times.write.size();i++)
-        {
-            Json::Value json_write_time;
-            json_write_time["start time"] = Json::Int(sst.times.write[i].timeStart);
-            json_write_time["end time"] = Json::Int(sst.times.write[i].timeEnd);
-            json_write_times.append(json_write_time);
-        }
-        json_times["write times"] = json_write_times;
-
-        json_source["times"] = json_times;
-
-        // disk occupation
-        ChannelChecker::DiskSizes diskSizes = channelChecker->GetDiskSizes ();
-        Json::Value json_disks;
-
-        for(ChannelChecker::DiskSizes::iterator itr = diskSizes.begin(); itr != diskSizes.end(); itr++)
-        {
-            if(itr->second > 0)
-            {
-                Json::Value json_disk;
-                json_disk["name"] = itr->first;
-                json_disk["size"] = Json::UInt64(itr->second);
-                json_disks.append(json_disk);
-            }
-        }
-        json_source["disks"] = json_disks;
-
-        json_sources.append(json_source);
+        if(!json_source.empty())
+            json_sources.append(json_source);
     }
 
     json_root["sources"] = json_sources;
@@ -654,6 +667,35 @@ MomentFFmpegModule::sourceInfoToJson ()
     std::string json_respond = json_writer_styled.write(json_root);
 
     return json_respond;
+}
+
+std::string
+MomentFFmpegModule::GetSourceInfo (const std::string & source_name)
+{
+    logD(ffmpeg_module, _func_);
+
+    m_mutex.lock();
+
+    if(m_streams.find(source_name) != m_streams.end())
+    {
+        stSourceInfo si = m_streams[source_name].getRefPtr()->GetSourceInfo();
+        Ref<ChannelChecker> channelChecker = m_streams[source_name].getRefPtr()->GetChannelChecker();
+
+        Json::Value json_source = sourceInfoToJson(source_name, si, channelChecker);
+
+        m_mutex.unlock();
+
+        Json::StyledWriter json_writer_styled;
+        std::string json_respond = json_writer_styled.write(json_source);
+
+        return json_respond;
+    }
+    else
+    {
+        m_mutex.unlock();
+
+        return std::string();
+    }
 }
 
 
@@ -994,15 +1036,49 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
     }
     else if(segments.size() == 2 && (segments[1].compare("source_info") == 0))
     {
-        std::string source_info = self->sourceInfoToJson();
+        HTMLForm form( req );
 
-        logD(ffmpeg_module, _func, "OK");
+        NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
+        std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
 
-        resp.setStatus(HTTPResponse::HTTP_OK);
-        resp.setContentType("text/html");
-        std::ostream& out = resp.send();
-        out << source_info;
-        out.flush();
+        logE_(_func_, "channel_name = ", channel_name.c_str());
+
+        if(!channel_name.size()) // get all sources
+        {
+            std::string source_info = self->GetAllSourcesInfo();
+
+            logD(ffmpeg_module, _func, "OK");
+
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            resp.setContentType("text/html");
+            std::ostream& out = resp.send();
+            out << source_info;
+            out.flush();
+        }
+        else // get particlular source info
+        {
+            std::string source_info = self->GetSourceInfo(channel_name);
+
+            if(source_info.size())
+            {
+                logD(ffmpeg_module, _func, "OK");
+
+                resp.setStatus(HTTPResponse::HTTP_OK);
+                resp.setContentType("text/html");
+                std::ostream& out = resp.send();
+                out << source_info;
+                out.flush();
+            }
+            else
+            {
+                logE_ (_func, "Bad Request: stream not found");
+                resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+                std::ostream& out = resp.send();
+                out << "400 Bad Request: no conf_file parameter";
+                out.flush();
+                logA(ffmpeg_module, _func_, "mod_nvr_admin 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            }
+        }
     }
     else if(segments.size() == 2 && (segments[1].compare("remove_video") == 0))
     {

@@ -211,7 +211,7 @@ std::string RecpathConfig::GetNextPathForStream()
             if(freeSize > MINFREESIZE)
             {
                 next_path = it->first;
-                logD(test, _func_, "next_path is ", next_path.c_str());
+                logD(recpath, _func_, "next_path is ", next_path.c_str());
                 break;
             }
         }
@@ -222,11 +222,11 @@ std::string RecpathConfig::GetNextPathForStream()
         }
         else
         {
-            logD(test, _func_, "next_path is empty");
+            logD(recpath, _func_, "next_path is empty");
         }
 
         // cleaning
-        logD(test, _func_, "CLEANING");
+        logD(recpath, _func_, "CLEANING");
         ChannelChecker::ChannelFileDiskTimes channelFileDiskTimes;
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = m_pStreams->begin();
         for(itFFStream; itFFStream != m_pStreams->end(); itFFStream++)
