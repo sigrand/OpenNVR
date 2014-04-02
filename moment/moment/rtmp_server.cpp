@@ -22,7 +22,8 @@
 #include <moment/inc.h>
 
 #include <moment/rtmp_server.h>
-
+#include <moment/moment_request_handler.h>
+#include <json/json.h>
 
 using namespace M;
 
@@ -242,6 +243,41 @@ RtmpServer::completePlay (Uint32 const /* msg_stream_id */)
     // sendRtmpSampleAccess (msg_stream_id, true, true);
 }
 
+bool doRequest(std::string &sUri, std::string &sRequest, std::string &sResponse)
+{
+    try
+    {
+        logD (rtmp_server, _func, "request uri: ", sUri.c_str());
+        URI uri(sUri);
+        std::string path(uri.getPathAndQuery());
+
+        HTTPClientSession session(uri.getHost(), uri.getPort());
+        HTTPRequest request(HTTPRequest::HTTP_POST, path, HTTPMessage::HTTP_1_1);
+
+        request.setContentType("application/json");
+        request.setKeepAlive(true);
+        request.setContentLength(sRequest.size());
+
+        session.sendRequest(request) << sRequest;
+        HTTPResponse response;
+        std::istream& rs = session.receiveResponse(response);
+        if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
+        {
+            logE_ (_func, "fail to validate: ", sUri.c_str());
+            sResponse = "";
+            return false;
+        }
+        StreamCopier::copyToString(rs, sResponse);
+    }
+    catch (Poco::Exception& exc)
+    {
+        logE_ (_func, exc.displayText().c_str());
+        return false;
+    }
+
+    return true;
+}
+
 Result
 RtmpServer::doPlay (Uint32       const msg_stream_id,
 		    AmfDecoder * const mt_nonnull decoder)
@@ -275,6 +311,45 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
     if (vs_name_full_len > vs_name_len) {
 	logW_ (_func, "video stream name length exceeds limit "
 	       "(length ", vs_name_full_len, " bytes, limit ", sizeof (vs_name_buf), " bytes)");
+    }
+
+    // here do validation
+
+    ConstMemory memChannelName = ConstMemory (vs_name_buf, vs_name_len);
+    if(this->m_bValidationOn)
+    {
+        StRef<String> str_id = st_makeString(ConstMemory (vs_name_buf, vs_name_len));
+        std::string args = "/";
+        std::string sUri = std::string("http:\/\/") + m_validatorAddr + args;
+
+        Json::StyledWriter json_writer_styled;
+        Json::Value root_req;
+        root_req["clientAddr"] = m_clientAddr;
+        root_req["id"] = str_id->cstr();
+        std::string sRequest = json_writer_styled.write(root_req);
+
+        std::string sResponse;
+
+        memChannelName = ConstMemory();
+        if(doRequest(sUri, sRequest, sResponse))
+        {
+            Json::Reader reader;
+            Json::Value root_resp;
+            bool parseSuccess = reader.parse(sResponse, root_resp, false);
+            if(parseSuccess)
+            {
+                logD(rtmp_server, _func_, "result = ", root_resp["result"].asString().c_str());
+
+                std::string strId;
+                if(root_resp["result"].asString().compare("OK") == 0)
+                {
+                    strId = root_resp["id"].asString();
+                    logD(rtmp_server, _func_, "strId = ", strId.c_str());
+                }
+
+                memChannelName = ConstMemory(strId.c_str(), strId.size());
+            }
+        }
     }
 
     {
@@ -314,12 +389,12 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
 	encoder.addFieldName ("code");
 	encoder.addString ("NetStream.Play.Reset");
 
-	Ref<String> description_str = makeString ("Playing and resetting ", ConstMemory (vs_name_buf, vs_name_len), ".");
+    Ref<String> description_str = makeString ("Playing and resetting ", memChannelName, ".");
 	encoder.addFieldName ("description");
 	encoder.addString (description_str->mem());
 
 	encoder.addFieldName ("details");
-	encoder.addString (ConstMemory (vs_name_buf, vs_name_len));
+    encoder.addString (memChannelName);
 
 	encoder.addFieldName ("clientid");
 	encoder.addNumber (1.0);
@@ -365,12 +440,12 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
 	encoder.addFieldName ("code");
 	encoder.addString ("NetStream.Play.Start");
 
-	Ref<String> description_str = makeString ("Started playing ", ConstMemory (vs_name_buf, vs_name_len), ".");
+    Ref<String> description_str = makeString ("Started playing ", memChannelName, ".");
 	encoder.addFieldName ("description");
 	encoder.addString (description_str->mem());
 
 	encoder.addFieldName ("details");
-	encoder.addString (ConstMemory (vs_name_buf, vs_name_len));
+    encoder.addString (memChannelName);
 
 	encoder.addFieldName ("clientid");
 	encoder.addNumber (1.0);
@@ -398,7 +473,7 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
                     &complete,
                     frontend->startRtmpWatching,
                     /*(*/
-                        ConstMemory (vs_name_buf, vs_name_len),
+                        memChannelName,
                         CbDesc<StartRtmpWatchingCallback> (startRtmpWatchingCallback,
                                                            data,
                                                            getCoderefContainer(),

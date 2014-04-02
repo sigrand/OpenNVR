@@ -92,6 +92,10 @@ private:
 
     AtomicInt playing;
 
+    std::string m_clientAddr;
+    std::string m_validatorAddr;
+    bool m_bValidationOn;
+
     void sendRtmpSampleAccess (Uint32 msg_stream_id,
                                bool   allow_a,
                                bool   allow_b);
@@ -153,6 +157,13 @@ public:
     mt_const void setRtmpConnection (RtmpConnection * const rtmp_conn)
     {
 	this->rtmp_conn = rtmp_conn;
+    }
+
+    void setValidationOpts(bool bValidationOn, std::string validatorAddr, std::string clientAddr)
+    {
+        this->m_bValidationOn = bValidationOn;
+        this->m_validatorAddr = validatorAddr;
+        this->m_clientAddr = clientAddr;
     }
 
     class MetaData
@@ -253,7 +264,8 @@ public:
     RtmpServer (Object * const coderef_container)
 	: DependentCodeReferenced (coderef_container),
           rtmp_conn (coderef_container),
-	  playing (0)
+      playing (0),
+      m_bValidationOn(false)
     {}
 };
 

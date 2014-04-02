@@ -30,6 +30,8 @@ namespace MomentFFmpeg {
 using namespace M;
 using namespace Moment;
 
+class RecpathConfig;
+
 class NvrCleaner : public Object
 {
 private:

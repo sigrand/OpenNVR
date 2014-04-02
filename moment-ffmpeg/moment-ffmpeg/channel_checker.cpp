@@ -330,6 +330,22 @@ ChannelChecker::GetChannelTimes()
     return chFileTimes;
 }
 
+std::pair<std::string, ChChDiskTimes>
+ChannelChecker::GetOldestFileDiskTimes ()
+{
+    logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
+
+    if(m_chFileDiskTimes.size())
+    {
+        logD(channelcheck, _func_,"dirname: [", m_chFileDiskTimes.begin()->first.c_str(), "]");
+        return std::pair<std::string, ChChDiskTimes>(m_chFileDiskTimes.begin()->first, m_chFileDiskTimes.begin()->second);
+    }
+    else
+    {
+        return std::pair<std::string, ChChDiskTimes>();
+    }
+}
+
 ChannelChecker::ChannelFileDiskTimes
 ChannelChecker::GetChannelFileDiskTimes ()
 {

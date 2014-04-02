@@ -53,6 +53,9 @@ namespace MomentFFmpeg {
 using namespace M;
 using namespace Moment;
 
+class NvrCleaner;
+class ChannelChecker;
+
 static int ff_lockmgr(void **mutex, enum AVLockOp op);
 
 struct stStreamInfo
@@ -210,6 +213,8 @@ private /*variables*/:
     stSourceInfo m_sourceInfo;
 
     std::map<int, TsCorrector> m_tsCorrectors; // correctors for pts/dts values [stream_index, tsCorrector]
+
+    Int64 m_nProbeSize; // probe size for av_find_stream_info
 };
 
 class FFmpegStream : public MediaSource
