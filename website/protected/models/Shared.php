@@ -9,7 +9,8 @@
  * @property integer $user_id
  * @property integer $cam_id
  * @property integer $show
- * @property integer $public
+ * @property integer $is_public
+ * @property integer $is_approved
  */
 class Shared extends CActiveRecord
 {
@@ -40,11 +41,11 @@ class Shared extends CActiveRecord
 		// will receive user inputs.
 		return array(
 			array('owner_id, user_id, cam_id', 'required'),
-			array('owner_id, user_id, cam_id, show, public', 'numerical', 'integerOnly'=>true),
+			array('owner_id, user_id, cam_id, show, is_public, is_approved', 'numerical', 'integerOnly'=>true),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, owner_id, user_id, cam_id, show, public', 'safe', 'on'=>'search'),
-		);
+			array('id, owner_id, user_id, cam_id, show, is_public, is_approved', 'safe', 'on'=>'search'),
+			);
 	}
 
 	/**
@@ -80,8 +81,9 @@ class Shared extends CActiveRecord
 			'user_id' => 'User',
 			'cam_id' => 'Cam',
 			'show' => 'Show',
-			'public' => 'Public',
-		);
+			'is_public' => 'Is Public',
+			'is_approved' => 'Is Approved',
+			);
 	}
 
 	/**
@@ -100,10 +102,11 @@ class Shared extends CActiveRecord
 		$criteria->compare('user_id',$this->user_id);
 		$criteria->compare('cam_id',$this->cam_id);
 		$criteria->compare('show',$this->show);
-		$criteria->compare('public',$this->public);
+		$criteria->compare('is_public',$this->is_public);
+		$criteria->compare('is_approved',$this->is_approved);
 
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
-		));
+			));
 	}
 }

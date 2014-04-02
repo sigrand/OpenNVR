@@ -20,7 +20,11 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 				<div class="form-group">
 					<?php echo $form->labelEx($model, 'time_offset', array('class' => 'col-sm-4 control-label')); ?>
 					<div class="col-sm-8">
-						<?php echo $form->textField($model, 'time_offset', array('class' => 'form-control')); ?>
+						<?php
+						Yii::import('ext.timezones.index', 1);
+						$tz = new timezones;
+						echo $form->dropDownList($model, 'time_offset', $tz->getTimezones(), array('class' => 'form-control'));
+						?>
 					</div>
 					<div class="col-sm-offset-4 col-sm-8">
 						<?php echo $form->error($model, 'time_offset'); ?>
@@ -46,7 +50,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 					</div>
 					<div class="form-group">
 						<div class="col-sm-offset-2 col-sm-10">
-							<?php echo CHtml::submitButton(Yii::t('user', 'Save'), array('class' => 'btn btn-primary')); ?>
+							<?php echo CHtml::submitButton(Yii::t('user', 'save'), array('class' => 'btn btn-primary')); ?>
 						</div>
 					</div>
 					<?php $this->endWidget(); ?>

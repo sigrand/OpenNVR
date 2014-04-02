@@ -17,77 +17,38 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'Login form' => 'Форма авторизации',
-  'Registration form' => 'Форма регистрации',
-  '
-		Registration was successful.<br/>
-		To use your account, you need to confirm your email address.<br/>
-		Confirmation code sent to your email.<br/>' => '
-		Регистрация прошла успешно.<br/>
-		Для авторизации, вам необходимо подтвердить свой email.<br/>
-		Письмо с кодом подтверждения отправлено вам на почту.<br/>',
-  'Hello {nick},<br/><br/>
-
-
-					Your activation code: {code}<br/> 
-					{link}' => '
-Здравствуйте {nick},<br/><br/>
-
-
-					Ваш код активации: {code}<br/>
-
-					<br/>Ссылка для активации:<br/> 
-					{link}',
+  'Hello {nick},<br/><br/>Your activation code: {code}<br/>{link}' => 'Здравствуйте {nick},<br/><br/>Ваш код для активации: {code}<br/> ',
   'Recovery link: {link}' => 'Ссылка для восстановления: {link}',
+  'Registration was successful.<br/>To use your account, you need to confirm your email address.<br/>Confirmation code sent to your email.<br/>' => 'Регистрация прошла успешно.<br/>Для того что бы войти вам нужно сначал подтвердить ваш email.<br/>Код для потдверждения отправлен вам на email.<br/>',
   'Account activation' => 'Активация аккаунта',
-  'Your email' => 'Ваш email',
-  'Your password was successfully changed' => 'Ваш пароль успешно изменен.',
-  'Enter email and password' => 'Введите email и пароль',
+  'Change' => 'Изменить',
+  'Code:' => 'Код:',
+  'Enter password again:' => 'Повторите пароль:',
+  'Enter password:' => 'Введите пароль:',
   'Enter your email:' => 'Введите email:',
   'Enter your nick:' => 'Введите Ник:',
-  'Enter nick, email and password' => 'Введите ник, email и пароль',
-  'Enter password' => 'Введите пароль:',
-  'Login' => 'Войти',
-  'Recovery' => 'Восстановить',
-  'Password recovery' => 'Восстановление пароля',
-  'You successfully confirmed your email address. Now you can login' => 'Вы успешно подтвердили свой email. Теперь вы можете авторизоваться.',
-  'This user already confirmed his email address.' => 'Данный пользователь, уже подтвердил свой email.',
-  'Remember me' => 'Запомнить вас?',
-  'Password change' => 'Изменение пароля',
-  'Code' => 'Код:',
-  'Wrong code.' => 'Неправильный код.',
-  'There is no such user' => 'Нет такого пользователя',
-  'Nick' => 'Ник',
-  'Passwords not equal!' => 'Пароли не совпадают!',
-  'Password' => 'Пароль',
-  'Password can\'t be empty.' => 'Пароль не может быть пустым.',
   'Go to site' => 'Перейти на сайт',
   'Letter for password recovery was sended to your email' => 'Письмо с данными для восстановления отправлено на ваш email',
-  'Confirm password:' => 'Подтвердите пароль:',
+  'Login' => 'Войти',
+  'Login form' => 'Форма авторизации',
+  'Nick' => 'Ник',
+  'Password' => 'Пароль',
+  'Password can\'t be empty.' => 'Пароль не может быть пустым.',
+  'Password recovery' => 'Восстановление пароля',
+  'Passwords not equal!' => 'Пароли не совпадают!',
+  'Register' => 'Регистрация',
   'Registration' => 'Регистрация',
-  'There is no such user.' => 'Такого пользователя нет.',
-  'or' => 'или',
+  'Registration form' => 'Форма регистрации',
+  'Remember me?' => 'Запомнить Вас?',
   'Send recovery message' => 'Послать сообщение для восстановления',
-  '
-Hello {nick},<br/><br/>
-
-
-					Your activation code: {code}<br/>
-
-					<br/>Activation link:<br/> 
-					{link}' => '
-Здравствуйте {nick},<br/><br/>
-
-
-					Ваш код активации: {code}<br/>
-
-					<br/>Ссылка для активации:<br/> 
-					{link}',
-  '
-Recovery link: {link}
-' => '
-Ссылка для восстановления: {link}
-',
-  'Refresh image' => 'Обновить картинку',
-  'Change' => 'Изменить'
+  'There is no such user' => 'Нет такого пользователя',
+  'There is no such user.' => 'Такого пользователя нет.',
+  'This user already confirmed his email address.' => 'Данный пользователь, уже подтвердил свой email.',
+  'Wrong code.' => 'Неправильный код.',
+  'You successfully confirmed your email address. Now you can login.' => 'Ваш email успешно подтвержден. Теперь вы можете войти.',
+  'Your email' => 'Ваш email',
+  'Your password was successfully changed. go to {login} or {site}' => 'Ваш пароль успешно изменен. Вы можете перейти {login} или {site}',
+  'index' => 'Главная',
+  'login' => 'Вход',
+  'or' => 'или',
 );

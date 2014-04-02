@@ -48,7 +48,7 @@ class Users extends CActiveRecord
 			array('status, options', 'numerical', 'integerOnly'=>true),
 			array('nick', 'length', 'max'=>150),
 			array('email', 'length', 'max'=>250),
-			array('pass', 'length', 'max'=>100),
+			array('pass', 'length', 'max'=>512),
 			array('salt', 'length', 'max'=>32),
 			array('time_offset', 'length', 'max'=>4),
 			// The following rule is used by search().

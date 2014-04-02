@@ -18,10 +18,10 @@ class RegForm extends CFormModel {
 	public function rules()	{
 		return array(
 			// name, email, subject and body are required
-			array('email, pass, nick', 'required', 'message' => Yii::t('errors', 'Can\'t be empty')),
+			array('email, pass, nick', 'required'),
 			array('email', 'unique', 'attributeName' => 'email', 'className' => 'Users', 'message' => Yii::t('errors', 'An account with this email address already exists')),
 			array('nick', 'unique', 'attributeName' => 'nick', 'className' => 'Users', 'message' => Yii::t('errors', 'An account with this nick already exists')),
-			array('email', 'email', 'message' => Yii::t('errors', 'Wrong email')),
+			array('email', 'email', 'message' => Yii::t('errors', 'Wrong email format')),
 			//array('email, pass, nick', 'safe'),
 			//array('verifyCode', 'captcha', 'allowEmpty'=>!CCaptcha::checkRequirements()),
 			);
@@ -38,17 +38,13 @@ class RegForm extends CFormModel {
 			Yii::import('ext.YiiMailer.YiiMailer');
 			$code = md5(md5($user->pass.$user->email));
 			$mail = new YiiMailer();
-			$mail->setFrom('register@camshot.ru');
+			$mail->setFrom(Settings::model()->getValue('register'));
 			$mail->setTo($user->email);
 			$mail->setSubject(Yii::t('register', 'Account activation'));
 			$mail->setBody(
 				Yii::t(
 					'register',
-					"Hello {nick},<br/><br/>
-
-
-					Your activation code: {code}<br/> 
-					{link}",
+					"Hello {nick},<br/><br/>Your activation code: {code}<br/>{link}",
 					array(
 						'{nick}' => $user->nick,
 						'{code}' => $code,

@@ -5,63 +5,46 @@ SET foreign_key_checks = 0;
 SET time_zone = '+07:00';
 SET sql_mode = 'NO_AUTO_VALUE_ON_ZERO';
 
+-- Дамп структуры базы данных cams
+DROP DATABASE IF EXISTS `cams`;
+CREATE DATABASE IF NOT EXISTS `cams` /*!40100 DEFAULT CHARACTER SET utf8 */;
+USE `cams`;
+
+-- Дамп структуры для таблица cams.cams
 DROP TABLE IF EXISTS `cams`;
-CREATE TABLE `cams` (
+CREATE TABLE IF NOT EXISTS `cams` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
+  `server_id` int(10) NOT NULL,
   `user_id` int(10) NOT NULL,
   `name` tinytext NOT NULL,
   `desc` text,
   `url` varchar(2000) NOT NULL,
   `prev_url` varchar(2000) DEFAULT NULL,
   `show` tinyint(1) DEFAULT '0',
-  `public` tinyint(1) DEFAULT '0',
+  `is_public` tinyint(1) DEFAULT '0',
   `time_offset` varchar(4) NOT NULL DEFAULT '+0',
-  `coordinates` varchar(100) DEFAULT '',
-  `view_area` text,
   `record` tinyint(1) NOT NULL DEFAULT '0',
+  `coordinates` varchar(100) DEFAULT NULL,
+  `view_area` text,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 
+-- Дамп структуры для таблица cams.notifications
 DROP TABLE IF EXISTS `notifications`;
-CREATE TABLE `notifications` (
+CREATE TABLE IF NOT EXISTS `notifications` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `msg` text NOT NULL,
   `creator_id` int(10) NOT NULL DEFAULT '0',
   `dest_id` int(10) NOT NULL DEFAULT '0',
-  `is_new` tinyint(4) NOT NULL DEFAULT '1',
-  `time` int(10) NOT NULL DEFAULT '0',
+  `shared_id` int(10) NOT NULL DEFAULT '0',
+  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '1- new, 0 - old, 2 - approved, 3 - disappsoved',
+  `time` int(10) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 
-DROP TABLE IF EXISTS `shared`;
-CREATE TABLE `shared` (
-  `id` int(10) NOT NULL AUTO_INCREMENT,
-  `owner_id` int(10) NOT NULL,
-  `user_id` int(10) NOT NULL,
-  `cam_id` int(10) NOT NULL,
-  `show` tinyint(4) NOT NULL DEFAULT '0',
-  `public` tinyint(4) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `users`;
-CREATE TABLE `users` (
-  `id` int(7) NOT NULL AUTO_INCREMENT,
-  `nick` varchar(150) DEFAULT NULL,
-  `email` varchar(250) DEFAULT NULL,
-  `pass` varchar(100) DEFAULT NULL,
-  `status` tinyint(4) DEFAULT NULL,
-  `salt` varchar(32) DEFAULT NULL,
-  `time_offset` varchar(4) NOT NULL DEFAULT '+0',
-  `options` tinyint(4) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
-
-INSERT INTO `users` (`id`, `nick`, `email`, `pass`, `status`, `salt`, `time_offset`, `options`) VALUES
-(0,	'admin',	'admin@admin.admin',	'$1$99pVDpkV$3PrWcVWefq9JopB8zsHMR0',	3,	'3f9d03118755b0406e61376cb7a28d95',	'+0',	0);
-
+-- Дамп структуры для таблица cams.screens
 DROP TABLE IF EXISTS `screens`;
-CREATE TABLE `screens` (
+CREATE TABLE IF NOT EXISTS `screens` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
   `name` varchar(150) DEFAULT NULL,
   `owner_id` int(10) NOT NULL,
@@ -162,6 +145,87 @@ CREATE TABLE `screens` (
   `cam16_h` int(10) NOT NULL,
   `cam16_descr` varchar(150) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+-- Дамп структуры для таблица cams.servers
+DROP TABLE IF EXISTS `servers`;
+CREATE TABLE IF NOT EXISTS `servers` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `ip` tinytext NOT NULL,
+  `protocol` set('http','https') NOT NULL DEFAULT 'http',
+  `s_port` int(5) unsigned NOT NULL DEFAULT '8082' COMMENT 'server port',
+  `w_port` int(5) unsigned NOT NULL DEFAULT '8084' COMMENT 'web port',
+  `l_port` int(5) unsigned NOT NULL DEFAULT '1935' COMMENT 'live port',
+  `comment` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+-- Дамп структуры для таблица cams.sessions
+DROP TABLE IF EXISTS `sessions`;
+CREATE TABLE IF NOT EXISTS `sessions` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) NOT NULL,
+  `session_id` varchar(32) NOT NULL,
+  `real_id` varchar(15) NOT NULL,
+  `ip` varchar(15) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+-- Дамп структуры для таблица cams.settings
+DROP TABLE IF EXISTS `settings`;
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `option` varchar(50) NOT NULL DEFAULT '0',
+  `value` varchar(50) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `option` (`option`)
+) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+
+-- Дамп данных таблицы cams.settings: 5 rows
+/*!40000 ALTER TABLE `settings` DISABLE KEYS */;
+INSERT INTO `settings` (`id`, `option`, `value`) VALUES
+  (1, 'style', 'default'),
+  (2, 'version', '0.8712'),
+  (3, 'index', 'list'),
+  (4, 'recovery', 'recovery@camshot.ru'),
+  (5, 'register', 'register@camshot.ru');
+/*!40000 ALTER TABLE `settings` ENABLE KEYS */;
+
+
+-- Дамп структуры для таблица cams.shared
+DROP TABLE IF EXISTS `shared`;
+CREATE TABLE IF NOT EXISTS `shared` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `owner_id` int(10) NOT NULL,
+  `user_id` int(10) NOT NULL,
+  `cam_id` int(10) NOT NULL,
+  `show` tinyint(4) NOT NULL DEFAULT '0',
+  `is_public` tinyint(4) NOT NULL DEFAULT '0',
+  `is_approved` tinyint(4) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+
+-- Дамп структуры для таблица cams.users
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(7) NOT NULL AUTO_INCREMENT,
+  `nick` varchar(150) DEFAULT NULL,
+  `email` varchar(250) DEFAULT NULL,
+  `pass` varchar(512) DEFAULT NULL,
+  `salt` varchar(32) DEFAULT NULL,
+  `time_offset` varchar(4) DEFAULT '+0',
+  `status` tinyint(4) DEFAULT NULL,
+  `options` tinyint(4) DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT=' ';
+
+/*!40000 ALTER TABLE `users` DISABLE KEYS */;
+INSERT INTO `users` (`id`, `nick`, `email`, `pass`, `salt`, `time_offset`, `status`, `options`) VALUES
+  (1, 'admin', 'admin@admin.admin', '$1$7r4.Cn0.$5WTgA7.eMNRcTwWEMulPg.', 'fb3b88dde2e758ecaab215fa25bf3077', '+0', 3, 0);
+/*!40000 ALTER TABLE `users` ENABLE KEYS */;
+/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
+/*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+
 
 -- 2014-01-27 18:01:23

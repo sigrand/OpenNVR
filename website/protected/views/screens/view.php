@@ -1,8 +1,8 @@
 <?php
-	if ($fullscreen == "true")
-		echo '<div class="col-sm-12" style="top:52px;bottom: 0px;left: 0px;width:100%;">';
-	else
-		echo '<div class="col-sm-12" style="position: absolute;top:52px;bottom: 0px;left: 0px;width:100%;">';
+if ($fullscreen == "true")
+	echo '<div class="col-sm-12" style="top:52px;bottom: 0px;left: 0px;width:100%;">';
+else
+	echo '<div class="col-sm-12" style="position: absolute;top:52px;bottom: 0px;left: 0px;width:100%;">';
 ?>
 <!--	<div class="panel panel-default" style="width:100%;">-->
 <?php
@@ -66,44 +66,51 @@
 			echo '<div class="cams" id="player'.$i.'" href="'.$id.'" style="background-color:'.$colors[$i].';';
 			echo ' position:absolute;width:'.$w.'%;height:'.$h.'%;left:'.$x.'%;top:'.$y.'%;">';
 ?>
-                <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo "$i\""; ?>
+				<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo "$i\""; ?>
 				cam_id=<?php echo "$id"; ?>
-                align="middle">
-                <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
-                <param name="allowScriptAccess" value="always"/>
-                <param name="quality" value="high"/>
-                <param name="scale" value="noscale"/>
-                <param name="salign" value="lt"/>
-                <param name="wmode" value="opaque"/>
-                <param name="bgcolor" value="#000000"/>
-                <param name="allowFullScreen" value="true"/>
-                <param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
-                <embed FlashVars="autoplay=0&playlist=1&buffer=0.3&auto_horizontal_mode=true&show_buttons=true"
-                src="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"
+				align="middle">
+				<param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
+				<param name="allowScriptAccess" value="always"/>
+				<param name="quality" value="high"/>
+				<param name="scale" value="noscale"/>
+				<param name="salign" value="lt"/>
+				<param name="wmode" value="opaque"/>
+				<param name="bgcolor" value="#000000"/>
+				<param name="allowFullScreen" value="true"/>
+				<param name="FlashVars" value="autoplay=0&playlist=1&buffer=0.3"/>
+				<embed FlashVars="autoplay=0&playlist=1&buffer=0.3&auto_horizontal_mode=true&show_buttons=true"
+				src="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"
 				cam_id=<?php echo "$id"; ?>
-                bgcolor="#000000"
-                width="100%"
-                height="100%"
-                name="MyPlayer<?php echo "$i\""; ?>
-                quality="high"
-                wmode="opaque"
-                align="middle"
-                scale="showall"
-                allowFullScreen="true"
-                allowScriptAccess="always"
-                type="application/x-shockwave-flash"
-                pluginspage="http://www.macromedia.com/go/getflashplayer"
-                />
+				bgcolor="#000000"
+				width="100%"
+				height="100%"
+				name="MyPlayer<?php echo "$i\""; ?>
+				quality="high"
+				wmode="opaque"
+				align="middle"
+				scale="showall"
+				allowFullScreen="true"
+				allowScriptAccess="always"
+				type="application/x-shockwave-flash"
+				pluginspage="http://www.macromedia.com/go/getflashplayer"
+				/>
 				<?php echo CHtml::link("<img src='".Yii::app()->request->baseUrl."/images/archive.png' style='width:50px;height:50px;position:absolute;top:10px;left:10px;z-index:1'></img>", $this->createUrl('/cams/fullscreen/id/'.$id), array("id" => "archive_button_".$i, 'target' => '_blank')); ?>
-            </object>
+				</object>
 
-<?php
-			echo '</div>';
+				<?php
+				echo '</div>';
+			}
 		}
-	}
 
-?>
-<!--		</div>-->
-		</div>
+		?>
+		<!--		</div>-->
 	</div>
 </div>
+</div>
+<script type="text/javascript">
+
+function flashInitialized() {
+	<?php echo $players; ?>
+}
+
+</script>

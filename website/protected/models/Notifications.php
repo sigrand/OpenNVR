@@ -8,7 +8,8 @@
  * @property string $msg
  * @property integer $creator_id
  * @property integer $dest_id
- * @property integer $is_new
+ * @property integer $shared_id
+ * @property integer $status
  * @property integer $time
  */
 class Notifications extends CActiveRecord
@@ -40,10 +41,10 @@ class Notifications extends CActiveRecord
 		// will receive user inputs.
 		return array(
 			array('msg, time', 'required'),
-			array('creator_id, dest_id, is_new, time', 'numerical', 'integerOnly'=>true),
+			array('creator_id, dest_id, shared_id, status, time', 'numerical', 'integerOnly'=>true),
 			// The following rule is used by search().
 			// Please remove those attributes that should not be searched.
-			array('id, msg, creator_id, dest_id, is_new, time', 'safe', 'on'=>'search'),
+			array('id, msg, creator_id, dest_id, shared_id, status, time', 'safe'),
 		);
 	}
 
@@ -68,7 +69,8 @@ class Notifications extends CActiveRecord
 			'msg' => 'Msg',
 			'creator_id' => 'Creator',
 			'dest_id' => 'Dest',
-			'is_new' => 'Is New',
+			'shared_id' => 'Shared',
+			'status' => 'Status',
 			'time' => 'Time',
 		);
 	}
@@ -88,7 +90,8 @@ class Notifications extends CActiveRecord
 		$criteria->compare('msg',$this->msg,true);
 		$criteria->compare('creator_id',$this->creator_id);
 		$criteria->compare('dest_id',$this->dest_id);
-		$criteria->compare('is_new',$this->is_new);
+		$criteria->compare('shared_id',$this->shared_id);
+		$criteria->compare('status',$this->status);
 		$criteria->compare('time',$this->time);
 
 		return new CActiveDataProvider($this, array(
