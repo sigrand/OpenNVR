@@ -65,9 +65,9 @@ return array(
 	'params'=>array(
 		'languages' => 
 		array(
-			'ru'=>'Russian',
 			'en'=>'English',
-		//'cn'=>'Chinese'
+			'ru'=>'Russian',
+			'cn'=>'Chinese'
 			),
 		),
 	);
