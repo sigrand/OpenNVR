@@ -27,6 +27,7 @@
 #include <sstream>
 #include <fstream>
 #include <sys/time.h>
+#include <json/json.h>
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/ffmpeg_stream.h>
 #include <moment-ffmpeg/channel_checker.h>
@@ -209,7 +210,9 @@ private:
     static StRef<String>  statisticsToJson (
             std::map<time_t, StatMeasure> * const mt_nonnull statPoints);
 
-    std::string sourceInfoToJson ();
+    Json::Value sourceInfoToJson (const std::string source_name, const stSourceInfo & si, Ref<ChannelChecker> pChannelChecker);
+    std::string GetAllSourcesInfo ();
+    std::string GetSourceInfo (const std::string & source_name);
 
     StRef<String> doGetFile (ConstMemory  stream_name,
                     Time         start_unixtime_sec,
