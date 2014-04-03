@@ -393,4 +393,32 @@ bool MemoryDispatcher::Notify(const std::string & fileName, bool bDone, unsigned
     return bRes;
 }
 
+bool MemoryDispatcher::IsFilenameRecorded(const std::string & filename)
+{
+    logD(memdisp, _func_, "filename [", filename.c_str(), "]");
+
+    bool bRes = false;
+
+    g_mutexMemoryDispatcher.lock();
+
+    for(DiskFiles::iterator itr = _diskFiles.begin(); itr != _diskFiles.end(); ++itr)
+    {
+        logD(memdisp, _func_, "diskname [", itr->first.c_str(), "]");
+        FilesInfo::iterator itr1 = itr->second.find(filename);
+        if(itr1 != itr->second.end())
+        {
+            logD(memdisp, _func_, "fileName is recorded[", itr1->first.c_str(), "]");
+            bRes = true;
+            break;
+        }
+    }
+
+    if(!bRes)
+        logD(memdisp, _func_, "fileName is not recorded[", filename.c_str(), "]");
+
+    g_mutexMemoryDispatcher.unlock();
+
+    return bRes;
+}
+
 }

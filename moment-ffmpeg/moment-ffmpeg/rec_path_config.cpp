@@ -263,19 +263,28 @@ std::string RecpathConfig::GetNextPathForStream()
         logD(recpath, _func_, "minfileName = ", fileName.c_str());
         logD(recpath, _func_, "mindiskName = ", diskName.c_str());
 
-        // delete it
+        // delete it (if filename is not recorded at current time)
         StRef<String> dir_name = st_makeString(diskName.c_str());
-        Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (dir_name->mem());
+        StRef<String> file_name = st_makeString(fileName.c_str());
+        StRef<String> full_file_name = st_makeString(dir_name, "/", file_name, ".flv");
+        if(!MemoryDispatcher::Instance().IsFilenameRecorded(full_file_name->cstr()))
+        {
+            Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (dir_name->mem());
 
-        StRef<String> const filenameFull = st_makeString(fileName.c_str(), ".flv");
+            StRef<String> const filenameFull = st_makeString(fileName.c_str(), ".flv");
 
-        logD(recpath, _func_, "filenameFull to remove = ", filenameFull);
+            logD(recpath, _func_, "filenameFull to remove = ", filenameFull);
 
-        vfs->removeFile (filenameFull->mem());
-        vfs->removeSubdirsForFilename (filenameFull->mem());
+            vfs->removeFile (filenameFull->mem());
+            vfs->removeSubdirsForFilename (filenameFull->mem());
 
-        std::string channel_name = fileName.substr(0,fileName.find("/"));
-        (*m_pStreams)[channel_name].getRefPtr()->GetChannelChecker()->DeleteFromCache(diskName, fileName);
+            std::string channel_name = fileName.substr(0,fileName.find("/"));
+            (*m_pStreams)[channel_name].getRefPtr()->GetChannelChecker()->DeleteFromCache(diskName, fileName);
+        }
+        else
+        {
+            break;
+        }
     }
 
     m_mutex.unlock();

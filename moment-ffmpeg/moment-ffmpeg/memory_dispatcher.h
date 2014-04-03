@@ -52,6 +52,8 @@ public:
 
     Int64 GetDiskFreeSizeFromDiskname(const std::string & diskName);
 
+    bool IsFilenameRecorded(const std::string & filename);
+
 private:
 
     MemoryDispatcher():_isInit(false){};
