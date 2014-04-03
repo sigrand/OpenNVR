@@ -208,10 +208,12 @@ Int64 MemoryDispatcher::getFreeSize(const std::string & diskName, time_t curTime
     logD(memdisp, _func_, "freeSize = [", freeSize, "]");
 
     resultFreeSize = freeSize + actualSizeOfStreams - reservedSizeByStreams;
+    if(resultFreeSize < 0)
+        resultFreeSize = 0;
 
     logD(memdisp, _func_, "resultFreeSize = [", resultFreeSize, "]");
 
-    return freeSize;
+    return resultFreeSize;
 }
 
 Int64 MemoryDispatcher::GetDiskFreeSizeFromDiskname(const std::string & diskName)
