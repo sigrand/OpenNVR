@@ -25,8 +25,8 @@ rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
 
     public function __construct($http, $options) {
         $this->http = $http;
-        $this->http->setPort($this->options['server_port']);
         $this->options = array_merge($this->options, $options);
+        $this->http->setPort($this->options['server_port']);
     }
 
     public function add($id, $name, $url) {

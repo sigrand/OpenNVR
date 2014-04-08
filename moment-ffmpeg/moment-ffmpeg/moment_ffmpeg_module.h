@@ -147,6 +147,9 @@ private:
     RecpathConfig m_recpath_config;
     Uint64 m_nDownloadLimit;
 
+    std::string m_validatorAddr;
+    bool m_bValidationOn;
+
     mt_const bool m_bServe_playlist_json;
 
     mt_const Ref<ChannelOptions> m_default_channel_opts;
@@ -213,6 +216,12 @@ private:
     Json::Value sourceInfoToJson (const std::string source_name, const stSourceInfo & si, Ref<ChannelChecker> pChannelChecker);
     std::string GetAllSourcesInfo ();
     std::string GetSourceInfo (const std::string & source_name);
+
+    std::string ValidateSource(const std::string & sourceName, const std::string & clientAddress);
+    bool GetValidationMode()
+    {
+        return m_bValidationOn;
+    }
 
     StRef<String> doGetFile (ConstMemory  stream_name,
                     Time         start_unixtime_sec,

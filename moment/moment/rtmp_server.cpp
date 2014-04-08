@@ -29,7 +29,7 @@ using namespace M;
 
 namespace Moment {
 
-static LogGroup libMary_logGroup_rtmp_server ("rtmp_server", LogLevel::I);
+static LogGroup libMary_logGroup_rtmp_server ("rtmp_server", LogLevel::E);
 
 MOMENT__RTMP_SERVER
 
@@ -254,11 +254,12 @@ bool doRequest(std::string &sUri, std::string &sRequest, std::string &sResponse)
         HTTPClientSession session(uri.getHost(), uri.getPort());
         HTTPRequest request(HTTPRequest::HTTP_POST, path, HTTPMessage::HTTP_1_1);
 
-        request.setContentType("application/json");
+        request.setContentType("application/x-www-form-urlencoded");
         request.setKeepAlive(true);
         request.setContentLength(sRequest.size());
 
         session.sendRequest(request) << sRequest;
+
         HTTPResponse response;
         std::istream& rs = session.receiveResponse(response);
         if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
@@ -316,6 +317,7 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
     // here do validation
 
     ConstMemory memChannelName = ConstMemory (vs_name_buf, vs_name_len);
+	std::string strId;
     if(this->m_bValidationOn)
     {
         StRef<String> str_id = st_makeString(ConstMemory (vs_name_buf, vs_name_len));
@@ -325,8 +327,21 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
         Json::StyledWriter json_writer_styled;
         Json::Value root_req;
         root_req["clientAddr"] = m_clientAddr;
-        root_req["id"] = str_id->cstr();
-        std::string sRequest = json_writer_styled.write(root_req);
+		std::string id_raw = str_id->cstr();
+		size_t pos = id_raw.find("?");
+		std::string id, idRest;
+		if(pos != std::string::npos)
+		{
+        	id = id_raw.substr(0, pos);
+        	idRest = id_raw.substr(pos);
+		}
+		else
+		{
+			id = id_raw;
+		}
+        root_req["id"] = id;
+        std::string sRequest = std::string("data=") + json_writer_styled.write(root_req);
+        logD(rtmp_server, _func_, "sRequest : [", sRequest.c_str(), "]");
 
         std::string sResponse;
 
@@ -339,12 +354,11 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
             if(parseSuccess)
             {
                 logD(rtmp_server, _func_, "result = ", root_resp["result"].asString().c_str());
-
-                std::string strId;
-                if(root_resp["result"].asString().compare("OK") == 0)
+                if(root_resp["result"].asString().compare("success") == 0)
                 {
                     strId = root_resp["id"].asString();
-                    logD(rtmp_server, _func_, "strId = ", strId.c_str());
+					strId += idRest;
+                    logD(rtmp_server, _func_, "id = ", strId.c_str());
                 }
 
                 memChannelName = ConstMemory(strId.c_str(), strId.size());

@@ -76,21 +76,4 @@ void HttpReqHandler::handleRequest(HTTPServerRequest &req, HTTPServerResponse &r
 
 HandlerMap HttpReqHandler::_handlerMap;
 
-
-//======== admin http handler
-
-
-void AdminHttpReqHandler::addHandler(std::string ss, HandlerFunc handler, void * data)
-{
-    //_handlerMap[ss] = std::make_pair(handler, data);
-    _handlerMap.insert(std::make_pair(ss, std::make_pair(handler, data)));
-}
-
-void AdminHttpReqHandler::handleRequest(HTTPServerRequest &req, HTTPServerResponse &resp)
-{
-    commonHandleRequest(req, resp, _handlerMap);
-}
-
-HandlerMap AdminHttpReqHandler::_handlerMap;
-
 }

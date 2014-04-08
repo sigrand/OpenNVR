@@ -27,19 +27,13 @@ public:
 	virtual HTTPRequestHandler* createRequestHandler(const HTTPServerRequest &);
 };
 
-class AdminHttpHandlerFactory : public HTTPRequestHandlerFactory
-{
-public:
-    virtual HTTPRequestHandler* createRequestHandler(const HTTPServerRequest &);
-};
-
 class MomentHTTPServer : public ServerApplication
 {
 public:
 
-    void SetPorts(int http_port, int admin_http_port);
+    void SetPorts(int http_port);
 
-    MomentHTTPServer():http_port(-1),admin_http_port(-1)
+    MomentHTTPServer():http_port(-1)
     {
 
     }
@@ -51,7 +45,6 @@ protected:
 private:
 
     int http_port;
-    int admin_http_port;
 };
 }
 #endif /* MOMENT__HTTP_SERVER__H__ */

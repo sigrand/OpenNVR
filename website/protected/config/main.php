@@ -33,7 +33,7 @@ return array(
 			'urlFormat'=>'path',
 			'rules'=>array(
 				'/'=>'cams/index',
-				'cams/existence/id/<id:\d+>/<stream:\d+|\d+_low>'=>'cams/existence',
+				'cams/existence/id/<id:\d+>/<stream:.*?>'=>'cams/existence',
 				),
 			),
 		'db'=>array(

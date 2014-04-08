@@ -74,16 +74,16 @@ uri = "rtsp://192.168.10.21:8092/test1.sdp"
 
 then just run moment. nvr will automatically write stream in /opt/moment/records/sony/curyear/curmonth/curday/
 
-http://192.168.10.21:8082/mod_nvr_admin/rec_on?stream=sony&seq=1 - turn on record
-http://192.168.10.21:8082/mod_nvr_admin/rec_off?stream=sony&seq=1 - turn off record
+http://192.168.10.21:8080/mod_nvr_admin/rec_on?stream=sony&seq=1 - turn on record
+http://192.168.10.21:8080/mod_nvr_admin/rec_off?stream=sony&seq=1 - turn off record
 
-http://192.168.10.21:8082/mod_nvr_admin/files_existence?stream=sony - get all recorded files
+http://192.168.10.21:8080/mod_nvr_admin/files_existence?stream=sony - get all recorded files
 
-http://192.168.10.21:8082/mod_nvr_admin/statistics - get statistics
+http://192.168.10.21:8080/mod_nvr_admin/statistics - get statistics
 
-http://192.168.10.21:8082/mod_rtmp/stat - get statistics about rtmp sessions
+http://192.168.10.21:8080/mod_rtmp/stat - get statistics about rtmp sessions
 
-http://192.168.10.21:8082/mod_nvr_admin/remove_video?conf_file=cam0&start=1368828300&end=1368828400 - remove recorded video from to (unixtime)
+http://192.168.10.21:8080/mod_nvr_admin/remove_video?conf_file=cam0&start=1368828300&end=1368828400 - remove recorded video from to (unixtime)
 
 http://192.168.10.21:8080/mod_nvr/channel_state?stream=test&seq=1 - get state info (turned on or off)
 
@@ -108,13 +108,13 @@ to manage sources via http-requests
 examples:
 
 add channel
-http://192.168.10.21:8082/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp
+http://192.168.10.21:8080/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp
 
 modify channel
-http://192.168.10.21:8082/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp&update
+http://192.168.10.21:8080/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp&update
 
 remove channel
-http://192.168.10.21:8082/admin/remove_channel?conf_file=sony0
+http://192.168.10.21:8080/admin/remove_channel?conf_file=sony0
 
 =====================================================================================
 To enable ONVIF support in moment
@@ -145,7 +145,7 @@ vlc http://192.168.10.21:8080/hls/stream_name.m3u8
 =====================================================================================
 to get info about disk available for nvrserver
 
-http://192.168.10.21:8082/mod_nvr_admin/disk_info
+http://192.168.10.21:8080/mod_nvr_admin/disk_info
 
 =====================================================================================
 nvrserver supports multiple directories for read/write.
@@ -193,16 +193,16 @@ If you want to change records paths without rebooting nvrserver
 
 2) do http-request
 
-http://192.168.10.21:8082/mod_nvr_admin/reload_recpath
+http://192.168.10.21:8080/mod_nvr_admin/reload_recpath
 
 =====================================================================================
 to get information about all sources
 
-http://192.168.10.21:8082/mod_nvr_admin/source_info
+http://192.168.10.21:8080/mod_nvr_admin/source_info
 
 info about source
 
-http://192.168.10.21:8082/mod_nvr_admin/source_info?stream=sony
+http://192.168.10.21:8080/mod_nvr_admin/source_info?stream=sony
 
 =====================================================================================
 watchdog for nvrserver relaunches nvrserver when it falls
@@ -219,4 +219,17 @@ watchdog for nvrserver relaunches nvrserver when it falls
 3) launch watchdog
 # python watchdog.py &
 
+=====================================================================================
+to enable validation you need:
+1) edit moment.conf
+2) in mod_rtmp section set
+  enable_validation = y
+  validation_server_addr = %server_name% // for example 213.183.117.158/index.php/cams/check
 
+----example:
+
+request format:
+data={'clientAddr':'192.168.10.1', 'id':'1eb41788de895eb7d984b8f22b8b1392'}
+
+response format:
+{'result':'success','id':'cam_1'}

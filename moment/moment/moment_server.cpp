@@ -2069,7 +2069,7 @@ MomentServer::init (ServerApp        * const mt_nonnull server_app,
 
 
     HttpReqHandler::addHandler(std::string("server"), serverHttpRequest, this);
-    AdminHttpReqHandler::addHandler(std::string("admin"), adminHttpRequest, this);
+    HttpReqHandler::addHandler(std::string("admin"), adminHttpRequest, this);
 
     if (!loadModules ())
 	logE_ (_func, "Could not load modules");

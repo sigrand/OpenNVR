@@ -703,7 +703,7 @@
                 $.ajax({
                   cache: false,
                 type: "GET",
-                url: "http://localhost:8082/admin/add_channel?conf_file=" + the_name + "&title=" + the_title + "&uri=" + the_uri + update,
+                url: "http://localhost:8080/admin/add_channel?conf_file=" + the_name + "&title=" + the_title + "&uri=" + the_uri + update,
                 contentType: "application/json",
                 dataType: "json",
                 data: null,
@@ -745,7 +745,7 @@
         height: 300,
         buttons: { 
             Ok: function() {
-                //http://192.168.10.21:8082/admin/add_channel?conf_file=sony6&title=Sony6&uri=rtsp://192.168.10.21:8092/test0.sdp
+                //http://192.168.10.21:8080/admin/add_channel?conf_file=sony6&title=Sony6&uri=rtsp://192.168.10.21:8092/test0.sdp
               var the_name = "";
               $.get("/server/playlist.json", {}, function (data) {
                 var playlist = data["sources"];
@@ -761,7 +761,7 @@
                   $.ajax({
                     cache: false,
               type: "GET",
-              url: "http://localhost:8082/admin/add_channel?conf_file=" + the_name + "&title=" + the_title + "&uri=" + the_uri + update,
+              url: "http://localhost:8080/admin/add_channel?conf_file=" + the_name + "&title=" + the_title + "&uri=" + the_uri + update,
               contentType: "application/json",
               dataType: "json",
               data: null,
@@ -822,7 +822,7 @@
                   $.ajax({
                     cache: false,
               type: "GET",
-              url: "http://localhost:8082/admin/remove_channel?conf_file=" + the_name,
+              url: "http://localhost:8080/admin/remove_channel?conf_file=" + the_name,
               contentType: "application/json",
               dataType: "json",
               data: null,

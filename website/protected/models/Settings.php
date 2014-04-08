@@ -30,7 +30,7 @@ class Settings extends CActiveRecord
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
 			array('id, option, value', 'safe', 'on'=>'search'),
-		);
+			);
 	}
 
 	/**
@@ -41,7 +41,7 @@ class Settings extends CActiveRecord
 		// NOTE: you may need to adjust the relation name and the related
 		// class name for the relations automatically generated below.
 		return array(
-		);
+			);
 	}
 
 	/**
@@ -53,11 +53,14 @@ class Settings extends CActiveRecord
 			'id' => 'ID',
 			'option' => 'Option',
 			'value' => 'Value',
-		);
+			);
 	}
 
 	public function getValue($option) {
-		return $this->findByAttributes(array('option' => $option))->value;
+		$option = $this->findByAttributes(array('option' => $option));
+		if($option) {
+			return $option->value;
+		}
 	}
 
 	public function getStyles() {
@@ -90,7 +93,7 @@ class Settings extends CActiveRecord
 
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
-		));
+			));
 	}
 
 	/**

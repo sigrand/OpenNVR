@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS `cams` (
   `time_offset` varchar(4) NOT NULL DEFAULT '+0',
   `record` tinyint(1) NOT NULL DEFAULT '0',
   `coordinates` varchar(100) DEFAULT NULL,
-  `view_area` text,
+  `view_area` text DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 
@@ -219,13 +219,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT=' ';
 
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
 INSERT INTO `users` (`id`, `nick`, `email`, `pass`, `salt`, `time_offset`, `status`, `options`) VALUES
   (1, 'admin', 'admin@admin.admin', '$1$7r4.Cn0.$5WTgA7.eMNRcTwWEMulPg.', 'fb3b88dde2e758ecaab215fa25bf3077', '+0', 3, 0);
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
-/*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
-/*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-
 
 -- 2014-01-27 18:01:23

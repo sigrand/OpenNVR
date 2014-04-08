@@ -847,6 +847,78 @@ MomentFFmpegModule::removeVideoFiles(StRef<String> const channel_name,
     return bRes;
 }
 
+bool doRequest(std::string &sUri, std::string &sRequest, std::string &sResponse)
+{
+    try
+    {
+        logD (ffmpeg_module, _func, "request uri: ", sUri.c_str());
+        URI uri(sUri);
+        std::string path(uri.getPathAndQuery());
+
+        HTTPClientSession session(uri.getHost(), uri.getPort());
+        HTTPRequest request(HTTPRequest::HTTP_POST, path, HTTPMessage::HTTP_1_1);
+
+        request.setContentType("application/x-www-form-urlencoded");
+        request.setKeepAlive(true);
+        request.setContentLength(sRequest.size());
+
+        session.sendRequest(request) << sRequest;
+
+        HTTPResponse response;
+        std::istream& rs = session.receiveResponse(response);
+        if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
+        {
+            logE_ (_func, "fail to validate: ", sUri.c_str());
+            sResponse = "";
+            return false;
+        }
+        StreamCopier::copyToString(rs, sResponse);
+    }
+    catch (Poco::Exception& exc)
+    {
+        logE_ (_func, exc.displayText().c_str());
+        return false;
+    }
+
+    return true;
+}
+
+std::string
+MomentFFmpegModule::ValidateSource(const std::string & sourceName, const std::string & clientAddress)
+{
+    std::string validatedSource;
+    if(m_bValidationOn)
+    {
+        std::string args = "/";
+        std::string sUri = std::string("http:\/\/") + m_validatorAddr + args;
+
+        Json::StyledWriter json_writer_styled;
+        Json::Value root_req;
+        root_req["clientAddr"] = clientAddress;
+        root_req["id"] = sourceName;
+        std::string sRequest = std::string("data=") + json_writer_styled.write(root_req);
+        logD(ffmpeg_module, _func_, "QQQQQ sRequest : [", sRequest.c_str(), "]");
+
+        std::string sResponse;
+
+        if(doRequest(sUri, sRequest, sResponse))
+        {
+            Json::Reader reader;
+            Json::Value root_resp;
+            bool parseSuccess = reader.parse(sResponse, root_resp, false);
+            if(parseSuccess)
+            {
+                logD(ffmpeg_module, _func_, "result = ", root_resp["result"].asString().c_str());
+                if(root_resp["result"].asString().compare("success") == 0)
+                {
+                    validatedSource = root_resp["id"].asString();
+                    logD(ffmpeg_module, _func_, "id = ", validatedSource.c_str());
+                }
+            }
+        }
+    }
+    return validatedSource;
+}
 
 bool
 MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
@@ -1382,6 +1454,10 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
 
         NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
         std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+        std::string client_addr = req.clientAddress().toString();
+        std::string client_addr_without_port = client_addr.substr(0, client_addr.find(":"));
+        if(self->GetValidationMode())
+            channel_name = self->ValidateSource(channel_name, client_addr_without_port);
 
         logD(ffmpeg_module, _func_, "channel_name: [", channel_name.c_str(), "]");
 
@@ -1987,7 +2063,37 @@ MomentFFmpegModule::init (MomentServer * const moment)
               true /* auto_delete */);
 
     HttpReqHandler::addHandler(std::string("mod_nvr"), httpRequest, this);
-    AdminHttpReqHandler::addHandler(std::string("mod_nvr_admin"), adminHttpRequest, this);
+    HttpReqHandler::addHandler(std::string("mod_nvr_admin"), adminHttpRequest, this);
+
+    // set source validation options
+    bool bValidationOn = false;
+    {
+        ConstMemory const opt_name = "mod_rtmp/enable_validation";
+        MConfig::BooleanValue const enable = config->getBoolean (opt_name);
+        bValidationOn = (enable == MConfig::Boolean_True) ? true: false;
+    }
+    if(bValidationOn)
+    {
+        ConstMemory const opt_name = "mod_rtmp/validation_server_addr";
+        ConstMemory const opt_val = config->getString (opt_name);
+        if (!opt_val.isNull())
+        {
+            Ref<String> validatorAddr = grab (new (std::nothrow) String (opt_val));
+            std::string sValidatorAddr = validatorAddr->cstr();
+            Ref<String> validatorAddrIP = makeString(sValidatorAddr.substr(0,sValidatorAddr.find("/")).c_str(), ":80");
+            IpAddress validServerAddr;
+            if (setIpAddress (validatorAddrIP->mem(), &validServerAddr)) // just for checking
+            {
+                m_validatorAddr = sValidatorAddr;
+                m_bValidationOn = true;
+                logD (ffmpeg_module, _func_, "Validation is ON, validatorAddr = ", validatorAddr);
+            }
+            else
+                logE_ (_func_, "Fail set validator IpAddress: ", validatorAddr);
+        }
+        else
+            logE_ (_func_, "Invalid value for ", opt_name, ": ", opt_val);
+    }
 
     return Result::Success;
 }
@@ -1998,7 +2104,8 @@ MomentFFmpegModule::MomentFFmpegModule()
       m_timer_keyStat (NULL),
       m_timer_updateTimes (NULL),
       m_pPage_pool (NULL),
-      m_bServe_playlist_json (true)
+      m_bServe_playlist_json (true),
+      m_bValidationOn(false)
 {
     m_default_channel_opts = grab (new (std::nothrow) ChannelOptions);
     if(!m_default_channel_opts){logE_(_func_, "cannot allocate m_default_channel_opts");}

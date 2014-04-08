@@ -1000,7 +1000,7 @@ ChannelManager::init (MomentServer * const mt_nonnull moment,
             moment->getServerApp()->getServerContext()->getMainThreadContext()->getDeferredProcessor());
 
     HttpReqHandler::addHandler(std::string("server"), serverHttpRequest, this);
-    AdminHttpReqHandler::addHandler(std::string("admin"), adminHttpRequest, this);
+    HttpReqHandler::addHandler(std::string("admin"), adminHttpRequest, this);
 }
 
 ChannelManager::ChannelManager ()

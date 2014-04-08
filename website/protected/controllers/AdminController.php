@@ -19,6 +19,53 @@ class AdminController extends Controller {
 				),
 			);
 	}
+
+	public function actionCheckUpdate() {
+		$result = array();
+		Yii::import('ext.cloudDrivers.index', 1);
+		$d = new driversManager;
+		if(!$d->init()) {
+			$this->redirect($this->createUrl('admin/updater'));
+			Yii::app()->end();
+		}
+		$versions = $d->getVersions();
+		if(!$versions) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update checking failed. Repo access problem')));
+			$this->redirect($this->createUrl('admin/updater'));	
+			Yii::app()->end();
+		}
+		$params = array('version', 'SQLversion');
+		foreach($params as $value) {
+			$model = Settings::model()->findByAttributes(array('option' => $value));
+			if($versions[$value] == $model->value) {
+				$result[$value] = 1;
+			} else {
+				$result[$value] = $versions[$value];
+			}
+		}
+		Yii::app()->user->setFlash('versions', json_encode($result));
+		Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! update checked')));
+		$this->redirect($this->createUrl('admin/updater'));
+	}
+
+	public function actionUpdater() {
+		Yii::import('ext.cloudDrivers.index', 1);
+		$d = new driversManager;
+		$versions = $d->getVersions(1);
+		Yii::app()->user->setFlash('versions', json_encode($versions));
+		$params = array('version', 'SQLversion');
+		foreach ($params as $value) {
+			$model = Settings::model()->findByAttributes(array('option' => $value));
+			if(!$model) {
+				$model = new Settings;
+				$model->option = $value;
+				$model->value = '0.1';
+				$model->save();
+			}
+			$models[] = $model;
+		}
+		$this->render('updater', array('models' => $models));
+	}
 	
 	public function actionSettings() {
 		if(isset($_POST['Settings'])) {
@@ -125,8 +172,8 @@ class AdminController extends Controller {
 			}
 			break;
 			case 'source_info':
-				print_r($stat);
-				return true;
+			print_r($stat);
+			return true;
 			break;
 
 			default:

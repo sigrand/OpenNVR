@@ -729,7 +729,6 @@ static ServerApp::Events const server_app_events = {
 
 struct strPorts
 {
-  int admin_http_port;
   int http_port;
 };
 
@@ -737,7 +736,7 @@ void server_thread_func(void * arg)
 {
     struct strPorts * ports = (struct strPorts *)arg;
     MomentHTTPServer app;
-    app.SetPorts(ports->http_port,ports->admin_http_port);
+    app.SetPorts(ports->http_port);
     char * chNull = "";
     app.run(1, &chNull);
 }
@@ -746,19 +745,14 @@ bool
 MomentInstance::initServer(MConfig::Config *config)
 {
     struct strPorts ports;
-    ConstMemory const admin_bind = config->getString_default (ConstMemory("http/admin_bind"), ":8092");
     ConstMemory const http_bind = config->getString_default (ConstMemory("http/http_bind"), ":8090");
 
-    std::string s_admin_bind = st_makeString(admin_bind)->cstr();
     std::string s_http_bind = st_makeString(http_bind)->cstr();
 
-    Int32 admin_http_port;
     Int32 http_port;
 
-    strToInt32_safe(s_admin_bind.substr(1).c_str(), &admin_http_port, 10);
     strToInt32_safe(s_http_bind.substr(1).c_str(), &http_port, 10);
 
-    ports.admin_http_port = admin_http_port;
     ports.http_port = http_port;
 
     {
@@ -857,7 +851,7 @@ MomentInstance::run ()
         return EXIT_FAILURE;
     }
 
-    AdminHttpReqHandler::addHandler(std::string("ctl"), ctlHttpRequest, this);
+    HttpReqHandler::addHandler(std::string("ctl"), ctlHttpRequest, this);
 
 
     Ref<ChannelManager> const channel_manager = grab (new (std::nothrow) ChannelManager);

@@ -829,7 +829,7 @@ $this->widget('zii.widgets.jui.CJuiDatePicker',
     var menuSourcesList = document.getElementById("menuSourcesList");
     var menuArchiveList = document.getElementById("menuArchiveList");
     var iv = setInterval(function () {
-        var cam = $('#<?php echo $cam->getRealId($cam->getSessionId($low)); ?>');
+        var cam = $('#<?php echo $cam->getSessionId($low); ?>');
         if (cam.html()) {
             clearInterval(iv);
             cam.click();

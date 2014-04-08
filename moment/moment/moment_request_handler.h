@@ -39,16 +39,5 @@ public:
   virtual void handleRequest(HTTPServerRequest &req, HTTPServerResponse &resp);
 };
 
-class AdminHttpReqHandler : public HTTPRequestHandler
-{
-  static HandlerMap _handlerMap;
-
-public:
-
-  static void addHandler(std::string ss, HandlerFunc handler, void * data);
-
-  virtual void handleRequest(HTTPServerRequest &req, HTTPServerResponse &resp);
-};
-
 }
 #endif /* MOMENT__REQUEST_HANDLER__H__ */

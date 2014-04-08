@@ -20,7 +20,7 @@ class CamsController extends Controller {
 	public function accessRules() {
 		return array(
 			array('allow',
-				'actions'=>array('index', 'fullscreen', 'playlist', 'check', 'map'),
+				'actions'=>array('index', 'fullscreen', 'playlist', 'check', 'map', 'list'),
 				'users'=>array('*'),
 				),
 			array('allow',
@@ -46,9 +46,10 @@ class CamsController extends Controller {
 	}
 
 	public function actionCheck($id = '', $clientAddr = '') {
-		if((!$id && !$clientAddr) && (isset($_POST['id']) && isset($_POST['clientAddr']))) {
-			$id = $_POST['id'];
-			$clientAddr = $_POST['clientAddr'];
+		if((!$id && !$clientAddr) && (isset($_POST['data']))) {
+			$data = json_decode($_POST['data'], 1);
+			$id = $data['id'];
+			$clientAddr = $data['clientAddr'];
 		}
 		$response = array('result' => 'fail', 'id' => '');
 		if(empty($id) && $this->validateRequest('id', $id)) {
@@ -59,10 +60,18 @@ class CamsController extends Controller {
 			$response['id'] = 'empty or invalid ip';
 			$this->renderJSON($response);
 		}
-		$id = Sessions::model()->findByAttributes(array('ip' => $clientAddr, 'session_id' => $id), array('select' => 'real_id'));
+		$id = Sessions::model()->findByAttributes(array('session_id' => $id), array('select' => 'real_id, ip'));
 		if($id) {
-			$response['result'] = 'success';
-			$response['id'] = $id->real_id;
+			$cam = Cams::model()->findByPK($id->real_id);
+			if($cam->is_public) {
+				$response['result'] = 'success';
+				$response['id'] = $id->real_id;
+			} elseif($id->ip == $clientAddr) {
+				$response['result'] = 'success';
+				$response['id'] = $id->real_id;
+			} else {
+				$response['id'] = 'huge fail';
+			}
 		} else {
 			$response['id'] = 'huge fail';
 		}
@@ -93,7 +102,7 @@ class CamsController extends Controller {
 		$momentManager = new momentManager($id);
 		$this->render('empty',
 			array(
-				'content' => $momentManager->playlist(Cams::model()->getRealId($cam_id))
+				'content' => $momentManager->playlist(Cams::model()->getRealId($cam_id), $cam_id)
 				)
 			);
 	}

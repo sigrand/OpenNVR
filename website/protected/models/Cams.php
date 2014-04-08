@@ -134,7 +134,11 @@ class Cams extends CActiveRecord {
 			$allMyCams[$cam->id] = $cam;
 		}
 		foreach ($myPublicCams as $key => $cam) {
-			$allMyCams[$cam->id] = $cam->cam;
+			if(isset($cam->cam)) {
+				$allMyCams[$cam->id] = $cam->cam;
+			} else {
+				$allMyCams[$cam->id] = $cam;
+			}
 		}
 		foreach ($mySharedCams as $key => $cam) {
 			$allMyCams[$cam->cam_id] = $cam->cam;

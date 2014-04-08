@@ -200,7 +200,7 @@ if(Yii::app()->user->hasFlash('notify')) {
 
 	function flashInitialized() {
 		var cam_id = "<?php echo $model->id;//$model->getSessionId(); ?>";
-		document['MyPlayer'].setSource("<?php echo 'rtmp://'.$server->ip.':'.$server->l_port.'/live/'; ?>", cam_id+"_low", cam_id);
+		document['MyPlayer'].setSource("<?php if(isset($server)) { echo 'rtmp://'.$server->ip.':'.$server->l_port.'/live/'; } ?>", cam_id+"_low", cam_id);
 		document.getElementById("open_link").href="<?php echo $this->createUrl('cams/fullscreen', array('full' => 1, 'id' => $model->getSessionId())); ?>";
 	}
 

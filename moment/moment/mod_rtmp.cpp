@@ -1207,8 +1207,15 @@ Result clientConnected (RtmpConnection  * const mt_nonnull rtmp_conn,
                 StRef<String> sss = st_makeString(a1, ".", a2, ".", a3, ".", a4);
                 clientAddr = sss->cstr();
             }
+            std::string sValidatorAddr = validatorAddr->cstr();
+            std::string str_validatorAddrIP = sValidatorAddr.substr(0,sValidatorAddr.find("/"));
+            if(str_validatorAddrIP.find(":") == std::string::npos)
+            {
+                str_validatorAddrIP += std::string(":80");
+            }
+            Ref<String> validatorAddrIP = makeString(str_validatorAddrIP.c_str());
             IpAddress validServerAddr;
-            if (setIpAddress (validatorAddr->mem(), &validServerAddr))
+            if (setIpAddress (validatorAddrIP->mem(), &validServerAddr)) // just for checking
             {
                 client_session->rtmp_server.setValidationOpts(true, validatorAddr->cstr(), clientAddr);
                 logD (mod_rtmp, _func_, "Validation is ON, validatorAddr = ", validatorAddr, ", clientAddr = ", clientAddr.c_str());
@@ -1799,7 +1806,7 @@ static Result momentRtmpInit ()
 	    }
 	} while (0);
 
-        AdminHttpReqHandler::addHandler(std::string("mod_rtmp"), MomentRtmpModule::adminHttpRequest, rtmp_module);
+        HttpReqHandler::addHandler(std::string("mod_rtmp"), MomentRtmpModule::adminHttpRequest, rtmp_module);
     }
 
     {

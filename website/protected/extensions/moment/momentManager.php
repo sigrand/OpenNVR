@@ -16,7 +16,7 @@ class momentManager {
            );
     }
 
-	public function add($model) { // TODO add YII::t to notes
+	public function add($model) {
 		$result = $this->moment->add($model->id, $model->name, $model->url);
         if($result !== true) {
             Notify::note(Yii::t('errors', 'Add cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
@@ -57,7 +57,7 @@ class momentManager {
         return $result;
     }
 
-    public function playlist($cam_id) {
+    public function playlist($cam_id, $session_id) {
         $result = $this->moment->playlist();
         if(!$result) {
             Notify::note(Yii::t('errors', 'Can not get playlist, problem with nvr'));
@@ -67,6 +67,7 @@ class momentManager {
         if(!isset($result['sources'])) { return json_encode($response); }
         foreach ($result['sources'] as $value) {
             if($value['name'] == $cam_id) {
+                $value['name'] = $session_id;
                 $response['sources'][] = $value;
                 break;
             }

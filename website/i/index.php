@@ -2,15 +2,21 @@
 ini_set('error_reporting', E_ALL);
 ini_set('display_errors', 'On');
 ini_set('display_startup_errors', 'On');
+set_time_limit(1000);
 define('DIR', dirname(__FILE__).'/');
 include DIR.'langs/ru.php';
-include DIR.'installer.php';
+include DIR.'lib/installer.php';
+include DIR.'lib/dropWebLight.php';
+include DIR.'lib/http.php';
 
 $i = new installer;
 $v = '0.1';
-$repo = '';
-$file_list = 'file_list.json';
+$repo = 'https://www.dropbox.com/sh/5heu2fsn394fnka/QTmCe0-vy7';
+$h = new http;
+$h->setProxy('localhost', 666);
+$d = new dropWebLight($repo, $h);
 
+$file_list = 'file_list.json';
 $c['{collapsible}'] = 'false';
 $use_current = isset($_POST['use_current']) && $_POST['use_current'] == 'on';
 $lang['{use_this}'] = '<br/><input type="checkbox" name="use_current" class="use" '.($use_current ? 'checked' : '').'> Использовать текущую?';
@@ -33,10 +39,16 @@ $c = listResult('options', $i, $c);
 $i->check('e|w', $c['{install_path}']) ? $i->step('install_path', true) : $i->step('install_path', false);
 $c = listResult('perms', $i, $c);
 
+if(!$i->check('e|r|f', DIR.$file_list)) {
+	$d->get($file_list, DIR);
+}
 if($i->check('e|r|f', DIR.$file_list)) {
 	$i->step('dist', true);
 	$files = json_decode(file_get_contents(DIR.$file_list), 1);
-	$i->check('e|r|f', $files);
+	if(!$i->check('e|r|f', $files['files'])) { //TODO: add button download files
+		$d->get($files['files'], DIR);
+		$i->check('e|r|f', $files['files']);
+	}
 } else {
 	$i->step('dist', false);
 }
@@ -114,7 +126,7 @@ function listResult($section, $i, $c = '') {
 	$c['{'.$section.'_check_result}'] = !isset($c['{'.$section.'_check_result}']) ? '' : $c['{'.$section.'_check_result}'];
 	$status = 1;
 	$results = $i->get('check_result');
-	$results['object'] = $results['object'][0] == '{' && $results['object'][strlen($results['object'])-1] == '}' ? json_decode($results['object'], 1) : $results['object'];
+	$results['object'] = isset($results['object'][0]) && $results['object'][0] == '{' && $results['object'][strlen($results['object'])-1] == '}' ? json_decode($results['object'], 1) : $results['object'];
 	foreach($results as $key => $result) {
 		if($key == 'object') { continue; }
 		if(is_array($results['object']) && !isset($results['object']['name'])) {

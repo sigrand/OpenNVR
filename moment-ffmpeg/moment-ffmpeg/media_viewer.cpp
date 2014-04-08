@@ -341,7 +341,7 @@ MediaViewer::rtmpStartWatching (ConstMemory        const stream_name,
                                 Ref<VideoStream> * const mt_nonnull ret_stream,
                                 void             * const _session)
 {
-    logD (viewer, _func, "session 0x", fmt_hex, (UintPtr) _session, ", stream_name: ", stream_name_with_params);
+    logD (viewer, _func, "session 0x", fmt_hex, (UintPtr) _session, ", stream_name: ", stream_name, ", stream_name_with_params: ", stream_name_with_params);
 
     Session * const session = static_cast <Session*> (_session);
 

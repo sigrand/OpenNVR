@@ -25,7 +25,15 @@
 						<label class="col-sm-4 control-label" for="Settings_option"><?php echo $model->option; ?></label>
 						<div class="col-sm-8">
 							<?php echo $form->hiddenField($model, '['.$k.']id'); ?>
-							<?php echo $model->option == 'style' ? $form->dropDownList($model, '['.$k.']value', Settings::model()->getStyles(), array('class' => 'form-control')) : $form->textField($model, '['.$k.']value', array('class' => 'form-control')); ?>
+							<?php
+							if($model->option == 'style') {
+								echo $form->dropDownList($model, '['.$k.']value', Settings::model()->getStyles(), array('class' => 'form-control'));
+							} elseif ($model->option == 'index') {
+								echo $form->dropDownList($model, '['.$k.']value', array('map' => 'map', 'list' => 'list'), array('class' => 'form-control'));
+							} else {
+								echo $form->textField($model, '['.$k.']value', array('class' => 'form-control'));
+							}
+							?>
 						</div>
 						<div class="col-sm-offset-4 col-sm-8">
 							<?php echo $form->error($model, '['.$k.']value'); ?>
