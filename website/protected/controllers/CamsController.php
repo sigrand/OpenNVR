@@ -197,7 +197,7 @@ class CamsController extends Controller {
 		}
 		if(isset($_POST['Cams'])) {
 			$model->attributes = $_POST['Cams'];
-			$model->id = Cams::model()->getRealId($model->id);
+			$model->id = Cams::model()->getRealId($id);
 			$model->user_id = Yii::app()->user->getId();
 			if($model->validate()) {
 				$momentManager = new momentManager($model->server_id);
