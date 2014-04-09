@@ -251,7 +251,11 @@ var markers_cluster = new L.MarkerClusterGroup();
 					provider: new L.GeoSearch.Provider.OpenStreetMap()
 				}).addTo(map);
 			}
-			map.fitBounds(L.latLngBounds(cams_markers));
+			if (cams_markers.length) {
+				map.fitBounds(L.latLngBounds(cams_markers));
+			} else {
+				map.fitWorld();
+			}
 		});
 
 		for (i=1;i<=4;i++) {
