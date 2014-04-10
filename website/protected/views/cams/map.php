@@ -135,12 +135,13 @@
 </div> <!-- carousel and map wrapper div end -->
 
 <script>
-	var carousel_cams = [];
+	var carousel_cams = {};
 	var carousel_position = 0;
 	var server_ip = "";
 	var server_port = "";
 	var cam_id = "";
 	var cams = [];
+	var cams_hashes = {};
 	var servers = [];
 	var ports = [];
 	var cams_markers = [];
@@ -152,13 +153,15 @@
 	function flashInitialized() {
 		if (cam_id != "") {
 			// for popup player;
-			document["MyPlayer"].setSource('rtmp://' + server_ip + ':' + server_port + '/live/', cam_id+"_low", cam_id);
-			document.getElementById("open_link").href="<?php echo $this->createUrl('cams/fullscreen', array('full' => 1, 'id' => '')); ?>/"+cam_id;
+			document["MyPlayer"].setSource('rtmp://' + server_ip + ':' + server_port + '/live/', cams_hashes[cam_id].low, cams_hashes[cam_id].high);
+			document.getElementById("open_link").href="<?php echo $this->createUrl('cams/fullscreen', array('full' => 1, 'id' => '')); ?>/"+cams_hashes[cam_id].high;
 			cam_id = "";
 		} else {
 			// for carousel players
 			for (i=1;i<=4;i++) {
-				document["MyPlayer"+i].setSource('rtmp://' + servers[i] + ':' + ports[i] + '/live/', carousel_cams[i]+"_low", carousel_cams[i]);
+				document["MyPlayer"+i].setSource('rtmp://' + cams_hashes[carousel_cams[i]].server_ip + ':' 
+						+ cams_hashes[carousel_cams[i]].server_port + '/live/', cams_hashes[carousel_cams[i]].low,
+						 cams_hashes[carousel_cams[i]].high);
 			}
 		}
 	}
@@ -200,6 +203,10 @@ var markers_cluster = new L.MarkerClusterGroup();
 					$server = $servers[$cam->server_id];
 				}
 		?>
+				cams_hashes["<?php echo $cam->id; ?>"] = {low:"<?php echo $cam->getSessionId(true); ?>",
+						server_ip:"<?php echo $server->ip; ?>",
+						server_port:"<?php echo $server->l_port; ?>",
+						high:"<?php echo $cam->getSessionId(false); ?>"};
 				cams.push(<?php echo "\"$cam->id\""; ?>);
 				servers.push("<?php echo $server->ip; ?>");
 				ports.push("<?php echo $server->l_port; ?>");
