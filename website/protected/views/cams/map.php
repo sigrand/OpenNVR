@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/l.geosearch.css" />
 
 <div style="display:none;">
-<div id="MyPlayer_div" style="width:300px;height:168px;">
+<div id="MyPlayer_div" style="width:640px;height:360px;z-index:1000;">
                 <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer"
                 align="middle">
                 <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
@@ -56,7 +56,7 @@
 	<?php
 		for ($i=1; $i<=4; $i++) {
 	?>
-	<div class="col-sm-12 carousel_players" style="padding:0px" id="player_<?php echo "$i\""; ?>>
+	<div class="col-sm-12 carousel_players" style="width:10px;height:10px;padding:0px" id="player_<?php echo "$i\""; ?>>
                 <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo "$i\""; ?>
                 align="middle">
                 <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
@@ -250,7 +250,7 @@ var markers_cluster = new L.MarkerClusterGroup();
 				map.addLayer(osm);
 				map.addControl(new L.Control.Layers({'OSM':osm, "Yandex":yndx, "Google":googleLayer}));
 				$.each(markers, function(key, val) {
-					val.bindPopup(document.getElementById("MyPlayer_div"));
+					val.bindPopup(document.getElementById("MyPlayer_div"), {maxWidth:'640px', maxHeight:'360px'});
 					view_areas[key].addTo(map);
 				});
 				map.addLayer(markers_cluster);
@@ -268,8 +268,8 @@ var markers_cluster = new L.MarkerClusterGroup();
 		for (i=1;i<=4;i++) {
 			$("#on_MyPlayer"+i).click(function(){
 				cam_id = carousel_cams[this.id.substring(11)];
-				server_ip = servers[i];
-				server_port = ports[i];
+				server_ip = cams_hashes[cam_id].server_ip;
+				server_port = cams_hashes[cam_id].server_port;
 				markers_cluster.zoomToShowLayer(markers[cam_id], function() {
 					markers[cam_id].openPopup();
 				});
@@ -326,5 +326,6 @@ var markers_cluster = new L.MarkerClusterGroup();
 			console.log("carousel_position="+carousel_position);
 			flashInitialized();
 		});
+		flashInitialized();
 	});
 	</script>
