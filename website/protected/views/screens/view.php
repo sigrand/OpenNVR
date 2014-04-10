@@ -11,28 +11,6 @@ else
 			<div style="width:100%;">
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/player/js/jquery-1.10.2.js"></script>
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/player/js/flowplayer-3.2.13.min.js"></script>
-<script type="text/javascript">
-
-	var hide_buttons_timer = [];
-	function hidebutton(i) {
-		$("#archive_button_"+i).hide();
-	}
-	function flashInitialized() {
-		for (i=1; i<=16; i++) {
-			document["MyPlayer"+i].setSource(<?php echo '"rtmp://'.Yii::app()->params['moment_server_ip'].':'.Yii::app()->params['moment_live_port'].'/live/"'; ?>, document["MyPlayer"+i].attributes.cam_id.value+"_low", document["MyPlayer"+i].attributes.cam_id.value);
-			$("#player"+i).mousemove(function() {
-				id = this.id.substring(6);
-				$("#archive_button_"+id).show();
-				if (hide_buttons_timer[id]) {
-					clearInterval(hide_buttons_timer[id]);
-					hide_buttons_timer[id] = setInterval("hidebutton("+id+");", 5000);
-				}
-			});
-			hide_buttons_timer[i] = setInterval ("hidebutton("+i+");", 5000);
-		}
-	}
-
-</script>
 
 <?php
 
@@ -55,6 +33,7 @@ else
 		15 => "#800080",
 		16 => "#808000",
 	);
+	$players = "";
 	for ($i=1; $i <= 16; $i++) {
 		eval("\$id=\$model->cam${i}_id;");
 		eval("\$x=\$model->cam${i}_x;");
@@ -63,6 +42,16 @@ else
 		eval("\$h=\$model->cam${i}_h;");
 		eval("\$descr=\$model->cam${i}_descr;");
 		if (($w > 0) && ($h > 0)) {
+			$cam = Cams::model()->findByPK($id);
+			$stream = $cam->getSessionId();
+			$stream_low = $cam->getSessionId(true);
+			if(isset($servers[$cam->server_id])) {
+			$server = $servers[$cam->server_id];
+			} else {
+			$server = $servers[$cam->server_id] = Servers::model()->findByPK($cam->server_id);
+			}
+			$players .= 'document["MyPlayer'.$i.'"].setSource("rtmp://'.$server->ip.':'.$server->l_port.'/live/", "'.$stream_low.'", "'.$stream.'");'."\n";
+
 			echo '<div class="cams" id="player'.$i.'" href="'.$id.'" style="background-color:'.$colors[$i].';';
 			echo ' position:absolute;width:'.$w.'%;height:'.$h.'%;left:'.$x.'%;top:'.$y.'%;">';
 ?>
@@ -94,7 +83,7 @@ else
 				type="application/x-shockwave-flash"
 				pluginspage="http://www.macromedia.com/go/getflashplayer"
 				/>
-				<?php echo CHtml::link("<img src='".Yii::app()->request->baseUrl."/images/archive.png' style='width:50px;height:50px;position:absolute;top:10px;left:10px;z-index:1'></img>", $this->createUrl('/cams/fullscreen/id/'.$id), array("id" => "archive_button_".$i, 'target' => '_blank')); ?>
+				<?php echo CHtml::link("<img src='".Yii::app()->request->baseUrl."/images/archive.png' style='width:50px;height:50px;position:absolute;top:10px;left:10px;z-index:1'></img>", $this->createUrl('/cams/fullscreen/id/'.$stream), array("id" => "archive_button_".$i, 'target' => '_blank')); ?>
 				</object>
 
 				<?php
@@ -107,10 +96,28 @@ else
 	</div>
 </div>
 </div>
+
 <script type="text/javascript">
 
-function flashInitialized() {
-	<?php echo $players; ?>
-}
+	var hide_buttons_timer = [];
+	function hidebutton(i) {
+		$("#archive_button_"+i).hide();
+	}
+	function flashInitialized() {
+		<?php echo $players; ?>
+		for (i=1; i<=16; i++) {
+			$("#player"+i).mousemove(function() {
+				id = this.id.substring(6);
+				$("#archive_button_"+id).show();
+				if (hide_buttons_timer[id]) {
+					clearInterval(hide_buttons_timer[id]);
+					hide_buttons_timer[id] = setInterval("hidebutton("+id+");", 5000);
+				}
+			});
+			hide_buttons_timer[i] = setInterval ("hidebutton("+i+");", 5000);
+		}
+	}
+
+</script>
 
 </script>
