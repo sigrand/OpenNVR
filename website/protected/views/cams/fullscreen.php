@@ -263,7 +263,7 @@ function updatePlaylist() {
                         $.ajax({
                             cache: false,
                             type: "GET",
-                            url: "<?php echo $this->createUrl('cams/existence', array('id' => $cam->server_id)); ?>/" + stream_name,
+                            url: "<?php echo $this->createUrl('cams/existence', array('id' => $cam->server_id)); ?>/" + '<?php echo $cam->getRealId($cam->getSessionId($low)); ?>',
                             contentType: "application/json",
                             dataType: "json",
                             data: null,
@@ -715,7 +715,7 @@ $this->widget('zii.widgets.jui.CJuiDatePicker',
                         slide: function(event, ui) {
                             $('.downtime').text(parseInt(ui.value[0]/1000));
                             var t = new Date(parseInt(ui.values[0]*1000));
-                            $('.downlink').text('" . $down . $cam->getSessionId() . "&start='+ parseInt(ui.values[0]) + '&end=' + parseInt(ui.values[1]));
+                            $('.downlink').text('" . $down . $cam->getRealId($cam->getSessionId($low)) . "&start='+ parseInt(ui.values[0]) + '&end=' + parseInt(ui.values[1]));
                             $('#mnv').text(beatiful(t.getHours()) + ':' + beatiful(t.getMinutes()) + ':' + beatiful(t.getSeconds()));
                             t = new Date(parseInt(ui.values[1]*1000));
                             $('#mxv').text(beatiful(t.getHours()) + ':' + beatiful(t.getMinutes()) + ':' + beatiful(t.getSeconds()));
@@ -840,7 +840,7 @@ $this->widget('zii.widgets.jui.CJuiDatePicker',
         $('#download-button').bind('click', function () {
             minChange('#ddtpckr', 1);
             minChange('#sddtpckr', 0);
-            $('.downlink').text('<?php echo $down.$cam->getSessionId(); ?>&start=' + parseInt($('.mindate').text() / 1000) + '&end=' + parseInt($('.maxdate').text() / 1000));
+            $('.downlink').text('<?php echo $down.$cam->getRealId($cam->getSessionId($low)); ?>&start=' + parseInt($('.mindate').text() / 1000) + '&end=' + parseInt($('.maxdate').text() / 1000));
             $('#download-dialog').dialog("open");
         });
 
@@ -912,7 +912,6 @@ $this->widget('zii.widgets.jui.CJuiDatePicker',
            window.location.href = $('.downlink').text();
         }
     }
-
 </script>
 </body>
 </html>
