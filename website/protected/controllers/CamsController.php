@@ -60,20 +60,26 @@ class CamsController extends Controller {
 			$response['id'] = 'empty or invalid ip';
 			$this->renderJSON($response);
 		}
-		$id = Sessions::model()->findByAttributes(array('session_id' => $id), array('select' => 'real_id, ip'));
-		if($id) {
-			$cam = Cams::model()->findByPK($id->real_id);
+		$session_id = Sessions::model()->findByAttributes(array('session_id' => $id), array('select' => 'real_id, ip'));
+		if($session_id) {
+			$cam = Cams::model()->findByPK($session_id->real_id);
 			if($cam->is_public) {
 				$response['result'] = 'success';
-				$response['id'] = $id->real_id;
+				$response['id'] = $session_id->real_id;
 			} elseif($id->ip == $clientAddr) {
 				$response['result'] = 'success';
-				$response['id'] = $id->real_id;
+				$response['id'] = $session_id->real_id;
 			} else {
 				$response['id'] = 'huge fail';
 			}
 		} else {
-			$response['id'] = 'huge fail';
+			$cam = Cams::model()->findByPK($id);
+			if ($cam && $cam->is_public) {
+				$response['result'] = 'success';
+				$response['id'] = $id;
+			} else {
+				$response['id'] = 'huge fail';
+			}
 		}
 		$this->renderJSON($response);
 	}
