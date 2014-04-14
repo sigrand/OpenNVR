@@ -22,7 +22,7 @@ class AdminController extends Controller {
 
 	public function actionCheckUpdate() {
 		$result = array();
-		Yii::import('ext.cloudDrivers.index', 1);
+		Yii::import('ext.Updater.index', 1);
 		$d = new driversManager;
 		if(!$d->init()) {
 			$this->redirect($this->createUrl('admin/updater'));
@@ -48,8 +48,38 @@ class AdminController extends Controller {
 		$this->redirect($this->createUrl('admin/updater'));
 	}
 
+	public function actionUpdateSQLVersion() {
+		$result = array();
+		Yii::import('ext.Updater.index', 1);
+		$d = new driversManager;
+		if(!$d->init()) {
+			$this->redirect($this->createUrl('admin/updater'));
+			Yii::app()->end();
+		}
+		$versions = $d->getVersions(1);
+		if(!$versions) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update checking failed. Repo access problem')));
+			$this->redirect($this->createUrl('admin/updater'));	
+			Yii::app()->end();
+		}
+		$model = Settings::model()->findByAttributes(array('option' => 'SQLversion'));
+		if($versions['SQLversion'] == $model->value) {
+			Yii::app()->user->setFlash('notify', array('type' => 'warning', 'message' => Yii::t('admin', 'No new version')));	
+			$this->redirect($this->createUrl('admin/updater'));	
+			Yii::app()->end();
+		}
+		$filename = $d->getLast('SQLversion');
+		if(updaterHelper::update($filename)) {
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! updated')));
+		} else {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Fail, cant execute update file')));
+		}
+		Yii::app()->user->setFlash('versions', json_encode($result));
+		$this->redirect($this->createUrl('admin/updater'));
+	}
+
 	public function actionUpdater() {
-		Yii::import('ext.cloudDrivers.index', 1);
+		Yii::import('ext.Updater.index', 1);
 		$d = new driversManager;
 		$versions = $d->getVersions(1);
 		Yii::app()->user->setFlash('versions', json_encode($versions));
