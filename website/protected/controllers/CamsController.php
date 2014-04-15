@@ -66,7 +66,7 @@ class CamsController extends Controller {
 			if($cam->is_public) {
 				$response['result'] = 'success';
 				$response['id'] = $session_id->real_id;
-			} elseif($id->ip == $clientAddr) {
+			} elseif($session_id->ip == $clientAddr) {
 				$response['result'] = 'success';
 				$response['id'] = $session_id->real_id;
 			} else {
