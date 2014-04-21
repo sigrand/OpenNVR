@@ -25,6 +25,8 @@
 #include <moment/moment_request_handler.h>
 #include <json/json.h>
 
+#define HASHSIZE 32
+
 using namespace M;
 
 namespace Moment {
@@ -320,7 +322,10 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
 	std::string strId;
     if(this->m_bValidationOn)
     {
+        memChannelName = ConstMemory();
+
         StRef<String> str_id = st_makeString(ConstMemory (vs_name_buf, vs_name_len));
+        logD(rtmp_server, _func_, "str_id is [", str_id, "]");
         std::string args = "/";
         std::string sUri = std::string("http:\/\/") + m_validatorAddr + args;
 
@@ -339,30 +344,35 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
 		{
 			id = id_raw;
 		}
-        root_req["id"] = id;
-        std::string sRequest = std::string("data=") + json_writer_styled.write(root_req);
-        logD(rtmp_server, _func_, "sRequest : [", sRequest.c_str(), "]");
-
-        std::string sResponse;
-
-        memChannelName = ConstMemory();
-        if(doRequest(sUri, sRequest, sResponse))
+        if(id.length() == HASHSIZE)
         {
-            Json::Reader reader;
-            Json::Value root_resp;
-            bool parseSuccess = reader.parse(sResponse, root_resp, false);
-            if(parseSuccess)
-            {
-                logD(rtmp_server, _func_, "result = ", root_resp["result"].asString().c_str());
-                if(root_resp["result"].asString().compare("success") == 0)
-                {
-                    strId = root_resp["id"].asString();
-					strId += idRest;
-                    logD(rtmp_server, _func_, "id = ", strId.c_str());
-                }
+            root_req["id"] = id;
+            std::string sRequest = std::string("data=") + json_writer_styled.write(root_req);
+            logD(rtmp_server, _func_, "sRequest : [", sRequest.c_str(), "]");
 
-                memChannelName = ConstMemory(strId.c_str(), strId.size());
+            std::string sResponse;
+            if(doRequest(sUri, sRequest, sResponse))
+            {
+                Json::Reader reader;
+                Json::Value root_resp;
+                bool parseSuccess = reader.parse(sResponse, root_resp, false);
+                if(parseSuccess)
+                {
+                    logD(rtmp_server, _func_, "result = ", root_resp["result"].asString().c_str());
+                    if(root_resp["result"].asString().compare("success") == 0)
+                    {
+                        strId = root_resp["id"].asString();
+                        strId += idRest;
+                        logD(rtmp_server, _func_, "id = ", strId.c_str());
+                    }
+
+                    memChannelName = ConstMemory(strId.c_str(), strId.size());
+                }
             }
+        }
+        else
+        {
+            logE_(_func_, "validation failed, source name length is not ", HASHSIZE);
         }
     }
 
