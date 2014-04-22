@@ -514,16 +514,9 @@ function doResize() {
              style="width: 15%; height: 100%; background-color: #fff; border-left: 1px solid #222222; overflow: auto; position: absolute; bottom: 0px; right: 0px;">
             <div style="padding: 1.2em; border-bottom: 5px solid #444444; vertical-align: bottom; text-align: center">
                 <span style="font-size: large; font-weight: bold; color: #777777"><?php echo $cam->name; ?></span>
-                <br/>
-                real_id: <?php echo $cam->id; ?><br/>
-                ip: <?php echo Yii::app()->user->user_ip; ?><br/>
-                session_id: <?php echo $cam->getSessionId($low); ?><br/>
-                check_url: <?php echo CHtml::link('check', $this->createUrl('cams/check', array('id' => $cam->getSessionId($low), 'clientAddr' => Yii::app()->user->user_ip))); ?>
-                <br/>
             </div>
             <div style="padding: 1.2em; border-bottom: 5px solid #444444; vertical-align: bottom; text-align: center">
-                <span
-                    style="font-size: large; font-weight: bold; color: #777777"><?php echo Yii::t('cams', 'Archive'); ?></span>
+                <span style="font-size: large; font-weight: bold; color: #777777"><?php echo Yii::t('cams', 'Archive'); ?></span>
             </div>
             <div id="menuArchiveList" style="width: 100%">
             </div>
@@ -544,8 +537,7 @@ function doResize() {
         <div id="progressButton" class="progressButton"
              style="position: absolute;background-color: #aaa; width: calc(100% - <?php echo $this->showArchive ? '15' : '0'; ?>%); height: 40px; bottom: 0px">
             <div style="float: left; height: 100%; padding-left: 5px">
-                <table border="0" cellpadding="0" cellspacing="0"
-                       style="height: 100%; margin-left: auto; margin-right: auto">
+                <table border="0" cellpadding="0" cellspacing="0" style="height: 100%; margin-left: auto; margin-right: auto">
                     <tr>
                         <td>
                             <div id="play-position" class="play-position" style="color: #dddddd"></div>
@@ -553,8 +545,7 @@ function doResize() {
                         <td style="padding-left: 10px; padding-right: 10px">
                             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
                                 <tr>
-                                    <td id="rec-button"
-                                        class="go-button rec-button-<?php echo !$cam->record ? 'on' : 'off'; ?>">
+                                    <td id="rec-button" class="go-button rec-button-<?php echo !$cam->record ? 'on' : 'off'; ?>">
                                         <?php echo Yii::t('cams', 'Record {record status}', array('{record status}' => $cam->record ? Yii::t('cams', 'on') : Yii::t('cams', 'off'))); ?>
                                     </td>
                                 </tr>
@@ -564,8 +555,7 @@ function doResize() {
                 </table>
             </div>
             <div style="float: right; height: 100%">
-                <table border="0" cellpadding="0" cellspacing="0"
-                       style="height: 100%; padding-left: 1ex; padding-right: 0px">
+                <table border="0" cellpadding="0" cellspacing="0" style="height: 100%; padding-left: 1ex; padding-right: 0px">
                     <tr>
                         <td style="padding-left: 15px; padding-right: 5px">
                             <table border="0" cellpadding="0" cellspacing="0" style="height: 28px">
