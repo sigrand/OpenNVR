@@ -66,6 +66,10 @@ struct StatMeasure
     double user_util_min;
     double user_util_max;
     double user_util_avg;
+
+    //HDD measurement
+    std::vector<std::string> devnames;
+    std::vector<double> hdd_utils;
 };
 
 class StatMeasurer: public Object
@@ -83,6 +87,7 @@ public:
 
     bool CheckCPU();
     bool CheckRAM();
+    bool CheckHDD();
 
     StatMeasure GetStatMeasure();
 
@@ -131,13 +136,13 @@ private:
     double m_user_util_all;
     unsigned m_user_util_count;
 
-
+    std::vector<std::string> m_devnames;
+    std::vector<double> m_hdd_utils;
 
 
     static void refreshTimerTickCPURAM (void *_self);
 
     void resetAll();
-
 };
 
 }

@@ -58,6 +58,7 @@ libmoment_ffmpeg_1_0_la_SOURCES =	\
         rec_path_config.cpp             \
         rec_path_config.h               \
         ffmpeg_common.h                 \
+        iostat.h                        \
         inc.h
 
 moment_ffmpeg_win_sources =                                         \

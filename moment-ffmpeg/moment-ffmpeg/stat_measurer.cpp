@@ -12,6 +12,8 @@
 #include <moment-ffmpeg/inc.h>
 #include <moment-ffmpeg/stat_measurer.h>
 
+#include <iostat/iostat.h>
+
 #ifndef PLATFORM_WIN32
 #include <sys/times.h>
 #endif
@@ -124,6 +126,9 @@ StatMeasurer::resetAll()
     m_user_util_max = 0;
     m_user_util_all = 0;
     m_user_util_count = 0;
+
+    m_devnames.clear();
+    m_hdd_utils.clear();
 }
 
 void
@@ -275,6 +280,26 @@ StatMeasurer::CheckCPU()
     return true;
 }
 
+bool
+StatMeasurer::CheckHDD()
+{
+    stat_io * stat_io_ = NULL;
+    int stat_io_size = NULL;
+
+    Get_stat_io(& stat_io_, & stat_io_size);
+
+    m_devnames.clear();
+    m_hdd_utils.clear();
+
+    for(int i=0;i<stat_io_size;i++)
+    {
+        m_devnames.push_back(stat_io_[i].devname);
+        m_hdd_utils.push_back(stat_io_[i].util);
+    }
+
+    Free_stat_io(& stat_io_);
+}
+
 
 StatMeasure StatMeasurer::GetStatMeasure()
 {
@@ -321,11 +346,13 @@ StatMeasure StatMeasurer::GetStatMeasure()
     else
         stm.user_util_avg = 0;
 
+    stm.devnames = m_devnames;
+    stm.hdd_utils = m_hdd_utils;
+
     resetAll();
 
     return stm;
 }
-
 
 void
 StatMeasurer::refreshTimerTickCPURAM (void * const _self)
@@ -334,6 +361,7 @@ StatMeasurer::refreshTimerTickCPURAM (void * const _self)
 
     self->CheckRAM();
     self->CheckCPU();
+    self->CheckHDD();
 }
 
 mt_const void
@@ -345,6 +373,7 @@ StatMeasurer::Init (Timers * const mt_nonnull timers, int time_seconds)
 
     if(time_seconds)
     {
+        Run_iostat();
         this->timer_keyCPURAM = this->timers->addTimer (CbDesc<Timers::TimerCallback> (refreshTimerTickCPURAM, this, this),
                   time_seconds,
                   true /* periodical */,
@@ -392,6 +421,7 @@ StatMeasurer::~StatMeasurer()
     if (this->timer_keyCPURAM) {
         this->timers->deleteTimer (this->timer_keyCPURAM);
         this->timer_keyCPURAM = NULL;
+        Close_iostat();
     }
 }
 

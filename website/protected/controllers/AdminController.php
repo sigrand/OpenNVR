@@ -11,6 +11,11 @@ class AdminController extends Controller {
 	public function accessRules() {
 		return array(
 			array('allow',
+				'actions'=>array('users', 'addUser'),
+				'users'=>array('@'),
+				'expression' => 'Yii::app()->user->permissions == 2'
+				),
+			array('allow',
 				'users' => array('@'),
 				'expression' => 'Yii::app()->user->isAdmin'
 				),
@@ -78,13 +83,46 @@ class AdminController extends Controller {
 		$this->redirect($this->createUrl('admin/updater'));
 	}
 
+	public function actionUpdateVersion() {
+		$result = array();
+		Yii::import('ext.Updater.index', 1);
+		$d = new driversManager;
+		if(!$d->init()) {
+			$this->redirect($this->createUrl('admin/updater'));
+			Yii::app()->end();
+		}
+		$versions = $d->getVersions(1);
+		if(!$versions) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update checking failed. Repo access problem')));
+			$this->redirect($this->createUrl('admin/updater'));	
+			Yii::app()->end();
+		}
+		$model = Settings::model()->findByAttributes(array('option' => 'version'));
+		if($versions['version'] == $model->value) {
+			Yii::app()->user->setFlash('notify', array('type' => 'warning', 'message' => Yii::t('admin', 'No new version')));	
+			$this->redirect($this->createUrl('admin/updater'));	
+			Yii::app()->end();
+		}
+		$filename = $d->getLast('version');
+		//updaterHelper::update($filename, 'files');
+		//*
+		if(updaterHelper::update($filename, 'files')) {
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! updated')));
+		} else {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Fail, cant execute update file')));
+		}
+		Yii::app()->user->setFlash('versions', json_encode($result));
+		$this->redirect($this->createUrl('admin/updater'));
+		//*/
+	}
+
 	public function actionUpdater() {
 		Yii::import('ext.Updater.index', 1);
 		$d = new driversManager;
 		$versions = $d->getVersions(1);
 		Yii::app()->user->setFlash('versions', json_encode($versions));
 		$params = array('version', 'SQLversion');
-		foreach ($params as $value) {
+		foreach($params as $value) {
 			$model = Settings::model()->findByAttributes(array('option' => $value));
 			if(!$model) {
 				$model = new Settings;
@@ -94,7 +132,7 @@ class AdminController extends Controller {
 			}
 			$models[] = $model;
 		}
-		$this->render('updater', array('models' => $models));
+		$this->render('updater', array('models' => $models, 'last_check' => updaterHelper::lastCheck()));
 	}
 	
 	public function actionSettings() {
@@ -296,10 +334,11 @@ class AdminController extends Controller {
 		$pages->applyLimit($criteria);
 		$all = Users::model()->findAll($criteria);
 		$this->render(
-			'users/index',
+			Yii::app()->user->permissions == 2 ? 'users/oper' : 'users/index',
 			array(
 				'form' => new UsersForm,
 				'admins' => $admins,
+				'operators' => $operators,
 				'viewers' => $viewers,
 				'banned' => $banned,
 				'all' => $all,
@@ -318,10 +357,13 @@ class AdminController extends Controller {
 			);
 		foreach ($this->userActions as $key => $value) {
 			if(isset($actions[$key])) {
-				if ($key === 'levelup') {
+				if($key == 'levelup' && Yii::app()->user->permissions == 3) {
 					$user->status++;
+				} elseif($key == 'dismiss' && Yii::app()->user->permissions == 3) {
+					$user->status--;
+				} else {
+					$user->status = $value[0];
 				}
-				$user->status = $value[0];
 				if($user->save()) {
 					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Users {action}', array('{action}' => $value[1]))));
 					return;
@@ -337,6 +379,20 @@ class AdminController extends Controller {
 			$logs = Notifications::model()->findAll(array('condition' => 'creator_id > 0', 'order' => 'time DESC'));
 		}
 		$this->render('logs/index', array('type' => $type, 'logs' => $logs));
-
 	}
+
+	public function actionAddUser() {
+		$model = new UserForm;
+		if(isset($_POST['UserForm'])) {
+			$model->attributes = $_POST['UserForm'];
+			if($model->validate() && $model->register()) {
+				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'User added')));
+				$this->redirect(array('users'));
+			} else {
+				Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'User not added')));
+			}
+		}
+		$this->render('users/edit', array('model' => $model));
+	}
+
 }

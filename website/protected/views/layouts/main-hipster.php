@@ -31,6 +31,14 @@
 						?>
 					</li>
 					<?php if(!Yii::app()->user->isGuest) { ?>
+					<?php if(Yii::app()->user->permissions == 2) { ?>
+					<li class="dropdown">
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><?php echo Yii::t('menu', 'Manage'); ?> <b class="caret"></b></a>
+						<ul class="dropdown-menu">
+							<li><?php echo CHtml::link(Yii::t('menu', 'Users'), $this->createUrl('admin/users')); ?></li>
+						</ul>
+					</li>
+					<?php } ?>
 					<?php if(Yii::app()->user->isAdmin) { ?>
 					<li class="dropdown">
 						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><?php echo Yii::t('menu', 'Admin'); ?> <b class="caret"></b></a>
