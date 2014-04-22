@@ -44,6 +44,9 @@ class driversManager {
 				$data = UpdaterHelper::get('versions.json', 0, 1);
 				if(isset($data['files'][$what]) && !empty($data['files'][$what])) {
 					if(in_array($data['files'][$what], array_keys($files))) {
+						if(file_exists(TMP.$data['files'][$what])) {
+							return $data['files'][$what];
+						}
 						if($this->driver->get($data['files'][$what], TMP)) {
 							return $data['files'][$what];
 						}

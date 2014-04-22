@@ -5,7 +5,11 @@
 		<div class="panel-body">
 			<?php
 			if(!isset($activation)) {
-				echo Yii::t('register', 'Registration was successful.<br/>To use your account, you need to confirm your email address.<br/>Confirmation code sent to your email.<br/>');
+				if(Settings::model()->getValue('mail_confirm')) {
+					echo Yii::t('register', 'Registration was successful.<br/>To use your account, you need to confirm your email address.<br/>Confirmation code sent to your email.<br/>');
+				} else {
+					echo Yii::t('register', 'Registration was successful.<br/>');
+				}
 				echo CHtml::link(Yii::t('register', 'Go to site'), Yii::app()->createUrl('site/index'));
 			} elseif($activation == 1) {
 				echo Yii::t('register', 'This user already confirmed his email address.');

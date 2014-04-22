@@ -9,3 +9,5 @@
 			),
 веб базу сам не создает, ее нужно создать руками (phpmyadmin, ad.php, wso.php)
 файл для импорта БД nvr.sql, в ней один пользователь admin@admin.admin admin
+
+

@@ -181,16 +181,15 @@ CREATE TABLE IF NOT EXISTS `settings` (
   UNIQUE KEY `option` (`option`)
 ) ENGINE=MyISAM AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
--- Дамп данных таблицы cams.settings: 5 rows
-/*!40000 ALTER TABLE `settings` DISABLE KEYS */;
 INSERT INTO `settings` (`id`, `option`, `value`) VALUES
-  (1, 'style', 'default'),
-  (2, 'version', '0.8712'),
-  (3, 'index', 'list'),
+  (1, 'style', 'hipster'),
+  (2, 'version', '0.1'),
+  (3, 'index', 'map'),
   (4, 'recovery', 'recovery@camshot.ru'),
-  (5, 'register', 'register@camshot.ru');
-/*!40000 ALTER TABLE `settings` ENABLE KEYS */;
-
+  (5, 'register', 'register@camshot.ru'),
+  (6, 'SQLversion', '0.1'),
+  (7, 'repo', 'http://qps.ru/mR3pY'),
+  (8, 'mail_confirm', '1');
 
 -- Дамп структуры для таблица cams.shared
 DROP TABLE IF EXISTS `shared`;

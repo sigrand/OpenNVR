@@ -10,7 +10,7 @@
 		<?php } ?>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo  Yii::t('admin', 'Updater'); ?></h3>
+				<h3 class="panel-title"><?php echo Yii::t('admin', 'Updater last check: {last_check_time}', array('{last_check_time}' => $last_check ? $last_check : Yii::t('admin', 'Not checked'))); ?></h3>
 			</div>
 			<div class="panel-body">
 				<?php

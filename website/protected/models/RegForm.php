@@ -35,6 +35,11 @@ class RegForm extends CFormModel {
 		$user->salt = $salt;
 		$user->pass = crypt(trim($this->pass).$salt);
 		if($user->validate() && $user->save()) {
+			if(!Settings::model()->getValue('mail_confirm')) {
+				$user->status = 1;
+				$user->save();
+				return 1;
+			}
 			Yii::import('ext.YiiMailer.YiiMailer');
 			$code = md5(md5($user->pass.$user->email));
 			$mail = new YiiMailer();
@@ -53,8 +58,6 @@ class RegForm extends CFormModel {
 					)
 				);
 				$mail->send();
-			//print_r($mail->getError());
-			///die();
 				return 1;
 			}
 		}

@@ -12,7 +12,7 @@
 #include <moment-ffmpeg/inc.h>
 #include <moment-ffmpeg/stat_measurer.h>
 
-#include <moment-ffmpeg/iostat.h>
+#include <iostat/iostat.h>
 
 #ifndef PLATFORM_WIN32
 #include <sys/times.h>

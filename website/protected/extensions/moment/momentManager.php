@@ -86,7 +86,7 @@ class momentManager {
     public function stat($type) {
         $result = $this->moment->stat($type);
         if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not get statistics type: {type}'), array('{type}' => $type));
+            Notify::note(Yii::t('errors', 'Can not get statistics type: {type}', array('{type}' => $type)));
         }
         return $result;
     }

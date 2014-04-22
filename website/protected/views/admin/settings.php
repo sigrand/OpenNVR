@@ -30,6 +30,8 @@
 								echo $form->dropDownList($model, '['.$k.']value', Settings::model()->getStyles(), array('class' => 'form-control'));
 							} elseif ($model->option == 'index') {
 								echo $form->dropDownList($model, '['.$k.']value', array('map' => 'map', 'list' => 'list'), array('class' => 'form-control'));
+							} elseif ($model->option == 'mail_confirm') {
+								echo $form->checkBox($model, '['.$k.']value', array('class' => 'form-control'));
 							} else {
 								echo $form->textField($model, '['.$k.']value', array('class' => 'form-control'));
 							}
