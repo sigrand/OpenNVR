@@ -3,8 +3,8 @@
 ?>
 <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
 <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
-<script src="/js/leaflet/leaflet.draw.js"></script>
-<link rel="stylesheet" href="/css/leaflet.draw.css" />
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/leaflet.draw.js"></script>
+<link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/leaflet.draw.css" />
 
 <div class="col-sm-12">
 	<div class="panel panel-default">
@@ -215,7 +215,7 @@ if(Yii::app()->user->hasFlash('notify')) {
 		var popup = L.popup();
 		var LeafIcon = L.Icon.extend({
 			options: {
-				shadowUrl: '/images/shadow.png',
+				shadowUrl: '<?php echo Yii::app()->request->baseUrl; ?>/images/shadow.png',
 				iconSize:     [40, 41],
 				shadowSize:   [51, 37],
 				iconAnchor:   [17, 33],
@@ -223,7 +223,7 @@ if(Yii::app()->user->hasFlash('notify')) {
 				popupAnchor:  [0, -10]
 			}
 		});
-		var cam_icon = new LeafIcon({iconUrl: '/images/cam_icon.png'});
+		var cam_icon = new LeafIcon({iconUrl: '<?php echo Yii::app()->request->baseUrl; ?>/images/cam_icon.png'});
 		marker = L.marker([<?php echo $model->coordinates == "" ? "0,0" : "$model->coordinates"; ?>], {icon:cam_icon}).addTo(map);
 		polygon = L.polygon([<?php echo $model->view_area == "" ? "" : "$model->view_area"; ?>], {color:'#2f85cb'}).addTo(map);
 

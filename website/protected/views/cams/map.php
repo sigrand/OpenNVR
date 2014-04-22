@@ -170,7 +170,7 @@
 		var mypopup = L.popup(document.getElementById("MyPlayer_div"));
 var LeafIcon = L.Icon.extend({
 	options: {
-	shadowUrl: '/images/shadow.png',
+	shadowUrl: '<?php echo Yii::app()->request->baseUrl; ?>/images/shadow.png',
 	iconSize:     [40, 41],
 	shadowSize:   [51, 37],
 	iconAnchor:   [17, 33],
@@ -178,7 +178,7 @@ var LeafIcon = L.Icon.extend({
 	popupAnchor:  [0, -10]
 	}
 });
-var cam_icon = new LeafIcon({iconUrl: '/images/cam_icon.png'});
+var cam_icon = new LeafIcon({iconUrl: '<?php echo Yii::app()->request->baseUrl; ?>/images/cam_icon.png'});
 LeafIcon = L.Icon.extend({
 	options: {
 	shadowUrl: '/images/shadow.png',
