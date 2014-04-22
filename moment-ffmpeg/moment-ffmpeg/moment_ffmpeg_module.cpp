@@ -519,7 +519,22 @@ MomentFFmpegModule::statisticsToJson (
          s << "\"CPU utilization\":{\n";
          s << "\"min\":\"" << (*it).second.user_util_min << "\",\n";
          s << "\"max\":\"" << (*it).second.user_util_max << "\",\n";
-         s << "\"avg\":\"" << (*it).second.user_util_avg << "\"}\n";
+         s << "\"avg\":\"" << (*it).second.user_util_avg << "\"},\n";
+
+         s << "\"HDD utilization\":[\n";
+         for(int i=0;i<(*it).second.devnames.size();i++)
+         {
+             s << "{\"devname\":\"" << (*it).second.devnames[i] << "\",\n";
+             s << "\"util\":\"" << (*it).second.hdd_utils[i] << "\"}";
+             if(i+1 != (*it).second.devnames.size())
+             {
+                 s << ",\n";
+             }
+             else
+             {
+                 s << "]\n";
+             }
+         }
 
          std::map<time_t, StatMeasure>::iterator it1 = it;
          it1++;
@@ -1079,6 +1094,85 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             }
         }
     }
+    else if(segments.size() == 2 && (segments[1].compare("alive") == 0))
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
+        std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+
+        logE_(_func_, "channel_name = ", channel_name.c_str());
+
+        self->m_mutex.lock();
+
+        std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
+
+        if (itFFStream == self->m_streams.end())
+        {
+            self->m_mutex.unlock();
+
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << -1; // channel not found
+            out.flush();
+            logA(ffmpeg_module, _func_, "mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        bool bIsRestreaming = itFFStream->second.getRefPtr()->IsRestreaming();
+
+        self->m_mutex.unlock();
+
+        logD(ffmpeg_module, _func, "OK");
+
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        out << bIsRestreaming? 1: 0;
+        out.flush();
+    }
+    else if(segments.size() == 2 && (segments[1].compare("resolution") == 0))
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator channel_name_iter = form.find("stream");
+        std::string channel_name = (channel_name_iter != form.end()) ? channel_name_iter->second: "";
+
+        logE_(_func_, "channel_name = ", channel_name.c_str());
+
+        self->m_mutex.lock();
+
+        std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
+
+        if (itFFStream == self->m_streams.end())
+        {
+            self->m_mutex.unlock();
+
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << 0 << " " << 0; // channel not found
+            out.flush();
+            logA(ffmpeg_module, _func_, "mod_nvr_admin 404 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        stSourceInfo si = itFFStream->second.getRefPtr()->GetSourceInfo();
+
+        self->m_mutex.unlock();
+
+        logD(ffmpeg_module, _func, "OK");
+
+        resp.setStatus(HTTPResponse::HTTP_OK);
+        resp.setContentType("text/html");
+        std::ostream& out = resp.send();
+        for(int i = 0; i < si.videoStreams.size(); i++)
+        {
+            int width = si.videoStreams[i].width;
+            int height = si.videoStreams[i].height;
+            out << width << " " << height << " ";
+        }
+        out.flush();
+    }
     else if(segments.size() == 2 && (segments[1].compare("remove_video") == 0))
     {
         HTMLForm form( req );
@@ -1581,7 +1675,7 @@ MomentFFmpegModule::CreateStatPoint()
     stmRes.packetAmountInOut = ss != 0 ? packAmInOut / ss : 0;
     stmRes.packetAmountInNvr = ss != 0 ? packAmInNvr / ss : 0;
 
-    // CPU RAM
+    // CPU RAM HDD
     StatMeasure stmGeneral = m_statMeasurer.GetStatMeasure();
 
     stmRes.minRAM = stmGeneral.minRAM;
@@ -1592,6 +1686,8 @@ MomentFFmpegModule::CreateStatPoint()
     stmRes.user_util_max = stmGeneral.user_util_max;
     stmRes.user_util_avg = stmGeneral.user_util_avg;
 
+    stmRes.devnames = stmGeneral.devnames;
+    stmRes.hdd_utils = stmGeneral.hdd_utils;
     // timestamp
 
     struct timeval tv;
@@ -1662,7 +1758,22 @@ MomentFFmpegModule::DumpStatInFile()
 
         statToFile << it->second.user_util_min << "|";
         statToFile << it->second.user_util_max << "|";
-        statToFile << it->second.user_util_avg << std::endl;
+        statToFile << it->second.user_util_avg << "|";
+
+        // HDD stat
+        for(int i=0;i<it->second.devnames.size();i++)
+        {
+            statToFile << it->second.devnames[i] << "|";
+            statToFile << it->second.hdd_utils[i];
+            if(i+1 != it->second.devnames.size())
+            {
+                statToFile << "|";
+            }
+            else
+            {
+                statToFile << std::endl;
+            }
+        }
     }
 
     std::ofstream statFile;
@@ -1766,6 +1877,19 @@ MomentFFmpegModule::ReadStatFromFile()
             {
                 std::istringstream iss(tokens[14]);
                 iss >> stm.user_util_avg;
+            }
+            // HDD
+            {
+                int i=15;
+                while(i+1 < tokens.size())
+                {
+                    stm.devnames.push_back(tokens[i]);
+                    double util;
+                    std::istringstream iss(tokens[i+1]);
+                    iss >> util;
+                    stm.hdd_utils.push_back(util);
+                    i+=2;
+                }
             }
             // push to statPoints
             m_statPoints[timestamp] = stm;

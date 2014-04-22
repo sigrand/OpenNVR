@@ -233,3 +233,22 @@ data={'clientAddr':'192.168.10.1', 'id':'1eb41788de895eb7d984b8f22b8b1392'}
 
 response format:
 {'result':'success','id':'cam_1'}
+
+=====================================================================================
+http://192.168.10.21:8080/mod_nvr_admin/alive?stream=104
+RESPONSES:
+-there is no source:
+-1
+-stream is not restreaming:
+0
+-stream is restreaming:
+1
+
+http://192.168.10.21:8080/mod_nvr_admin/resolution?stream=104
+RESPONSES:
+-there is no source:
+0 0
+-source exists:
+1920 1080
+-if videostream of source is more than one:
+1920 1080 640 480

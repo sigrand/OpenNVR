@@ -1224,7 +1224,7 @@ bool FFmpegStream::IsRecording()
 
 bool FFmpegStream::IsRestreaming()
 {
-    return m_bIsRestreaming;
+    return m_bIsRestreaming && m_bIsReallyRestreaming;
 }
 
 int FFmpegStream::WriteB8ToBuffer(Int32 b, MemoryEx & memory)
@@ -1565,6 +1565,7 @@ FFmpegStream::beginPushPacket()
             logD(stream, _func_, "EOS");
 
             m_bIsRestreaming = false;
+            m_bIsReallyRestreaming = false;
 
             eos_pending = true;
 
@@ -1646,6 +1647,7 @@ FFmpegStream::doReleasePipeline ()
     logD(pipeline, _func_);
 
     m_bIsRestreaming = false;
+    m_bIsReallyRestreaming = false;
 
 //    bool const join = (tlocal != libMary_getThreadLocal());
 
@@ -1886,11 +1888,13 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
     else
     {
         logE_(_func_, "it is_not h264_stream");
+        m_bIsReallyRestreaming = false;
         return;
     }
 
     if (skip_frame) {
         logD (frames, _func, "skipping frame");
+        m_bIsReallyRestreaming = false;
         return;
     }
 
@@ -1912,6 +1916,7 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
     if( (sizee = AvcParseNalUnits(ConstMemory(packet.data, packet.size), &localMemory)) < 0 )
     {
         logE_ (_func, "AvcParseNalUnits fails");
+        m_bIsReallyRestreaming = false;
         return;
     }
 
@@ -1948,6 +1953,8 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
 
     video_stream->fireVideoMessage (&msg);
     logD(frames, _func, "fireVideoMessage succeed, msg.msg_len=", msg.msg_len, ", msg.timestamp_nanosec=", msg.timestamp_nanosec);
+
+    m_bIsReallyRestreaming = true;
 
     page_pool->msgUnref (page_list.first);
 
@@ -2070,6 +2077,7 @@ void FFmpegStream::doAudioData(AVPacket & packet, const AVStream & stream)
     if(audio_codec_id == VideoStream::AudioCodecId::Unknown)
     {
         // TODO: need to support this codec, now we skip audio packets
+        m_bIsReallyRestreaming = false;
         return;
     }
 
@@ -2150,7 +2158,11 @@ void FFmpegStream::doAudioData(AVPacket & packet, const AVStream & stream)
     }
 
     if(skip_frame)
+    {
+        logD (frames, _func, "skipping frame");
+        m_bIsReallyRestreaming = false;
         return;
+    }
 
     {
         Size msg_len = 0;
@@ -2196,6 +2208,7 @@ void FFmpegStream::doAudioData(AVPacket & packet, const AVStream & stream)
         msg.rate = audio_rate;
         msg.channels = audio_channels;
 
+        m_bIsReallyRestreaming = true;
         video_stream->fireAudioMessage (&msg);
 
         page_pool->msgUnref (page_list.first);
@@ -2619,6 +2632,7 @@ FFmpegStream::FFmpegStream ()
 
       tlocal (NULL),
       m_bIsRestreaming(false),
+      m_bIsReallyRestreaming(false),
       m_bReleaseCalled(false),
       m_pRecpathConfig(NULL)
 {

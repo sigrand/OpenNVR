@@ -245,6 +245,11 @@ momentPath="${DST}/moment"
     momentIncludeDir="-I${momentPath}/include/moment-1.0"
     momentLibs="-L${momentPath}/lib -lmoment-1.0"
 
+# hdd statistic module
+cd "${SC_DIR}/moment-ffmpeg/iostat"
+make
+cp "${SC_DIR}/moment-ffmpeg/iostat/libiostat.so" "${momentPath}/lib/libiostat.so"
+momentLibs+=" -liostat"
 
 # moment-ffmpeg:
 momentffmpegPath="${DST}/moment"

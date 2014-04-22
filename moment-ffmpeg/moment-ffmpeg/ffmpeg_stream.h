@@ -378,6 +378,7 @@ private:
     LibMary_ThreadLocal *tlocal;
 
     volatile bool m_bIsRestreaming;
+    volatile bool m_bIsReallyRestreaming; // set by successness of firing msg in doVideo/AudioData
     bool m_bReleaseCalled;      // called releasePipeline when we are in init stage in createSmartPipelineForUri
 
     mt_end
