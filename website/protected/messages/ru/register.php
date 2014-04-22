@@ -17,7 +17,7 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'Hello {nick},<br/><br/>Your activation code: {code}<br/>{link}' => 'Здравствуйте {nick},<br/><br/>Ваш код для активации: {code}<br/> ',
+  'Hello {nick},<br/><br/>Your activation code: {code}<br/>{link}' => 'Здравствуйте {nick},<br/><br/>Ваш код для активации: {code}<br/>{link}',
   'Recovery link: {link}' => 'Ссылка для восстановления: {link}',
   'Registration was successful.<br/>To use your account, you need to confirm your email address.<br/>Confirmation code sent to your email.<br/>' => 'Регистрация прошла успешно.<br/>Для того что бы войти вам нужно сначал подтвердить ваш email.<br/>Код для потдверждения отправлен вам на email.<br/>',
   'Account activation' => 'Активация аккаунта',
