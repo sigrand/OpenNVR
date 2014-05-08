@@ -25,11 +25,13 @@ public class MyPlayer extends Sprite
 {
     private var buffer_time : Number;
     private var autoplay : Boolean;
+    private var lo_stream_name : String;
     private var hi_stream_name : String;
 
     private function setSource (uri : String, stream_name_ : String, hi_stream_name_ : String) : void {
 	trace ("--- setSource(): " + uri + ", " + stream_name_);
 	hi_stream_name = hi_stream_name_;
+	lo_stream_name = stream_name_;
 	setChannel (uri, stream_name_);
     }
 
@@ -603,7 +605,7 @@ public class MyPlayer extends Sprite
 		if (event.fullScreen) {
 			setChannel (channel_uri, hi_stream_name);
 		} else {
-			setChannel (channel_uri, stream_name);
+			setChannel (channel_uri, lo_stream_name);
 		}
 /*
 		if (hi_uri == "") {
