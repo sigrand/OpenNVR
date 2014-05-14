@@ -83,6 +83,22 @@ class momentManager {
         return $result;
     }
 
+    public function resolution($stream) {
+        $result = $this->moment->resolution($stream);
+        if(!$result) {
+            Notify::note(Yii::t('errors', 'Can not get resolution, problem with nvr'));
+        }
+        return $result;
+    }
+
+    public function alive($stream) {
+        $result = $this->moment->alive($stream);
+        if(!$result) {
+            Notify::note(Yii::t('errors', 'Can not get alive status, problem with nvr'));
+        }
+        return $result;
+    }
+
     public function stat($type) {
         $result = $this->moment->stat($type);
         if(!$result) {

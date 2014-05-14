@@ -66,6 +66,20 @@ rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
         return trim($result);
     }
 
+    public function resolution($stream) {
+        $this->http->setPort($this->options['web_port']);
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/mod_nvr_admin/resolution?stream={$stream}");
+        $this->http->setPort($this->options['server_port']);
+        return trim($result);
+    }
+
+    public function alive($stream) {
+        $this->http->setPort($this->options['web_port']);
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/mod_nvr_admin/alive?stream={$stream}");
+        $this->http->setPort($this->options['server_port']);
+        return trim($result);
+    }
+
     public function stat($type) {
         $stats = array(
             'load' => 'mod_nvr_admin/statistics',

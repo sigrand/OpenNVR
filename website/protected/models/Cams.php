@@ -131,9 +131,19 @@ class Cams extends CActiveRecord {
 		$mySharedCams = $shared;
 		$allMyCams = array();
 		foreach ($myCams as $key => $cam) {
+
+			$server = Servers::model()->findByPK($cam->server_id);
+			$momentManager = new momentManager($cam->server_id);
+			if ($momentManager->alive($cam->id) == "1")
+
 			$allMyCams[$cam->id] = $cam;
 		}
 		foreach ($myPublicCams as $key => $cam) {
+
+			$server = Servers::model()->findByPK($cam->server_id);
+			$momentManager = new momentManager($cam->server_id);
+			if ($momentManager->alive($cam->id) == "1")
+
 			if(isset($cam->cam)) {
 				$allMyCams[$cam->id] = $cam->cam;
 			} else {
@@ -141,6 +151,11 @@ class Cams extends CActiveRecord {
 			}
 		}
 		foreach ($mySharedCams as $key => $cam) {
+
+			$server = Servers::model()->findByPK($cam->server_id);
+			$momentManager = new momentManager($cam->server_id);
+			if ($momentManager->alive($cam->id) == "1")
+
 			$allMyCams[$cam->cam_id] = $cam->cam;
 		}
 		return $allMyCams;
