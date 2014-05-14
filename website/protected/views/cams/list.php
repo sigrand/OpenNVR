@@ -7,9 +7,19 @@
 		<?php } ?>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('cams', 'My cams'); ?></h3>
+				<ul class="nav nav-tabs">
+					<li class='active' id='my_cams'>
+						<?php echo CHtml::link(Yii::t('cams', 'My cams'), '#'); ?>
+					</li>
+					<li class='' id='shared_cams'>
+						<?php echo CHtml::link(Yii::t('cams', 'Shared cams'), '#'); ?>
+					</li>
+					<li class='' id='public_cams'>
+						<?php echo CHtml::link(Yii::t('cams', 'Public cams'), '#'); ?>
+					</li>
+				</ul>
 			</div>
-			<div class="panel-body">
+			<div class="panel-body" id='my_cams_tab'>
 				<?php
 				$addLink = CHtml::link(Yii::t('cams', 'Add cam'), $this->createUrl('cams/add'), array('class' => 'btn btn-success'));
 				if(!empty($myCams)) {
@@ -61,14 +71,7 @@
 				echo $addLink;
 				?>
 			</div>
-		</div>
-	</div>
-	<div class="col-sm-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('cams', 'Cams shared for me'); ?></h3>
-			</div>
-			<div class="panel-body">
+			<div class="panel-body" id='shared_cams_tab' style='display:none'>
 				<?php
 				if(!empty($mySharedCams)) {
 					?>
@@ -111,14 +114,7 @@
 				}
 				?>
 			</div>
-		</div>
-	</div>
-	<div class="col-sm-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('cams', 'Public cams'); ?></h3>
-			</div>
-			<div class="panel-body">
+			<div class="panel-body" id='public_cams_tab' style='display:none'>
 				<?php
 				if(!empty($myPublicCams)) {
 					?>
@@ -178,6 +174,12 @@
 		});
 		$(".checkAllP").click(function(){
 			$('input[id*="CamsForm_pcam_"]').not(this).prop('checked', this.checked);
+		});
+		$('.nav-tabs li').click(function(){
+			$(".nav-tabs li").removeClass("active");
+			$("#"+this.id).addClass("active");
+			$(".panel-body").hide();
+			$("#"+this.id+"_tab").show();
 		});
 	});
 	</script>

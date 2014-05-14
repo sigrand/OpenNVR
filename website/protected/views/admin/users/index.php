@@ -7,9 +7,25 @@
 		<?php } ?>
 		<div class="panel panel-default">
 			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Admins'); ?></h3>
+				<ul class="nav nav-tabs">
+					<li class='active' id='admins'>
+						<?php echo CHtml::link(Yii::t('admin', 'Admins'), '#'); ?>
+					</li>
+					<li class='' id='operators'>
+						<?php echo CHtml::link(Yii::t('admin', 'Operators'), '#'); ?>
+					</li>
+					<li class='' id='viewers'>
+						<?php echo CHtml::link(Yii::t('admin', 'Viewers'), '#'); ?>
+					</li>
+					<li class='' id='banned'>
+						<?php echo CHtml::link(Yii::t('admin', 'Banned'), '#'); ?>
+					</li>
+					<li class='' id='all_others'>
+						<?php echo CHtml::link(Yii::t('admin', 'All others'), '#'); ?>
+					</li>
+				</ul>
 			</div>
-			<div class="panel-body">
+			<div class="panel-body" id="admins_tab">
 				<?php
 				if(!empty($admins)) {
 					?>
@@ -46,14 +62,7 @@
 				}
 				?>
 			</div>
-		</div>
-	</div>
-	<div class="col-sm-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Operators'); ?></h3>
-			</div>
-			<div class="panel-body">
+			<div class="panel-body" id="operators_tab" style="display:none">
 				<?php
 				if(!empty($operators)) {
 					?>
@@ -91,14 +100,7 @@
 				}
 				?>
 			</div>
-		</div>
-	</div>
-	<div class="col-sm-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Viewers'); ?></h3>
-			</div>
-			<div class="panel-body">
+			<div class="panel-body" id="viewers_tab" style="display:none">
 				<?php
 				echo CHtml::link(Yii::t('admin', 'Add user'), $this->createUrl('admin/addUser'), array('class' => 'btn btn-success'));
 				if(!empty($viewers)) {
@@ -136,14 +138,7 @@
 				}
 				?>
 			</div>
-		</div>
-	</div>
-	<div class="col-sm-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'Banned'); ?></h3>
-			</div>
-			<div class="panel-body">
+			<div class="panel-body" id="banned_tab" style="display:none">
 				<?php
 				if(!empty($banned)) {
 					?>
@@ -179,14 +174,7 @@
 				}
 				?>
 			</div>
-		</div>
-	</div>
-	<div class="col-sm-12">
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<h3 class="panel-title"><?php echo Yii::t('admin', 'All others'); ?></h3>
-			</div>
-			<div class="panel-body">
+			<div class="panel-body" id="all_others_tab" style="display:none">
 				<?php
 				if(!empty($all)) {
 					?>
@@ -245,6 +233,12 @@
 		});			
 		$(".checkAllV").click(function(){
 			$('input[id*="UsersForm_vuser_"]').not(this).prop('checked', this.checked);
+		});
+		$('.nav-tabs li').click(function(){
+			$(".nav-tabs li").removeClass("active");
+			$("#"+this.id).addClass("active");
+			$(".panel-body").hide();
+			$("#"+this.id+"_tab").show();
 		});
 	});
 	</script>
