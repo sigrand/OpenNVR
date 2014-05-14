@@ -83,7 +83,7 @@ else
 				type="application/x-shockwave-flash"
 				pluginspage="http://www.macromedia.com/go/getflashplayer"
 				/>
-				<?php echo CHtml::link("<img src='".Yii::app()->request->baseUrl."/images/archive.png' style='width:50px;height:50px;position:absolute;top:10px;left:10px;z-index:1'></img>", $this->createUrl('/cams/fullscreen/full/1/id/'.$stream), array("id" => "archive_button_".$i, 'target' => '_blank')); ?>
+				<?php echo CHtml::link("<img src='".Yii::app()->request->baseUrl."/images/archive.png' style='width:50px;height:50px;position:absolute;top:10px;left:10px;z-index:1'></img>", $this->createUrl('/cams/archive/full/1/id/'.$stream), array("id" => "archive_button_".$i, 'target' => '_blank')); ?>
 				</object>
 
 				<?php

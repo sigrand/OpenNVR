@@ -34,7 +34,7 @@
 								echo '<tr>
 								<td>'.CHtml::activeCheckBox($form, 'cam_'.$cam->getSessionId()).'</td>
 								<td>'.($key+1).'</td>
-								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->getSessionId(), 'full' => '1')), array('target' => '_blank')).'</td>
+								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/archive', array('id' => $cam->getSessionId(), 'full' => '1')), array('target' => '_blank')).'</td>
 								<td>'.$m[1].'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
 								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
@@ -89,7 +89,7 @@
 								echo '<tr>
 								<td>'.CHtml::activeCheckBox($form, 'shcam_'.$cam->id).'</td>
 								<td>'.($key + 1).'</td>
-								<td>'.CHtml::link(CHtml::encode($cam->cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->cam->getSessionId(), 'full' => '1')), array('target' => '_blank')).'</td>
+								<td>'.CHtml::link(CHtml::encode($cam->cam->name), $this->createUrl('cams/archive', array('id' => $cam->cam->getSessionId(), 'full' => '1')), array('target' => '_blank')).'</td>
 								<td>'.CHtml::encode($cam->owner->nick).'</td>
 								<td>'.CHtml::encode($cam->cam->desc).'</td>
 								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>
@@ -146,7 +146,7 @@
 								echo '<tr>
 								<td>'.CHtml::activeCheckBox($form, 'pcam_'.$cam->getSessionId()).'</td>
 								<td>'.($key + 1).'</td>
-								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/fullscreen', array('id' => $cam->getSessionId(), 'full' => '1')), array('target' => '_blank')).'</td>
+								<td>'.CHtml::link(CHtml::encode($cam->name), $this->createUrl('cams/archive', array('id' => $cam->getSessionId(), 'full' => '1')), array('target' => '_blank')).'</td>
 								<td>'.CHtml::encode($cam->owner->nick).'</td>
 								<td>'.CHtml::encode($cam->desc).'</td>
 								<td>'.($cam->show ? Yii::t('cams', 'Show') : Yii::t('cams', 'Don\'t show')).'</td>

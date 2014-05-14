@@ -154,7 +154,7 @@
 		if (cam_id != "") {
 			// for popup player;
 			document["MyPlayer"].setSource('rtmp://' + server_ip + ':' + server_port + '/live/', cams_hashes[cam_id].low, cams_hashes[cam_id].high);
-			document.getElementById("open_link").href="<?php echo $this->createUrl('cams/fullscreen', array('full' => 1, 'id' => '')); ?>/"+cams_hashes[cam_id].high;
+			document.getElementById("open_link").href="<?php echo $this->createUrl('cams/archive', array('full' => 1, 'id' => '')); ?>/"+cams_hashes[cam_id].high;
 			cam_id = "";
 		} else {
 			// for carousel players

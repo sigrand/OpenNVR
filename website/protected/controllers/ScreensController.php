@@ -29,7 +29,8 @@ class ScreensController extends Controller
 			array('allow',
 				'actions'=>array('view'),
 				'users'=>array('*'),
-			),			array('allow', // allow authenticated user to perform 'create' and 'update' actions
+			),
+			array('allow', // allow authenticated user to perform 'create' and 'update' actions
 				'actions'=>array('index','view','create','update','manage','delete'),
 				'users'=>array('@'),
 			),

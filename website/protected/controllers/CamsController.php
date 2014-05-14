@@ -24,7 +24,7 @@ class CamsController extends Controller {
 				'users'=>array('*'),
 				),
 			array('allow',
-				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime', 'map', 'list'),
+				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime', 'map', 'list', 'archive'),
 				'users'=>array('@'),
 				// access granted only for admins and operators
 				'expression' => '(Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)',
@@ -169,6 +169,39 @@ class CamsController extends Controller {
 				'session_id' => $cam->getSessionId($low),
 				'low' => $low,
 				'down' => $server->protocol.'://'.$server->ip.':'.$server->w_port.'/mod_nvr/file?stream='
+				));
+	}
+
+	public function actionArchive($id, $full = 0) {
+		//if(!is_numeric($id)) { $this->redirect('/player/'.$id); }
+		$this->layout = 'emptycolumn';
+		$id = Cams::model()->getRealId($id);
+		$cam = Cams::model()->findByPK($id);
+		if(!$cam) {
+			throw new CHttpException(404, Yii::t('errors', 'There is no such cam'));
+		}
+		if(!$cam->is_public && Yii::app()->user->isGuest) {
+			throw new CHttpException(403, Yii::t('errors', 'Access denied'));
+		}
+		$uid = Yii::app()->user->getId();
+		$shared = false;
+		if($cam->user_id != $uid) {
+			$shared = Shared::model()->findByAttributes(array('user_id' => $uid, 'cam_id' => $id));
+			if(!$cam->is_public && !(bool)$shared) {
+				throw new CHttpException(403, Yii::t('errors', 'Access denied'));
+			}
+		}
+		$this->showStatusbar = $this->showArchive = ((!$cam->is_public || ($shared && (!$shared->is_public || $shared->is_approved))) || $uid == $cam->user_id) ? 1 : 0;
+		$server = Servers::model()->findByPK($cam->server_id);
+		$momentManager = new momentManager($cam->server_id);
+		$this->render('archive',
+			array(
+				'cam' => $cam,
+				'full' => !$full,
+				'unixtime' => $momentManager->unixtime(),
+				'uri' => 'rtmp://'.$server->ip.':'.$server->l_port,
+				'down' => $server->protocol.'://'.$server->ip.':'.$server->w_port.'/mod_nvr/file?stream=',
+				'recorded_intervals' => $momentManager->existence($cam->id)
 				));
 	}
 
