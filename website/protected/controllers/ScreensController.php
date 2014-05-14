@@ -26,7 +26,10 @@ class ScreensController extends Controller
 	public function accessRules()
 	{
 		return array(
-			array('allow', // allow authenticated user to perform 'create' and 'update' actions
+			array('allow',
+				'actions'=>array('view'),
+				'users'=>array('*'),
+			),			array('allow', // allow authenticated user to perform 'create' and 'update' actions
 				'actions'=>array('index','view','create','update','manage','delete'),
 				'users'=>array('@'),
 			),
@@ -307,8 +310,8 @@ class ScreensController extends Controller
 		$model=Screens::model()->findByPk($id);
 		if($model===null) {
 				throw new CHttpException(404,'The requested page does not exist.');
-		} elseif ((Yii::app()->user->getId() != $model->owner_id) && (Yii::app()->user->permissions != 3)) {
-			$model=null;
+//		} elseif ((Yii::app()->user->getId() != $model->owner_id) && (Yii::app()->user->permissions != 3)) {
+//			$model=null;
 		}
 		return $model;
 	}
