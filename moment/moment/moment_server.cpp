@@ -573,6 +573,63 @@ Storage* MomentServer::getStorage ()
 MomentServer* MomentServer::getInstance ()
     { return instance; }
 
+void MomentServer::setRtmpService(RtmpService *rtmp_service)
+{
+    this->rtmp_service = rtmp_service;
+}
+
+size_t MomentServer::getRtmpSessionInfo()
+{
+    std::string strResponse;
+    Json::Value json_res;
+
+    if(!this->rtmp_service)
+    {
+        logE_(_func_, "rtmp_service is NULL");
+        return 0;
+    }
+
+    this->rtmp_service->rtmpServiceLock ();
+
+    RtmpService::SessionsInfo sinfo_sum;
+
+    RtmpService::SessionInfoIterator iter = this->rtmp_service->getClientSessionsInfo_unlocked (&sinfo_sum);
+
+    size_t num_valid_sessions = sinfo_sum.num_valid_sessions;
+
+//    Json::Value json_sessions;
+
+//    while (!iter.done())
+//    {
+//        RtmpService::ClientSessionInfo * const sinfo = iter.next ();
+
+//        Json::Value json_session;
+
+//        StRef<String> st_client_addr    = st_makeString(sinfo->client_addr);
+//        json_session["client_addr"]     = st_client_addr->cstr();
+//        StRef<String> st_create_time    = st_makeString(sinfo->creation_unixtime);
+//        json_session["create_time"]     = st_create_time->cstr();
+//        StRef<String> st_send_time      = st_makeString(sinfo->last_send_unixtime);
+//        json_session["send_time"]       = st_send_time->cstr();
+//        StRef<String> st_recv_time      = st_makeString(sinfo->last_recv_unixtime);
+//        json_session["recv_time"]       = st_recv_time->cstr();
+//        StRef<String> st_play_stream    = st_makeString(sinfo->last_play_stream);
+//        json_session["play_stream"]     = st_play_stream->cstr();
+//        StRef<String> st_publish_stream = st_makeString(sinfo->last_publish_stream);
+//        json_session["publish_stream"]  = st_publish_stream->cstr();
+
+//        json_sessions.append(json_session);
+//    }
+
+    this->rtmp_service->rtmpServiceUnlock ();
+
+    //json_res["num_valid_sessions"] = Json::UInt(num_valid_sessions);
+
+    //return json_res;
+
+    return num_valid_sessions;
+}
+
 
 // __________________________________ Config ___________________________________
 
@@ -2085,6 +2142,7 @@ MomentServer::MomentServer ()
       recorder_thread_pool  (NULL),
       reader_thread_pool    (NULL),
       storage               (NULL),
+      rtmp_service          (NULL),
       publish_all_streams   (true),
       enable_restreaming    (false),
       new_streams_on_top    (true),

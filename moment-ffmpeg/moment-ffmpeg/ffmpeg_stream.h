@@ -165,11 +165,17 @@ class ffmpegStreamData
 
 public:
 
+    enum InitRes {
+        Success = 0,
+        FailFindInfo,
+        Failure
+    };
+
     ffmpegStreamData(void);
     ~ffmpegStreamData();
 
-    Result Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
-                Timers * timers, RecpathConfig * recpathConfig);
+    InitRes Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
+                Timers * timers, RecpathConfig * recpathConfig, AVDictionary **opts);
     void Deinit();
 
     // if PushMediaPacket returns 'false' consequently it is the end of stream (EOS).

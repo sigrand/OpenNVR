@@ -42,6 +42,8 @@ struct StatMeasure
         user_util_min = std::numeric_limits<int64_t>::max();
         user_util_max = 0;
         user_util_avg = 0;
+
+        rtmp_sessions = 0;
     }
 
     // packet passing from in to out
@@ -67,9 +69,12 @@ struct StatMeasure
     double user_util_max;
     double user_util_avg;
 
-    //HDD measurement
+    // HDD measurement
     std::vector<std::string> devnames;
     std::vector<double> hdd_utils;
+
+    // RTMP sessions measurement
+    size_t rtmp_sessions;
 };
 
 class StatMeasurer: public Object

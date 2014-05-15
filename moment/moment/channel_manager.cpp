@@ -23,7 +23,8 @@
 
 #include <libmary/types.h>
 #include <cctype>
-
+#include <sstream>
+#include "Poco/Base64Decoder.h"
 #include <mconfig/mconfig.h>
 #include <moment/libmoment.h>
 
@@ -118,6 +119,28 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
             logA_ ("moment__channel_manager 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
             goto _return;
         }
+
+        // decoding from base64
+        {
+            std::string item_uri64 = item_uri;
+            std::istringstream istr(item_uri64);
+            std::ostringstream ostr;
+            Poco::Base64Decoder b64in(istr);
+            std::copy(std::istreambuf_iterator<char>(b64in),
+                std::istreambuf_iterator<char>(),
+                std::ostreambuf_iterator<char>(ostr));
+            item_uri = ostr.str();
+        }
+//        {
+//            std::string item_title64 = item_title;
+//            std::istringstream istr(item_title64);
+//            std::ostringstream ostr;
+//            Poco::Base64Decoder b64in(istr);
+//            std::copy(std::istreambuf_iterator<char>(b64in),
+//                std::istreambuf_iterator<char>(),
+//                std::ostreambuf_iterator<char>(ostr));
+//            item_title = ostr.str();
+//        }
 
         // checking for existing url
         {

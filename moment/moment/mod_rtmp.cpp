@@ -1810,6 +1810,10 @@ static Result momentRtmpInit ()
     }
 
     {
+        moment->setRtmpService(&rtmp_module->rtmp_service);
+    }
+
+    {
         Ref<RtmpPushProtocol> const rtmp_push_proto = grab (new (std::nothrow) RtmpPushProtocol);
         rtmp_push_proto->init (moment, rtmp_ping_timeout_millisec);
         moment->addPushProtocol ("rtmp", rtmp_push_proto);

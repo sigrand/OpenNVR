@@ -344,26 +344,26 @@ static int get_bit_rate(AVCodecContext *ctx)
     return bit_rate;
 }
 
-Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
-                              Timers * timers, RecpathConfig * recpathConfig)
+ffmpegStreamData::InitRes ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
+                              Timers * timers, RecpathConfig * recpathConfig, AVDictionary ** opts)
 {
     if(!uri || !uri[0])
     {
         logD(stream, _func_, "ffmpegStreamData Init failed");
-        return Result::Failure;
+        return InitRes::Failure;
     }
 
     if(std::string(uri).find("rtsp") != 0)
     {
         logE(stream, _func_, "ffmpegStreamData Init failed, uri is not rtsp");
-        return Result::Failure;
+        return InitRes::Failure;
     }
 
     Deinit();
 
     // Open video file
     logD(stream, _func_, "uri: ", uri);
-    Result res = Result::Success;
+    InitRes res = InitRes::Success;
 
     format_ctx = avformat_alloc_context();
 
@@ -371,7 +371,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
     format_ctx->interrupt_callback.opaque = &m_tcFFTimeout;
 
     m_tcFFTimeout.Start();
-    if(avformat_open_input(&format_ctx, uri, NULL, NULL) == 0)
+    if(avformat_open_input(&format_ctx, uri, NULL, opts) == 0)
     {
         logD(stream, _func_, "avformat_open_input, success");
         // Retrieve stream information
@@ -380,7 +380,8 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
 
         m_tcFFTimeout.Start();
         format_ctx->probesize = m_nProbeSize;
-        if(avformat_find_stream_info(format_ctx, NULL) >= 0)
+        int resFindStreamInfo = avformat_find_stream_info(format_ctx, NULL);
+        if(resFindStreamInfo >= 0)
         {
             logD(stream, _func_,"avformat_find_stream_info, success");
 
@@ -390,17 +391,20 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         else
         {
             logE_(_func_, "Couldn't find stream information");
-            res = Result::Failure;
+            if(resFindStreamInfo == -1)
+                res = InitRes::FailFindInfo;
+            else
+                res = InitRes::Failure;
         }
         g_mutexFFmpeg.unlock();
     }
     else
     {
         logE_(_func_, "Couldn't open uri [", uri, "]");
-        res = Result::Failure;
+        res = InitRes::Failure;
     }
 
-    if(res == Result::Success)
+    if(res == InitRes::Success)
     {
         m_sourceInfo.sourceName = channel_name;
         m_sourceInfo.uri = uri;
@@ -464,7 +468,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
                         logE_(_func_, "channel_name: ", channel_name, ", increasing probe size");
                         m_nProbeSize *= 2;
                     }
-                    res = Result::Failure;
+                    res = InitRes::Failure;
                     break;
                 }
             }
@@ -494,11 +498,11 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         if(video_stream_idx == -1)
         {
             logE_(_func_,"channel_name: ", channel_name, ", didn't find a video stream");
-            res = Result::Failure;
+            res = InitRes::Failure;
         }
     }
 
-    if(res == Result::Success)
+    if(res == InitRes::Success)
     {
         if(m_absf_ctx == NULL)
         {
@@ -615,7 +619,7 @@ Result ffmpegStreamData::Init(const char * uri, const char * channel_name, const
         }
     }
 
-    if(res == Result::Failure)
+    if(res == InitRes::Failure)
     {
         Deinit();
     }
@@ -1585,6 +1589,11 @@ FFmpegStream::createSmartPipelineForUri ()
         return;
     }
 
+    AVDictionary *opts = 0;
+    ffmpegStreamData::InitRes res = ffmpegStreamData::InitRes::Success;
+    bool bForcedTCP = false;
+    bool bForcedTCPTried = false;
+
     if (stream_closed) {
         mutex.lock ();
         logE_ (_this_func, "stream closed, channel \"", channel_opts->channel_name, "\"");
@@ -1593,16 +1602,41 @@ FFmpegStream::createSmartPipelineForUri ()
 
     logD(pipeline, _func, "uri: ", playback_item->stream_spec);
 
-    while(m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(),
-            channel_opts->channel_name->cstr(), this->config, this->timers, this->m_pRecpathConfig) != Result::Success)
+    while(true)
     {
-        m_ffmpegStreamData.Deinit();
-        logD(pipeline, _func_, "wait for 1 sec and init ffmpegStreamData again");
-        sleep(1);
-        if(m_bReleaseCalled)
+        if(bForcedTCP && !bForcedTCPTried)
         {
-            mutex.lock ();
-            goto _failure;
+            av_dict_set(&opts, "rtsp_transport", "tcp", 0);
+            res = m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(),
+                                                this->config, this->timers, this->m_pRecpathConfig, &opts);
+            bForcedTCPTried = true;
+            bForcedTCP = false;
+        }
+        else
+        {
+            res = m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(),
+                                                this->config, this->timers, this->m_pRecpathConfig, NULL);
+        }
+
+        if(res == ffmpegStreamData::InitRes::FailFindInfo && !bForcedTCPTried)
+        {
+            bForcedTCP = true;
+        }
+
+        if(res != ffmpegStreamData::InitRes::Success)
+        {
+            m_ffmpegStreamData.Deinit();
+            logD(pipeline, _func_, "wait for 1 sec and init ffmpegStreamData again");
+            sleep(1);
+            if(m_bReleaseCalled)
+            {
+                mutex.lock ();
+                goto _failure;
+            }
+        }
+        else
+        {
+            break;
         }
     }
 

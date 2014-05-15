@@ -14,7 +14,6 @@
 #include <sys/stat.h>
 #endif
 
-
 using namespace M;
 using namespace Moment;
 
@@ -24,8 +23,28 @@ namespace MomentFFmpeg {
 #define TIMER_TICK 5 // in seconds
 
 static LogGroup libMary_logGroup_channelcheck ("mod_ffmpeg.channelcheck", LogLevel::E);
+static LogGroup libMary_logGroup_mutex ("mod_ffmpeg.mutex", LogLevel::E);
 
 #ifdef __linux__
+uint64_t get_file_space(const char *filepath)
+{
+  struct stat st;
+  uint64_t totalsize = 0LL;
+
+  if(lstat(filepath, &st) == -1)
+  {
+    logE(channelcheck, _func_, "Couldn't stat: ", filepath);
+    return totalsize;
+  }
+
+  if(S_ISREG(st.st_mode)) // We only want to count regular files
+  {
+    totalsize = st.st_size;
+  }
+
+  return totalsize;
+}
+
 uint64_t get_dir_space(char *dirname)
 {
   DIR *dir;
@@ -271,9 +290,12 @@ ChannelChecker::GetChannelTimes()
 
     TimeChecker tc;tc.Start();
 
+    logD(mutex, _func_, "QQQQC 1");
     cleanCache();
+    logD(mutex, _func_, "QQQQC 2");
     updateCache(true);
 
+    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
     ChannelTimes chFileTimes;
@@ -289,39 +311,46 @@ ChannelChecker::GetChannelTimes()
 
     if(chFileTimes.size() >= 2)
     {
-        ChannelTimes::iterator it = chFileTimes.begin();
-        std::advance (it,1);
-
+        logD(mutex, _func_, "QQQQC chFileTimes.size() >= 2");
+        ChannelTimes::iterator itr = chFileTimes.begin();
+        std::advance (itr,1);
+logD(mutex, _func_, "QQQQC BEFORE concatination");
         while(1)
         {
-            if (it == chFileTimes.end())
+            if (itr == chFileTimes.end())
                 break;
 
-            std::vector<ChChTimes>::iterator it1 = it;
+            std::vector<ChChTimes>::iterator it1 = itr;
             std::advance (it1,-1);
-            if ((it->timeStart - (it1)->timeEnd) < CONCAT_INTERVAL)
+            if ((itr->timeStart - (it1)->timeEnd) < CONCAT_INTERVAL)
             {
                 ChChTimes chChTimes;
                 chChTimes.timeStart = (it1)->timeStart;
-                chChTimes.timeEnd = (it)->timeEnd;
+                chChTimes.timeEnd = (itr)->timeEnd;
 
-                std::vector<ChChTimes>::iterator prev = it;
+                std::vector<ChChTimes>::iterator prev = itr;
                 std::advance (prev,-1);
-                std::vector<ChChTimes>::iterator prevPrev = it;
+                std::vector<ChChTimes>::iterator prevPrev = itr;
                 std::advance (prevPrev,-2);
 
-                chFileTimes.erase(it);
+                chFileTimes.erase(itr);
                 chFileTimes.erase(prev);
                 std::vector<ChChTimes>::iterator prevPrev1 = prevPrev;
                 std::advance (prevPrev1,1);
                 chFileTimes.insert(prevPrev1, chChTimes);
-                it = chFileTimes.begin();
-                std::advance (it,1);
+                itr = chFileTimes.begin();
+                std::advance (itr,1);
             }
-            else ++it;
+            else ++itr;
         }
+logD(mutex, _func_, "QQQQC AFTER concatination");
+    }
+    else
+    {
+        logD(mutex, _func_, "QQQQC chFileTimes.size() IS NOT >= 2");
     }
 
+    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 
     Time t;tc.Stop(&t);
@@ -365,43 +394,28 @@ ChannelChecker::GetChannelFileDiskTimes ()
 ChannelChecker::DiskSizes
 ChannelChecker::GetDiskSizes ()
 {
-    DiskSizes diskSizes;
+    logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
-    std::string curPath = m_recpathConfig->GetNextPath();
-    while(curPath.length() != 0)
+    logD(mutex, _func_, "QQQQC MUTEX _locked");
+    m_mutex.lock();
+
+    DiskSizes ds;
+
+    DiskFileSizes::iterator itr = m_occupSizes.begin();
+    for(itr; itr != m_occupSizes.end(); itr++)
     {
-        Uint64 size = 0;
-
-        StRef<String> strRecDir = st_makeString(curPath.c_str());
-        Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
-        NvrFileIterator file_iter;
-        file_iter.init (vfs, m_channel_name->mem(), 0);
-        StRef<String> path = file_iter.getNext();
-        if(path != NULL && !path->isNullString()) // if <strRecDir>/<channel_name> folder exist (and it is non empty)
+        ds[itr->first] = 0;
+        std::map<std::string, Uint64>::iterator itr1 = itr->second.begin();
+        for(itr1; itr1 != itr->second.end(); itr1++)
         {
-#ifdef __linux__
-            StRef<String> fullRecDir;
-            char ch = *curPath.rbegin();
-            if(ch != '/')
-                fullRecDir = st_makeString(curPath.c_str(), "/", m_channel_name, "/");
-            else
-                fullRecDir = st_makeString(curPath.c_str(), "/", m_channel_name);
-            size = get_dir_space(fullRecDir->cstr()); // in bytes
-#else
-            size = 0; // TODO: implement
-#endif
+            ds[itr->first] += itr1->second;
         }
-        else
-        {
-            size = 0;
-        }
-
-        diskSizes[curPath] = size;
-
-        curPath = m_recpathConfig->GetNextPath(curPath);
     }
 
-    return diskSizes;
+    logD(mutex, _func_, "QQQQC MUTEX unlocked");
+    m_mutex.unlock();
+
+    return ds;
 }
 
 ChannelChecker::CheckResult
@@ -411,11 +425,13 @@ ChannelChecker::initCache()
 
     TimeChecker tc;tc.Start();
 
+    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
     initCacheFromIdx();
     completeCache();
 
+    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 
     Time t;tc.Stop(&t);
@@ -439,6 +455,13 @@ ChannelChecker::initCacheFromIdx()
         addRecordInCache(itr->first, itr->second.diskName, true);
     }
 
+    ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin();
+    for(itr; itr != m_chFileDiskTimes.end(); itr++)
+    {
+        StRef<String> st_fullname = st_makeString(itr->second.diskName.c_str(), "/", itr->first.c_str(), ".flv");
+        m_occupSizes[itr->second.diskName][itr->first] = get_file_space(st_fullname->cstr());
+    }
+
     Time t;tc.Stop(&t);
     logD(channelcheck, _func_,"ChannelChecker.initCacheFromIdx exectime = [", t, "]");
 
@@ -450,6 +473,7 @@ ChannelChecker::DeleteFromCache(const std::string & dirName, const std::string &
 {
     logD(channelcheck, _func_,"filename: [", dirName.c_str(), "/", fileName.c_str(), "]");
 
+    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
     m_chFileDiskTimes.erase(fileName);
@@ -459,6 +483,9 @@ ChannelChecker::DeleteFromCache(const std::string & dirName, const std::string &
     files_changed.push_back(fileName);
     writeIdx(dirName, files_changed);
 
+    m_occupSizes[dirName].erase(fileName);
+
+    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 
     return true;
@@ -471,14 +498,16 @@ ChannelChecker::updateCache(bool bForceUpdate)
 
     CheckResult rez = CheckResult_Success;
 
+    logD(mutex, _func_, "QQQQC 2 MUTEX _locked");
     m_mutex.lock();
 
     TimeChecker tc;tc.Start();
 
     ChannelFileDiskTimes::reverse_iterator itr = m_chFileDiskTimes.rbegin();
-
+logD(mutex, _func_, "QQQQC update 1");
     if(itr != m_chFileDiskTimes.rend()) // if last recorded file exists
     {
+logD(mutex, _func_, "QQQQC update 2");
         std::string lastfile = itr->first;
         std::string lastdir = itr->second.diskName;
 
@@ -489,6 +518,7 @@ ChannelChecker::updateCache(bool bForceUpdate)
 
         bool bNewerFile = false; // false - last recorded file is recording file now, true - there is newer file
         std::string curPath = m_recpathConfig->GetNextPath();
+logD(mutex, _func_, "QQQQC update 2.1");
         while(curPath.length() != 0)
         {
             NvrFileIterator file_iter;
@@ -510,6 +540,11 @@ ChannelChecker::updateCache(bool bForceUpdate)
                     // update duration for last recorded file
                     addRecordInCache(lastfile, lastdir, true);
 
+                    // update occup size of last recorded file
+                    StRef<String> st_fullname = st_makeString(lastdir.c_str(), "/", lastfile.c_str(), ".flv");
+                    Int64 occupSizeFile = get_file_space(st_fullname->cstr());
+                    m_occupSizes[lastdir][lastfile] = occupSizeFile;
+
                     // add new recording file in cache
                     std::string strpathNext = std::string(pathNext->cstr());
                     addRecordInCache(strpathNext, curPath, false);
@@ -530,6 +565,7 @@ ChannelChecker::updateCache(bool bForceUpdate)
             }
             curPath = m_recpathConfig->GetNextPath(curPath);
         }
+logD(mutex, _func_, "QQQQC update 2.2");
         if(!bNewerFile)
         {
             // update duration for last recorded file
@@ -539,9 +575,11 @@ ChannelChecker::updateCache(bool bForceUpdate)
                 files_changed.push_back(lastfile);
             writeIdx(lastdir, files_changed);
         }
+logD(mutex, _func_, "QQQQC update 2.3");
     }
     else // no one records exist
     {
+logD(mutex, _func_, "QQQQC update 3");
         std::string curPath = m_recpathConfig->GetNextPath();
         while(curPath.length() != 0)
         {
@@ -561,11 +599,13 @@ ChannelChecker::updateCache(bool bForceUpdate)
             }
             curPath = m_recpathConfig->GetNextPath(curPath);
         }
+logD(mutex, _func_, "QQQQC update 3.1");
     }
-
+logD(mutex, _func_, "QQQQC update 4");
     Time t;tc.Stop(&t);
     logD(channelcheck, _func_,"ChannelChecker.updateCache exectime = [", t, "]");
 
+    logD(mutex, _func_, "QQQQC 2 MUTEX unlocked");
     m_mutex.unlock();
 
     return rez;
@@ -604,6 +644,11 @@ ChannelChecker::completeCache()
         {
             std::string strpath = std::string(path->cstr());
             addRecordInCache(strpath, curPath, true);
+            ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin();
+
+            StRef<String> st_fullname = st_makeString(curPath.c_str(), "/", strpath.c_str(), ".flv");
+            m_occupSizes[curPath][strpath] = get_file_space(st_fullname->cstr());
+
             files_changed.push_back(strpath);
             path = file_iter.getNext();
         }
@@ -624,10 +669,12 @@ ChannelChecker::cleanCache()
 {
     logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
+    logD(mutex, _func_, "QQQQC 1 MUTEX _locked");
     m_mutex.lock();
 
     if(m_chFileDiskTimes.empty())
     {
+        logD(mutex, _func_, "QQQQC 1 MUTEX unlocked");
         m_mutex.unlock();
         return CheckResult_Success;
     }
@@ -635,6 +682,7 @@ ChannelChecker::cleanCache()
     TimeChecker tc;tc.Start();
 
     std::string curPath = m_recpathConfig->GetNextPath();
+logD(mutex, _func_, "QQQQC clean 1");
     while(curPath.length() != 0)
     {
         StRef<String> strRecDir = st_makeString(curPath.c_str());
@@ -647,8 +695,10 @@ ChannelChecker::cleanCache()
         std::vector<std::string> files_changed;
 
         StRef<String> path = file_iter.getNext();
+logD(mutex, _func_, "QQQQC clean 2");
         if(path != NULL)
         {
+            logD(mutex, _func_, "QQQQC clean 3");
             Time timeOfFirstFile = 0;
             {
                 StRef<String> const flv_filename = st_makeString (path, ".flv"); // replace by read from idx ??????
@@ -657,6 +707,7 @@ ChannelChecker::cleanCache()
             }
 
             ChannelFileDiskTimes::iterator it = m_chFileDiskTimes.begin();
+logD(mutex, _func_, "QQQQC clean 3.1");
             while(it != m_chFileDiskTimes.end())
             {
                 if(it->second.diskName.compare(curPath) == 0)
@@ -674,7 +725,11 @@ ChannelChecker::cleanCache()
                         files_changed.push_back(it->first);
 
                         m_chDiskFileTimes[it->second.diskName].erase(it->first);
-                        m_chFileDiskTimes.erase(it++);
+                        m_chFileDiskTimes.erase(it);
+
+                        m_occupSizes[it->second.diskName].erase(it->first);
+
+                        it++;
                     }
                     else
                     {
@@ -687,9 +742,11 @@ ChannelChecker::cleanCache()
                     it++;
                 }
             }
+logD(mutex, _func_, "QQQQC clean 3.2");
         }
         else
         {
+logD(mutex, _func_, "QQQQC clean 4");
             logD(channelcheck, _func_,"there is no files at all, clean all cache");
 
             ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin();
@@ -700,23 +757,24 @@ ChannelChecker::cleanCache()
                     files_changed.push_back(itr->first);
 
                     m_chDiskFileTimes[itr->second.diskName].erase(itr->first);
-                    m_chFileDiskTimes.erase(itr++);
+                    m_chFileDiskTimes.erase(itr);
+                    m_occupSizes[itr->second.diskName].erase(itr->first);
                 }
-                else
-                {
-                    itr++;
-                }
+                itr++;
             }
+logD(mutex, _func_, "QQQQC clean 4.1");
         }
-
+logD(mutex, _func_, "QQQQC clean 5");
         writeIdx(curPath, files_changed);
 
         curPath = m_recpathConfig->GetNextPath(curPath);
+logD(mutex, _func_, "QQQQC clean 6");
     }
 
     Time t;tc.Stop(&t);
     logD(channelcheck, _func_,"ChannelChecker.cleanCache exectime = [", t, "]");
 
+    logD(mutex, _func_, "QQQQC 1 MUTEX unlocked");
     m_mutex.unlock();
 
     return CheckResult_Success;
@@ -806,6 +864,7 @@ void ChannelChecker::dumpData()
 {
     logD(channelcheck, _func_,"m_channel_name = [", m_channel_name, "]");
 
+    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
     logD(channelcheck, _func_, "File summary:");
@@ -815,6 +874,7 @@ void ChannelChecker::dumpData()
              itr->second.times.timeStart, ",", itr->second.times.timeEnd, "}");
     }
 
+    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 }
 

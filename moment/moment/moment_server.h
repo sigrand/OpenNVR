@@ -24,7 +24,7 @@
 #include <libmary/libmary.h>
 #include <mconfig/mconfig.h>
 
-
+#include <json/json.h>
 #include <moment/moment_types.h>
 #include <moment/rtmp_connection.h>
 #include <moment/video_stream.h>
@@ -34,6 +34,7 @@
 #include <moment/transcoder.h>
 #include <moment/media_source_provider.h>
 
+#include <moment/rtmp_service.h>
 #include <moment/moment_request_handler.h>
 
 
@@ -578,6 +579,7 @@ private:
     mt_const ServerThreadPool *recorder_thread_pool;
     mt_const ServerThreadPool *reader_thread_pool;
     mt_const Storage          *storage;
+    mt_const RtmpService      *rtmp_service;
 
     mt_const WeakRef<ChannelManager> weak_channel_manager;
 
@@ -638,6 +640,9 @@ public:
     Ref<ChannelManager> getChannelManager () { return weak_channel_manager.getRef(); }
 
     static MomentServer* getInstance ();
+
+    void              setRtmpService(RtmpService *rtmp_service);
+    size_t            getRtmpSessionInfo(); // now it just returns amount of valid sessions
 
 
   // _________________________________ Config __________________________________
