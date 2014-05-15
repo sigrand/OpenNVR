@@ -55,7 +55,7 @@
 
 	<?php
 		for ($i=1; $i<=4; $i++) {
-			if(stristr($_SERVER['HTTP_USER_AGENT'], 'Mac os')) {
+			if(false && stristr($_SERVER['HTTP_USER_AGENT'], 'Mac os')) {
             	$server = Servers::model()->findByPK($cam->server_id);
                 ?>
                 <div class="col-sm-12 carousel_players" style="width:10px;height:10px;padding:0px" id="player_<?php echo $i; ?>">
