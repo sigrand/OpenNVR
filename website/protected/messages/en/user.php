@@ -40,6 +40,7 @@ return array (
   'Time zone' => '',
   'Time zone successfully changed' => '',
   'Timezone settings' => '',
+  'User approve shared cam' => '',
   'User decline shared cam' => '',
   'cam' => '',
   'save' => '',

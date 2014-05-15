@@ -38,6 +38,7 @@ return array (
   'Register' => '',
   'Registration' => '',
   'Registration form' => '',
+  'Registration was successful.<br/>' => '',
   'Registration was successful.<br/>To use your account, you need to confirm your email address.<br/>Confirmation code sent to your email.<br/>' => '',
   'Remember me?' => '',
   'Send recovery message' => '',

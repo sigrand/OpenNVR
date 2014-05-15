@@ -30,12 +30,12 @@ rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
     }
 
     public function add($id, $name, $url) {
-        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=$name&uri=$url");
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=$name&uri=".base64_encode($url));
         return trim($result) == 'OK' ? true : $result;
     }
 
     public function modify($id, $name, $url) {
-        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=$name&uri=$url&update");
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=$name&update&uri=".base64_encode($url));
         return trim($result) == 'OK' ? true : $result;
     }
 

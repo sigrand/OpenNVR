@@ -5,8 +5,8 @@
  */
 $jsFiles = array(
     'jQuery' => array(
-        'name' => '',
-        'path' => ''
+        'name' => 'jquery.min.js',
+        'path' => 'http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/'
     ),
 
     'mootools' => array(
@@ -49,6 +49,7 @@ $jsFiles = array(
         'path' => 'http://code.highcharts.com/stock/adapters/'
     ),
 
+    //Extra scripts used by Highcharts 3.0 charts
     'extra' => array(
         array(
             'name' => 'highcharts-more.js',

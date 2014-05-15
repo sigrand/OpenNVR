@@ -5,18 +5,20 @@
  *
  * The followings are the available columns in table 'cams':
  * @property integer $id
- * @property integer $user_id
  * @property integer $server_id
+ * @property integer $user_id
  * @property string $name
  * @property string $desc
  * @property string $url
  * @property string $prev_url
  * @property integer $show
- * @property integer $public
+ * @property integer $is_public
  * @property string $time_offset
+ * @property integer $record
  * @property string $coordinates
  * @property string $view_area
- * @property integer $record
+ * @property string $user
+ * @property string $pass
  */
 class Cams extends CActiveRecord {
 
@@ -36,6 +38,7 @@ class Cams extends CActiveRecord {
 			array('time_offset', 'length', 'max'=>4),
 			array('coordinates', 'match', 'pattern'=>'/^-?[0-9]{1,3}.[0-9]+, -?[0-9]{1,3}.[0-9]+$/u', 'message' => Yii::t('cams', 'Coordinates must be: "xxx.xxx, yyy.yyy"')),
 			array('desc', 'safe'),
+			array('user, pass', 'length', 'max'=>50),
 			array('view_area', 'safe'),
 			array('id, user_id, name, desc, url, prev_url, show, is_public, time_offset, record', 'safe', 'on'=>'search'),
 			);
@@ -66,7 +69,9 @@ class Cams extends CActiveRecord {
 			'time_offset' => Yii::t('cams', 'Time zone'),
 			'coordinates' => Yii::t('cams', 'Coordinates'),
 			'view_area' => Yii::t('cams', 'View area'),
-			'record' => Yii::t('cams', 'Enable record')
+			'record' => Yii::t('cams', 'Enable record'),
+			'user' => Yii::t('cams', 'Usernname'),
+			'pass' => Yii::t('cams', 'Password'),
 			);
 	}
 

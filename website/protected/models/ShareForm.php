@@ -6,11 +6,13 @@ class ShareForm extends CFormModel {
 	public $hcams;
 	public $cams;
 	public $emails;
+	public $type;
 
 	public function rules()	{
 		return array(
 			array('cams, emails, hcams', 'required'),
 			array('hcams', 'isOwned'),
+			array('type', 'safe'),
 			);
 	}
 
@@ -26,7 +28,11 @@ class ShareForm extends CFormModel {
 				$this->addError('cams', $c > 1 ? Yii::t('errors', 'One of cam is wrong') : Yii::t('errors', 'There is no such cam'));
 				return false;
 			}
-			$emails = array_map('trim', explode(',', $this->emails));
+			if(!is_array($this->emails)) {
+				$emails = array_map('trim', explode(',', $this->emails));
+			} else {
+				$emails = array_map('trim', $this->emails);
+			}
 			$c = count($emails);
 			$this->emailBuff = Users::model()->findAllByAttributes(array('email' => $emails));
 			if(empty($this->emailBuff) || count($this->emailBuff) != $c) {
@@ -41,8 +47,25 @@ class ShareForm extends CFormModel {
 	public function isOwned() {
 		if($this->camBuff) {
 			$c = count($this->camBuff);
-			foreach ($this->camBuff as $cam) {
-				if($cam->user_id != Yii::app()->user->getId()) { $this->addError('cams', $c > 1 ? Yii::t('errors', 'You are not owner of this cam') : Yii::t('errors', 'You are not owner of this cam')); return false; }
+			if($this->type == 'dassign' || $this->type == 'dshare') {
+				foreach($this->camBuff as $cam) {
+					$shared = Shared::model()->findByAttributes(array('cam_id' => $cam->id, 'user_id' => Yii::app()->user->getId()));
+					if(!$shared) {
+						$this->addError('cams', $c > 1 ? Yii::t('errors', 'You are not owner of this cams') : Yii::t('errors', 'You are not owner of this cam'));
+						return false;
+					}
+					if($shared->owner->status != 3) {
+						$this->addError('cams', $c > 1 ? Yii::t('errors', 'Owner of cams is not admin') : Yii::t('errors', 'Owner of cam is not admin'));
+						return false;
+					}
+				}
+			} else {
+				foreach($this->camBuff as $cam) {
+					if($cam->user_id != Yii::app()->user->getId()) {
+						$this->addError('cams', $c > 1 ? Yii::t('errors', 'You are not owner of this cams') : Yii::t('errors', 'You are not owner of this cam'));
+						return false;
+					}
+				}
 			}
 			return true;
 		}
@@ -60,9 +83,12 @@ class ShareForm extends CFormModel {
 					$shared->owner_id = $id;
 					$shared->user_id = $user->id;
 					$shared->cam_id = $cam->id;
-					$shared->save();
 				}
-				$n->note(Yii::t('cams', 'You granted access to camera {cam}', array('{cam}' => $cam->name)), array($id, $user->id, $shared->id));
+				if($this->type == 'assign') {
+					$shared->is_approved = 1;
+				}
+				$shared->save();
+				$n->note(Yii::t('cams', 'You granted access to camera {cam}', array('{cam}' => $cam->name)), array($id, $user->id, $shared->id), intval($this->type == 'assign')*2);
 			}
 		}
 		return true;

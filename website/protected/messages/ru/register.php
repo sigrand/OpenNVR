@@ -17,9 +17,7 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'Hello {nick},<br/><br/>Your activation code: {code}<br/>{link}' => 'Здравствуйте {nick},<br/><br/>Ваш код для активации: {code}<br/>{link}',
-  'Recovery link: {link}' => 'Ссылка для восстановления: {link}',
-  'Registration was successful.<br/>To use your account, you need to confirm your email address.<br/>Confirmation code sent to your email.<br/>' => 'Регистрация прошла успешно.<br/>Для того что бы войти вам нужно сначал подтвердить ваш email.<br/>Код для потдверждения отправлен вам на email.<br/>',
+  'Registration was successful.<br/>' => 'Регистрация прошла успешно.<br/>',
   'Account activation' => 'Активация аккаунта',
   'Change' => 'Изменить',
   'Code:' => 'Код:',
@@ -28,6 +26,7 @@ return array (
   'Enter your email:' => 'Введите email:',
   'Enter your nick:' => 'Введите Ник:',
   'Go to site' => 'Перейти на сайт',
+  'Hello {nick},<br/><br/>Your activation code: {code}<br/>{link}' => 'Здравствуйте {nick},<br/><br/>Ваш код для активации: {code}<br/>{link}',
   'Letter for password recovery was sended to your email' => 'Письмо с данными для восстановления отправлено на ваш email',
   'Login' => 'Войти',
   'Login form' => 'Форма авторизации',
@@ -36,9 +35,11 @@ return array (
   'Password can\'t be empty.' => 'Пароль не может быть пустым.',
   'Password recovery' => 'Восстановление пароля',
   'Passwords not equal!' => 'Пароли не совпадают!',
+  'Recovery link: {link}' => 'Ссылка для восстановления: {link}',
   'Register' => 'Регистрация',
   'Registration' => 'Регистрация',
   'Registration form' => 'Форма регистрации',
+  'Registration was successful.<br/>To use your account, you need to confirm your email address.<br/>Confirmation code sent to your email.<br/>' => 'Регистрация прошла успешно.<br/>Для того что бы войти вам нужно сначал подтвердить ваш email.<br/>Код для потдверждения отправлен вам на email.<br/>',
   'Remember me?' => 'Запомнить Вас?',
   'Send recovery message' => 'Послать сообщение для восстановления',
   'There is no such user' => 'Нет такого пользователя',

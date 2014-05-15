@@ -65,7 +65,7 @@ class Shared extends CActiveRecord
 				self::BELONGS_TO,
 				'Users',
 				'owner_id',
-				'select' => 'nick'
+				'select' => 'nick,status'
 				),
 			);
 	}
