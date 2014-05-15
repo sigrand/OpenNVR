@@ -31,15 +31,17 @@ class UsersController extends Controller {
 				if($notify->shared_id) {
 					$cam = Shared::model()->findByPK($notify->shared_id);
 					if(!$cam) {
+						$notify->delete();
 						throw new CHttpException(404, Yii::t('errors', 'Wrong cam'));
 					}
 				} else {
+					$notify->delete();
 					throw new CHttpException(404, Yii::t('errors', 'Wrong cam'));
 				}
 				$n = new Notify;
 				$id = Yii::app()->user->getId();
 				if($action == 'approve') { //TODO specify user and cam
-					$n->note(Yii::t('user', 'User decline shared cam'), array($id, $notify->creator_id, 0));
+					$n->note(Yii::t('user', 'User approve shared cam'), array($id, $notify->creator_id, 0));
 					$cam->is_approved = 1;
 					$cam->save();
 					$notify->status = 2;

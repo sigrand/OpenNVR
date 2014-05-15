@@ -131,6 +131,20 @@
 							<?php echo $form->error($model, 'view_area'); ?>
 						</div>
 					</div>
+					<div class="form-group">
+						<div class="col-sm-offset-2 col-sm-2 control-label"><b><?php echo Yii::t('cams', 'User:Password'); ?></b></div>
+						<div class="col-sm-4">
+							<?php echo $form->textField($model, 'user', array('class' => 'form-control')); ?>
+						</div>
+						<div class="col-sm-1"><b>:</b></div>
+						<div class="col-sm-3">
+							<?php echo $form->textField($model, 'pass', array('class' => 'form-control')); ?>
+						</div>
+						<div class="col-sm-offset-2 col-sm-4">
+							<?php echo $form->error($model, 'user'); ?>
+							<?php echo $form->error($model, 'pass'); ?>
+						</div>
+					</div>
 				</div>
 			</div>
 			<div class="col-sm-12">

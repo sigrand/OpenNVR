@@ -42,7 +42,7 @@ bool RecpathConfig::Init(const std::string & path_to_config,
 bool RecpathConfig::LoadConfig(const std::string & path_to_config)
 {
     logD(recpath, _func_);
-    m_mutex.lock();
+    //m_mutex.lock();
 
     m_configs.clear();
     m_bIsEmpty = true;
@@ -53,7 +53,7 @@ bool RecpathConfig::LoadConfig(const std::string & path_to_config)
     std::ifstream config_file(path_to_config, std::ifstream::binary);
     if(!config_file.good())
     {
-        m_mutex.unlock();
+        //m_mutex.unlock();
         logE_(_func_, "fail to load config");
         return false;
     }
@@ -61,7 +61,7 @@ bool RecpathConfig::LoadConfig(const std::string & path_to_config)
     bool parsingSuccessful = reader.parse( config_file, root, false );
     if(!parsingSuccessful)
     {
-        m_mutex.unlock();
+        //m_mutex.unlock();
         logE_(_func_, "fail to parse config");
         return false;
     }
@@ -69,7 +69,7 @@ bool RecpathConfig::LoadConfig(const std::string & path_to_config)
     Json::Value configs = root["configs"];
     if(configs.empty())
     {
-        m_mutex.unlock();
+        //m_mutex.unlock();
         logE_(_func_, "fail to find \"configs\" section");
         return false;
     }
@@ -85,7 +85,7 @@ bool RecpathConfig::LoadConfig(const std::string & path_to_config)
         if(path.empty())// || quota.empty() || mode.empty())
         {
             m_configs.clear();
-            m_mutex.unlock();
+            //m_mutex.unlock();
             logE_(_func_, "fail to parse params for section No ", itr.index());
             return false;
         }
@@ -106,7 +106,7 @@ bool RecpathConfig::LoadConfig(const std::string & path_to_config)
 
     m_bIsInit = true;
 
-    m_mutex.unlock();
+    //m_mutex.unlock();
 
     return true;
 }
@@ -135,11 +135,11 @@ std::string RecpathConfig::GetNextPath(const std::string & prev_path)
 {
     logD(recpath, _func_);
 
-    m_mutex.lock();
+    //m_mutex.lock();
 
     if(m_configs.size() == 0)
     {
-        m_mutex.unlock();
+        //m_mutex.unlock();
         logD(recpath, _func_, "Config is empty");
         return std::string("");
     }
@@ -180,7 +180,7 @@ std::string RecpathConfig::GetNextPath(const std::string & prev_path)
         logD(recpath, _func_, "return first path [", next_path.c_str(), "]");
     }
 
-    m_mutex.unlock();
+    //m_mutex.unlock();
 
     return next_path;
 }
@@ -189,11 +189,11 @@ std::string RecpathConfig::GetNextPathForStream()
 {
     logD(recpath, _func_);
 
-    m_mutex.lock();
+    //m_mutex.lock();
 
     if(m_configs.size() == 0)
     {
-        m_mutex.unlock();
+        //m_mutex.unlock();
         logD(recpath, _func_, "Config is empty");
         return std::string("");
     }
@@ -287,7 +287,7 @@ std::string RecpathConfig::GetNextPathForStream()
         }
     }
 
-    m_mutex.unlock();
+    //m_mutex.unlock();
 
     return next_path;
 }
@@ -297,7 +297,7 @@ RecpathConfig::IsPathExist(const std::string & path)
 {
     logD(recpath, _func_);
 
-    m_mutex.lock();
+    //m_mutex.lock();
 
     ConfigMap::iterator itr = m_configs.find(path);
     bool bRes = (itr != m_configs.end());
@@ -306,7 +306,7 @@ RecpathConfig::IsPathExist(const std::string & path)
     else
         logD(recpath, _func_, "path [", path.c_str(), "] doesnt exist");
 
-    m_mutex.unlock();
+    //m_mutex.unlock();
 
     return bRes;
 }

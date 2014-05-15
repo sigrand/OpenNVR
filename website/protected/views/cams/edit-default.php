@@ -49,6 +49,24 @@
 					</div>
 				</div>
 				<div class="form-group">
+					<?php echo $form->labelEx($model, 'user', array('class' => 'col-sm-4 control-label')); ?>
+					<div class="col-sm-8">
+						<?php echo $form->textField($model, 'user', array('class' => 'form-control')); ?>
+					</div>
+					<div class="col-sm-offset-4 col-sm-8">
+						<?php echo $form->error($model, 'user'); ?>
+					</div>
+				</div>
+				<div class="form-group">
+					<?php echo $form->labelEx($model, 'pass', array('class' => 'col-sm-4 control-label')); ?>
+					<div class="col-sm-8">
+						<?php echo $form->textField($model, 'pass', array('class' => 'form-control')); ?>
+					</div>
+					<div class="col-sm-offset-4 col-sm-8">
+						<?php echo $form->error($model, 'pass'); ?>
+					</div>
+				</div>
+				<div class="form-group">
 					<?php echo $form->labelEx($model, 'time_offset', array('class' => 'col-sm-4 control-label')); ?>
 					<div class="col-sm-8">
 						<?php

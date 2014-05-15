@@ -43,6 +43,7 @@ namespace MomentFFmpeg {
 #define TIMER_UPDATE_SOURCES_TIMES 2    // 2 seconds
 
 static LogGroup libMary_logGroup_ffmpeg_module ("mod_ffmpeg.ffmpeg_module", LogLevel::E);
+static LogGroup libMary_logGroup_mutex ("mod_ffmpeg.mutex", LogLevel::E);
 
 extern std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
 extern std::vector<std::string> split(const std::string &s, char delim);
@@ -64,10 +65,12 @@ MomentFFmpegModule::updatePlaylist (ConstMemory   const channel_name,
         return Result::Failure;
     }
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
 
     ChannelEntry * const channel_entry = m_channel_entry_hash.lookup (channel_name);
     if (!channel_entry) {
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	Ref<String> const err_msg = makeString ("Channel not found: ", channel_name);
 	logE_ (_func, err_msg);
@@ -76,6 +79,7 @@ MomentFFmpegModule::updatePlaylist (ConstMemory   const channel_name,
     }
 
     if (!channel_entry->playlist_filename) {
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	Ref<String> const err_msg = makeString ("No playlist for channel \"", channel_name, "\"");
 	logE_ (_func, err_msg);
@@ -90,12 +94,14 @@ MomentFFmpegModule::updatePlaylist (ConstMemory   const channel_name,
                 channel_entry->channel_opts->default_item,
                 &err_msg))
     {
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	logE_ (_func, "channel->loadPlaylistFile() failed: ", err_msg);
 	*ret_err_msg = makeString ("Playlist parsing error: ", err_msg->mem());
 	return Result::Failure;
     }
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 
     return Result::Success;
@@ -113,10 +119,12 @@ MomentFFmpegModule::setPosition (ConstMemory const channel_name,
 	return Result::Failure;
     }
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
 
     ChannelEntry * const channel_entry = m_channel_entry_hash.lookup (channel_name);
     if (!channel_entry) {
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	logE_ (_func, "Channel not found: ", channel_name);
 	return Result::Failure;
@@ -128,6 +136,7 @@ MomentFFmpegModule::setPosition (ConstMemory const channel_name,
     } else {
 	Uint32 item_idx;
 	if (!strToUint32_safe (item_name, &item_idx)) {
+        logD(mutex, _func_, "MUTEX unlocked");
         m_mutex.unlock ();
 	    logE_ (_func, "Failed to parse item index");
 	    return Result::Failure;
@@ -137,11 +146,13 @@ MomentFFmpegModule::setPosition (ConstMemory const channel_name,
     }
 
     if (!res) {
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	logE_ (_func, "Item not found: ", item_name, item_name_is_id ? " (id)" : " (idx)", ", channel: ", channel_name);
 	return Result::Failure;
     }
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 
     return Result::Success;
@@ -187,8 +198,10 @@ MomentFFmpegModule::createPlaylistChannel (ConstMemory      const playlist_filen
 
     channel->init (m_pMoment, channel_opts);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_channel_entry_hash.add (channel_entry);
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
     m_channel_set.addChannel (channel, channel_opts->channel_name->mem());
 
@@ -255,8 +268,10 @@ MomentFFmpegModule::createStreamChannel (ChannelOptions * const channel_opts,
 
     channel->init (m_pMoment, channel_opts);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_channel_entry_hash.add (channel_entry);
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
     m_channel_set.addChannel (channel, channel_opts->channel_name->mem());
 
@@ -324,8 +339,10 @@ MomentFFmpegModule::createDummyChannel (ConstMemory   const channel_name,
 
     channel->init (m_pMoment, opts);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_channel_entry_hash.add (channel_entry);
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
     m_channel_set.addChannel (channel, channel_name);
 
@@ -356,8 +373,10 @@ MomentFFmpegModule::createPlaylistRecorder (ConstMemory const recorder_name,
 		    filename_prefix,
                     m_default_channel_opts->min_playlist_duration_sec);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_recorder_entry_hash.add (recorder_entry);
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 
     {
@@ -391,8 +410,10 @@ MomentFFmpegModule::createChannelRecorder (ConstMemory const recorder_name,
 		    filename_prefix,
                     m_default_channel_opts->min_playlist_duration_sec);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_recorder_entry_hash.add (recorder_entry);
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 
     recorder->setSingleChannel (channel_name);
@@ -473,7 +494,8 @@ MomentFFmpegModule::channelFilesExistenceToJson (
 
 StRef<String>
 MomentFFmpegModule::statisticsToJson (
-        std::map<time_t, StatMeasure> * const mt_nonnull statPoints)
+        std::map<time_t, StatMeasure> * const mt_nonnull statPoints,
+        MomentServer * m_pMoment)
 {
     if(!statPoints)
     {
@@ -481,74 +503,77 @@ MomentFFmpegModule::statisticsToJson (
         return NULL;
     }
 
-     std::ostringstream s;
-	 
-     for(std::map<time_t, StatMeasure>::iterator it = statPoints->begin(); it != statPoints->end(); ++it)
-     {
-         s << "{\n\"time\":\"";
-         struct tm * timeinfo;
-         timeinfo = localtime (&(*it).first);
-         s << timeinfo->tm_year + 1900 << "." \
-                         << timeinfo->tm_mon + 1 << "." << timeinfo->tm_mday \
-                         << " " << timeinfo->tm_hour << ":" << timeinfo->tm_min \
-                         << ":" << timeinfo->tm_sec << "\",\n";
+    Json::Value json_root;
+    Json::Value json_statistics;
 
-         if((*it).second.packetAmountInOut != 0)
-         {
-             s << "\"packet time from ffmpeg to restreamer\":{\n";
-             s << "\"min\":\"" << (*it).second.minInOut << "\",\n";
-             s << "\"max\":\"" << (*it).second.maxInOut << "\",\n";
-             s << "\"avg\":\"" << (*it).second.avgInOut << "\",\n";
-             s << "\"avg amount\":\"" << (*it).second.packetAmountInOut << "\"},\n";
-         }
+    for(std::map<time_t, StatMeasure>::iterator it = statPoints->begin(); it != statPoints->end(); ++it)
+    {
+        Json::Value json_statistics_one;
 
-         if((*it).second.packetAmountInNvr != 0)
-         {
-             s << "\"packet time from ffmpeg to nvr\":{\n";
-             s << "\"min\":\"" << (*it).second.minInNvr << "\",\n";
-             s << "\"max\":\"" << (*it).second.maxInNvr << "\",\n";
-             s << "\"avg\":\"" << (*it).second.avgInNvr << "\",\n";
-             s << "\"avg amount\":\"" << (*it).second.packetAmountInNvr << "\"},\n";
-         }
+        struct tm * timeinfo;
+        timeinfo = localtime (&(*it).first);
+        StRef<String> str_time = st_makeString(timeinfo->tm_year + 1900, ".", timeinfo->tm_mon + 1, ".",
+                                               timeinfo->tm_mday, " ", timeinfo->tm_hour, ":",
+                                               timeinfo->tm_min, ":", timeinfo->tm_sec);
 
-         s << "\"RAM utilization\":{\n";
-         s << "\"min\":\"" << (*it).second.minRAM << "\",\n";
-         s << "\"max\":\"" << (*it).second.maxRAM << "\",\n";
-         s << "\"avg\":\"" << (*it).second.avgRAM << "\"},\n";
+        json_statistics_one["time"] = std::string(str_time->cstr());
 
-         s << "\"CPU utilization\":{\n";
-         s << "\"min\":\"" << (*it).second.user_util_min << "\",\n";
-         s << "\"max\":\"" << (*it).second.user_util_max << "\",\n";
-         s << "\"avg\":\"" << (*it).second.user_util_avg << "\"},\n";
+        if((*it).second.packetAmountInOut != 0)
+        {
+            Json::Value json_statistics_pt_ff_restr;
+            json_statistics_pt_ff_restr["min"] = Json::UInt64((*it).second.minInOut);
+            json_statistics_pt_ff_restr["max"] = Json::UInt64((*it).second.maxInOut);
+            json_statistics_pt_ff_restr["avg"] = Json::UInt64((*it).second.avgInOut);
+            json_statistics_pt_ff_restr["avg amount"] = Json::UInt64((*it).second.packetAmountInOut);
+            json_statistics_one["packet time from ffmpeg to restreamer"] = json_statistics_pt_ff_restr;
+        }
 
-         s << "\"HDD utilization\":[\n";
-         for(int i=0;i<(*it).second.devnames.size();i++)
-         {
-             s << "{\"devname\":\"" << (*it).second.devnames[i] << "\",\n";
-             s << "\"util\":\"" << (*it).second.hdd_utils[i] << "\"}";
-             if(i+1 != (*it).second.devnames.size())
-             {
-                 s << ",\n";
-             }
-             else
-             {
-                 s << "]\n";
-             }
-         }
+        if((*it).second.packetAmountInNvr != 0)
+        {
+            Json::Value json_statistics_pt_ff_nvr;
+            json_statistics_pt_ff_nvr["min"] = Json::UInt64((*it).second.minInNvr);
+            json_statistics_pt_ff_nvr["max"] = Json::UInt64((*it).second.maxInNvr);
+            json_statistics_pt_ff_nvr["avg"] = Json::UInt64((*it).second.avgInNvr);
+            json_statistics_pt_ff_nvr["avg amount"] = Json::UInt64((*it).second.packetAmountInNvr);
+            json_statistics_one["packet time from ffmpeg to nvr"] = json_statistics_pt_ff_nvr;
+        }
 
-         std::map<time_t, StatMeasure>::iterator it1 = it;
-         it1++;
-         if(it1 != statPoints->end())
-             s << "},\n";
-         else
-             s << "}\n";
-     }
+        Json::Value json_statistics_ram;
+        json_statistics_ram["min"] = Json::UInt64((*it).second.minRAM);
+        json_statistics_ram["max"] = Json::UInt64((*it).second.maxRAM);
+        json_statistics_ram["avg"] = Json::UInt64((*it).second.avgRAM);
+        json_statistics_one["RAM utilization"] = json_statistics_ram;
 
-     return st_makeString("{\n"
-                          "\"statistics\" : [\n",
-                          s.str().c_str(),
-                          "]\n"
-                          "}\n");
+        Json::Value json_statistics_cpu;
+        json_statistics_cpu["min"] = (*it).second.user_util_min;
+        json_statistics_cpu["max"] = (*it).second.user_util_max;
+        json_statistics_cpu["avg"] = (*it).second.user_util_avg;
+        json_statistics_one["CPU utilization"] = json_statistics_cpu;
+
+        Json::Value json_statistics_hdd;
+        for(int i=0;i<(*it).second.devnames.size();i++)
+        {
+            Json::Value json_statistics_hdd_device;
+            json_statistics_hdd_device["device"] = (*it).second.devnames[i];
+            json_statistics_hdd_device["util"] = (*it).second.hdd_utils[i];
+            json_statistics_hdd.append(json_statistics_hdd_device);
+        }
+
+        json_statistics_one["HDD utilization"] = json_statistics_hdd;
+        json_statistics_one["rtmp_sessions"] = Json::UInt((*it).second.rtmp_sessions);
+
+        json_statistics.append(json_statistics_one);
+    }
+
+    json_root["statistics"] = json_statistics;
+
+
+    Json::StyledWriter json_writer_styled;
+    std::string json_respond = json_writer_styled.write(json_root);
+
+    StRef<String> str_res = st_makeString(json_respond.c_str());
+
+    return str_res;
 }
 
 Json::Value
@@ -657,6 +682,7 @@ MomentFFmpegModule::GetAllSourcesInfo ()
 {
     logD(ffmpeg_module, _func_);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = m_streams.begin();
@@ -676,6 +702,7 @@ MomentFFmpegModule::GetAllSourcesInfo ()
 
     json_root["sources"] = json_sources;
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     Json::StyledWriter json_writer_styled;
@@ -689,6 +716,7 @@ MomentFFmpegModule::GetSourceInfo (const std::string & source_name)
 {
     logD(ffmpeg_module, _func_);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     if(m_streams.find(source_name) != m_streams.end())
@@ -698,6 +726,7 @@ MomentFFmpegModule::GetSourceInfo (const std::string & source_name)
 
         Json::Value json_source = sourceInfoToJson(source_name, si, channelChecker);
 
+        logD(mutex, _func_, "MUTEX unlocked");
         m_mutex.unlock();
 
         Json::StyledWriter json_writer_styled;
@@ -707,6 +736,7 @@ MomentFFmpegModule::GetSourceInfo (const std::string & source_name)
     }
     else
     {
+        logD(mutex, _func_, "MUTEX unlocked");
         m_mutex.unlock();
 
         return std::string();
@@ -821,6 +851,7 @@ MomentFFmpegModule::removeVideoFiles(StRef<String> const channel_name,
 {
     bool bRes = false;
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = m_streams.find(std::string(channel_name->cstr()));
@@ -831,6 +862,7 @@ MomentFFmpegModule::removeVideoFiles(StRef<String> const channel_name,
     }
     Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = channelChecker->GetChannelFileDiskTimes();
@@ -890,6 +922,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         bool channelIsFound = false;
         bool const set_on = (segments[1].compare("rec_on") == 0);
 
+        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
@@ -898,6 +931,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         if (!channelIsFound)
         {
+            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -912,6 +946,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         it->second.getRefPtr()->SetRecordingState(set_on);
         it->second.getRefPtr()->GetRecordingState(channel_state);
 
+        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         bool bDisableRecordFound = false;
@@ -986,12 +1021,14 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         StRef<String> st_channel_name = st_makeString(channel_name.c_str());
 
+        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
 
         if (itFFStream == self->m_streams.end())
         {
+            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -1005,6 +1042,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
         ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = channelChecker->GetChannelFileDiskTimes ();
 
+        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         StRef<String> const reply_body = channelFilesExistenceToJson (&chFileDiskTimes);
@@ -1018,7 +1056,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
     }
     else if(segments.size() == 2 && (segments[1].compare("statistics") == 0))
     {
-        StRef<String> reply_body = statisticsToJson(&self->m_statPoints);
+        StRef<String> reply_body = statisticsToJson(&self->m_statPoints, self->m_pMoment);
         resp.setStatus(HTTPResponse::HTTP_OK);
         resp.setContentType("text/html");
         std::ostream& out = resp.send();
@@ -1103,12 +1141,14 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         logE_(_func_, "channel_name = ", channel_name.c_str());
 
+        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
 
         if (itFFStream == self->m_streams.end())
         {
+            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -1121,6 +1161,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         bool bIsRestreaming = itFFStream->second.getRefPtr()->IsRestreaming();
 
+        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         logD(ffmpeg_module, _func, "OK");
@@ -1140,12 +1181,14 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         logE_(_func_, "channel_name = ", channel_name.c_str());
 
+        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
 
         if (itFFStream == self->m_streams.end())
         {
+            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -1158,6 +1201,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         stSourceInfo si = itFFStream->second.getRefPtr()->GetSourceInfo();
 
+        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         logD(ffmpeg_module, _func, "OK");
@@ -1255,23 +1299,23 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
     }
     else if(segments.size() == 2 && (segments[1].compare("reload_recpath") == 0))
     {
-        bool bRes = self->m_recpath_config.LoadConfig(self->m_recpath_conf->cstr());
+//        bool bRes = self->m_recpath_config.LoadConfig(self->m_recpath_conf->cstr());
 
-        if(bRes)
-        {
-            resp.setStatus(HTTPResponse::HTTP_OK);
-            resp.setContentType("text/html");
-            std::ostream& out = resp.send();
-            out << "recpath.conf is reloaded";
-            out << self->m_recpath_config.GetConfigJson();
-            out.flush();
-        }
-        else
+//        if(bRes)
+//        {
+//            resp.setStatus(HTTPResponse::HTTP_OK);
+//            resp.setContentType("text/html");
+//            std::ostream& out = resp.send();
+//            out << "recpath.conf is reloaded";
+//            out << self->m_recpath_config.GetConfigJson();
+//            out.flush();
+//        }
+//        else
         {
             logD(ffmpeg_module, _func_, "reply: 500 Internal server error");
             resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
             std::ostream& out = resp.send();
-            out << "500 Internal Server Error: fail to reload recpath.conf";
+            out << "500 Internal Server Error: fail to reload recpath.conf: not implemented";
             out.flush();
         }
     }
@@ -1317,6 +1361,7 @@ MomentFFmpegModule::clearEmptyChannels()
 {
     logD(ffmpeg_module, _func);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator it1 = m_streams.begin();
@@ -1331,6 +1376,7 @@ MomentFFmpegModule::clearEmptyChannels()
             it1++;
     }
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 }
 
@@ -1371,6 +1417,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
         bool channel_state = false; // false - isn't writing
         bool channelIsFound = false;
 
+        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator it = self->m_streams.find(channel_name);
@@ -1379,6 +1426,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
 
         if (!channelIsFound)
         {
+            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             logE_ (_func, "Channel Not Found (mod_nvr): ", channel_name.c_str());
@@ -1392,6 +1440,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
 
         it->second.getRefPtr()->GetRecordingState(channel_state);
 
+        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq.c_str(), "\", \"recording\": ", channel_state, " }");
@@ -1478,12 +1527,14 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
 
         logD(ffmpeg_module, _func_, "channel_name: [", channel_name.c_str(), "]");
 
+        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
-
+logD(mutex, _func_, "QQQQQ 1");
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
 
         if (itFFStream == self->m_streams.end())
         {
+            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
             logE_ (_func, "Channel Not Found (mod_nvr): ", channel_name.c_str());
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -1494,16 +1545,29 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
             goto _return;
         }
 
+logD(mutex, _func_, "QQQQQ 2");
         Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
-        ChannelChecker::ChannelTimes channel_existence = channelChecker->GetChannelTimes ();
+        std::string reply_body_str;
+        if(!channelChecker.isNull())
+        {
+            logD(mutex, _func_, "QQQQQ 3");
+            ChannelChecker::ChannelTimes channel_existence = channelChecker->GetChannelTimes ();
+            StRef<String> reply_body = channelExistenceToJson (&channel_existence);
+            reply_body_str = reply_body->cstr();
+        }
+        else
+        {
+            logE_(_func_, "channelChecker is empty");
+        }
 
+        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
-        StRef<String> const reply_body = channelExistenceToJson (&channel_existence);
+        //StRef<String> reply_body = channelExistenceToJson (&channel_existence);
         resp.setStatus(HTTPResponse::HTTP_OK);
         resp.setContentType("text/html");
         std::ostream& out = resp.send();
-        out << reply_body->cstr();
+        out << reply_body_str;//reply_body->cstr();
         out.flush();
         logA(ffmpeg_module, _func_, "mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
     }
@@ -1545,17 +1609,20 @@ MomentFFmpegModule::doGetFile (ConstMemory   const channel_name,
     StRef<String> str_ch_name = st_makeString(channel_name);
     std::string ch_name = str_ch_name->cstr();
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = m_streams.find(ch_name);
     if(itFFStream == m_streams.end())
     {
+        logD(mutex, _func_, "MUTEX unlocked");
         m_mutex.unlock();
         logE_(_func_, "there is no ", channel_name, " in m_streams");
         return false;
     }
     Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     ChannelChecker::ChannelFileDiskTimes chlFileDiskTimes = channelChecker->GetChannelFileDiskTimes();
@@ -1611,10 +1678,12 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
                       &m_recpath_config,
                       channel_checker);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     m_streams[channel_opts->channel_name->cstr()] = ffmpeg_stream;
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     return ffmpeg_stream;
@@ -1626,6 +1695,7 @@ MomentFFmpegModule::CreateStatPoint()
     StatMeasure stmRes;
     std::vector<StatMeasure> stmFromStreams;
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator it = m_streams.begin();
@@ -1635,6 +1705,7 @@ MomentFFmpegModule::CreateStatPoint()
             stmFromStreams.push_back(it->second.getRefPtr()->GetStatMeasure());
     }
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     // find out most minimum, most maximum, most average, etc
@@ -1675,7 +1746,7 @@ MomentFFmpegModule::CreateStatPoint()
     stmRes.packetAmountInOut = ss != 0 ? packAmInOut / ss : 0;
     stmRes.packetAmountInNvr = ss != 0 ? packAmInNvr / ss : 0;
 
-    // CPU RAM HDD
+    // CPU RAM HDD RTMP
     StatMeasure stmGeneral = m_statMeasurer.GetStatMeasure();
 
     stmRes.minRAM = stmGeneral.minRAM;
@@ -1688,14 +1759,15 @@ MomentFFmpegModule::CreateStatPoint()
 
     stmRes.devnames = stmGeneral.devnames;
     stmRes.hdd_utils = stmGeneral.hdd_utils;
-    // timestamp
 
+    stmRes.rtmp_sessions = this->m_pMoment->getRtmpSessionInfo();
+
+    // timestamp
     struct timeval tv;
     gettimeofday(&tv, NULL);
     time_t timePoint = tv.tv_sec;
 
     // add to allstat
-
     m_statPoints[timePoint] = stmRes;
 
     return true;
@@ -1730,57 +1802,72 @@ MomentFFmpegModule::DeleteOldPoints()
 bool
 MomentFFmpegModule::DumpStatInFile()
 {
-    std::stringstream statToFile;
+    Json::Value json_root;
+    Json::Value json_statistics;
 
-    std::map<time_t, StatMeasure>::iterator it = m_statPoints.begin();
-    for(it; it != m_statPoints.end(); ++it)
+    for(std::map<time_t, StatMeasure>::iterator it = m_statPoints.begin(); it != m_statPoints.end(); ++it)
     {
-        // time
-        statToFile << it->first << '|';
+        Json::Value json_statistics_one;
 
-        // in-out
-        statToFile << it->second.minInOut << '|';
-        statToFile << it->second.maxInOut << '|';
-        statToFile << it->second.avgInOut << '|';
-        statToFile << it->second.packetAmountInOut << '|';
+        json_statistics_one["time"] = Json::Int((*it).first);
 
-        statToFile << it->second.minInNvr << '|';
-        statToFile << it->second.maxInNvr << '|';
-        statToFile << it->second.avgInNvr << '|';
-        statToFile << it->second.packetAmountInNvr << '|';
-
-        // Memory stat
-        statToFile << it->second.minRAM << '|';
-        statToFile << it->second.maxRAM << '|';
-        statToFile << it->second.avgRAM << '|';
-
-        // CPU stat
-
-        statToFile << it->second.user_util_min << "|";
-        statToFile << it->second.user_util_max << "|";
-        statToFile << it->second.user_util_avg << "|";
-
-        // HDD stat
-        for(int i=0;i<it->second.devnames.size();i++)
+        if((*it).second.packetAmountInOut != 0)
         {
-            statToFile << it->second.devnames[i] << "|";
-            statToFile << it->second.hdd_utils[i];
-            if(i+1 != it->second.devnames.size())
-            {
-                statToFile << "|";
-            }
-            else
-            {
-                statToFile << std::endl;
-            }
+            Json::Value json_statistics_pt_ff_restr;
+            json_statistics_pt_ff_restr["min"] = Json::UInt64((*it).second.minInOut);
+            json_statistics_pt_ff_restr["max"] = Json::UInt64((*it).second.maxInOut);
+            json_statistics_pt_ff_restr["avg"] = Json::UInt64((*it).second.avgInOut);
+            json_statistics_pt_ff_restr["avg amount"] = Json::UInt64((*it).second.packetAmountInOut);
+            json_statistics_one["packet time from ffmpeg to restreamer"] = json_statistics_pt_ff_restr;
         }
+
+        if((*it).second.packetAmountInNvr != 0)
+        {
+            Json::Value json_statistics_pt_ff_nvr;
+            json_statistics_pt_ff_nvr["min"] = Json::UInt64((*it).second.minInNvr);
+            json_statistics_pt_ff_nvr["max"] = Json::UInt64((*it).second.maxInNvr);
+            json_statistics_pt_ff_nvr["avg"] = Json::UInt64((*it).second.avgInNvr);
+            json_statistics_pt_ff_nvr["avg amount"] = Json::UInt64((*it).second.packetAmountInNvr);
+            json_statistics_one["packet time from ffmpeg to nvr"] = json_statistics_pt_ff_nvr;
+        }
+
+        Json::Value json_statistics_ram;
+        json_statistics_ram["min"] = Json::UInt64((*it).second.minRAM);
+        json_statistics_ram["max"] = Json::UInt64((*it).second.maxRAM);
+        json_statistics_ram["avg"] = Json::UInt64((*it).second.avgRAM);
+        json_statistics_one["RAM utilization"] = json_statistics_ram;
+
+        Json::Value json_statistics_cpu;
+        json_statistics_cpu["min"] = (*it).second.user_util_min;
+        json_statistics_cpu["max"] = (*it).second.user_util_max;
+        json_statistics_cpu["avg"] = (*it).second.user_util_avg;
+        json_statistics_one["CPU utilization"] = json_statistics_cpu;
+
+        Json::Value json_statistics_hdd;
+        for(int i=0;i<(*it).second.devnames.size();i++)
+        {
+            Json::Value json_statistics_hdd_device;
+            json_statistics_hdd_device["device"] = (*it).second.devnames[i];
+            json_statistics_hdd_device["util"] = (*it).second.hdd_utils[i];
+            json_statistics_hdd.append(json_statistics_hdd_device);
+        }
+
+        json_statistics_one["HDD utilization"] = json_statistics_hdd;
+        json_statistics_one["rtmp_sessions"] = Json::UInt((*it).second.rtmp_sessions);
+
+        json_statistics.append(json_statistics_one);
     }
+
+    json_root["statistics"] = json_statistics;
+
+    Json::StyledWriter json_writer_styled;
+    std::string json_to_file = json_writer_styled.write(json_root);
 
     std::ofstream statFile;
     statFile.open(STATFILE, std::ios::out);
     if (statFile.is_open())
     {
-        statFile << statToFile.str();
+        statFile << json_to_file;
         statFile.close();
     }
     else
@@ -1797,105 +1884,81 @@ MomentFFmpegModule::ReadStatFromFile()
 {
     std::ifstream statFile;
     statFile.open(STATFILE, std::ios::in);
-    if(statFile.is_open())
+
+    Json::Value root;   // will contains the root value after parsing.
+    Json::Reader reader;
+
+    if(!statFile.good())
     {
-        std::string line;
-        while ( std::getline (statFile, line) )
-        {
-            time_t timestamp;
-            StatMeasure stm;
-            std::vector<std::string> tokens = split(line, '|');
-
-            if(tokens.size() != 15)
-            {
-                logE_(_func_, "wrong stat file!");
-                statFile.close();
-                break;
-            }
-
-            // time
-            {
-                std::istringstream iss(tokens[0]);
-                iss >> timestamp;
-            }
-            // in-out
-            {
-                std::istringstream iss(tokens[1]);
-                iss >> stm.minInOut;
-            }
-            {
-                std::istringstream iss(tokens[2]);
-                iss >> stm.maxInOut;
-            }
-            {
-                std::istringstream iss(tokens[3]);
-                iss >> stm.avgInOut;
-            }
-            {
-                std::istringstream iss(tokens[4]);
-                iss >> stm.packetAmountInOut;
-            }
-            // in-nvr
-            {
-                std::istringstream iss(tokens[5]);
-                iss >> stm.minInNvr;
-            }
-            {
-                std::istringstream iss(tokens[6]);
-                iss >> stm.maxInNvr;
-            }
-            {
-                std::istringstream iss(tokens[7]);
-                iss >> stm.avgInNvr;
-            }
-            {
-                std::istringstream iss(tokens[8]);
-                iss >> stm.packetAmountInNvr;
-            }
-            // RAM
-            {
-                std::istringstream iss(tokens[9]);
-                iss >> stm.minRAM;
-            }
-            {
-                std::istringstream iss(tokens[10]);
-                iss >> stm.maxRAM;
-            }
-            {
-                std::istringstream iss(tokens[11]);
-                iss >> stm.avgRAM;
-            }
-            // CPU
-            {
-                std::istringstream iss(tokens[12]);
-                iss >> stm.user_util_min;
-            }
-            {
-                std::istringstream iss(tokens[13]);
-                iss >> stm.user_util_max;
-            }
-            {
-                std::istringstream iss(tokens[14]);
-                iss >> stm.user_util_avg;
-            }
-            // HDD
-            {
-                int i=15;
-                while(i+1 < tokens.size())
-                {
-                    stm.devnames.push_back(tokens[i]);
-                    double util;
-                    std::istringstream iss(tokens[i+1]);
-                    iss >> util;
-                    stm.hdd_utils.push_back(util);
-                    i+=2;
-                }
-            }
-            // push to statPoints
-            m_statPoints[timestamp] = stm;
-        }
-        statFile.close();
+        logE_(_func_, "fail to load stat file");
+        return false;
     }
+
+    bool parsingSuccessful = reader.parse( statFile, root, false );
+    if(!parsingSuccessful)
+    {
+        logE_(_func_, "fail to parse stat file");
+        return false;
+    }
+
+    Json::Value statistics = root["statistics"];
+    if(statistics.empty())
+    {
+        logE_(_func_, "fail to find \"statistics\" section");
+        return false;
+    }
+
+    for( Json::ValueIterator itr = statistics.begin() ; itr != statistics.end() ; itr++ )
+    {
+        StatMeasure stm;
+
+        Json::Value stat_entry = (*itr);
+
+        time_t timestamp = stat_entry["time"].asUInt();
+
+        Json::Value stat_cpu = stat_entry["CPU utilization"];
+        stm.user_util_min = stat_cpu["min"].asDouble();
+        stm.user_util_max = stat_cpu["max"].asDouble();
+        stm.user_util_avg = stat_cpu["avg"].asDouble();
+
+        Json::Value stat_ram = stat_entry["RAM utilization"];
+        stm.minRAM = stat_ram["min"].asUInt64();
+        stm.maxRAM = stat_ram["max"].asUInt64();
+        stm.avgRAM = stat_ram["avg"].asUInt64();
+
+        Json::Value stat_in_out = stat_entry["packet time from ffmpeg to restreamer"];
+        if(!stat_in_out.empty())
+        {
+            stm.minInOut = stat_in_out["min"].asUInt64();
+            stm.maxInOut = stat_in_out["max"].asUInt64();
+            stm.avgInOut = stat_in_out["avg"].asUInt64();
+            stm.packetAmountInOut = stat_in_out["avg amount"].asUInt();
+        }
+
+        Json::Value stat_in_nvr = stat_entry["packet time from ffmpeg to nvr"];
+        if(!stat_in_nvr.empty())
+        {
+            stm.minInNvr = stat_in_nvr["min"].asUInt64();
+            stm.maxInNvr = stat_in_nvr["max"].asUInt64();
+            stm.avgInNvr = stat_in_nvr["avg"].asUInt64();
+            stm.packetAmountInNvr = stat_in_nvr["avg amount"].asUInt();
+        }
+
+        Json::Value stat_hdd = stat_entry["HDD utilization"];
+        for( Json::ValueIterator itr1 = stat_hdd.begin() ; itr1 != stat_hdd.end() ; itr1++ )
+        {
+            Json::Value hdd_entry = (*itr);
+
+            stm.devnames.push_back(hdd_entry["device"].asString());
+            stm.hdd_utils.push_back(hdd_entry["util"].asDouble());
+        }
+
+        stm.rtmp_sessions = stat_entry["rtmp_sessions"].asUInt();
+
+        m_statPoints[timestamp] = stm;
+    }
+
+    statFile.close();
 
     return false;
 }
@@ -1939,6 +2002,7 @@ MomentFFmpegModule::UpdateSourceTimes()
 {
     logD(ffmpeg_module, _func);
 
+    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     struct timeval tv;
@@ -2026,6 +2090,7 @@ MomentFFmpegModule::UpdateSourceTimes()
         itr1++;
     }
 
+    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     return true;
@@ -2141,6 +2206,7 @@ MomentFFmpegModule::~MomentFFmpegModule ()
         this->m_timer_updateTimes = NULL;
     }
 
+    logD(mutex, _func_, "MUTEX _locked in destructor");
   StateMutexLock l (&m_mutex);
 
     {

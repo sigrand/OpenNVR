@@ -26,6 +26,8 @@ CREATE TABLE IF NOT EXISTS `cams` (
   `record` tinyint(1) NOT NULL DEFAULT '0',
   `coordinates` varchar(100) DEFAULT NULL,
   `view_area` text DEFAULT NULL,
+  `user` varchar(50) DEFAULT NULL,
+  `pass` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 

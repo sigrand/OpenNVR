@@ -3,6 +3,7 @@
 class CamsController extends Controller {
 
 	private $buff = array();
+	private $double = 0;
 	public $showArchive = true;
 	public $showStatusbar = true;
 
@@ -279,8 +280,17 @@ class CamsController extends Controller {
 		$this->redirect(array('manage'));
 	}
 
-	public function actionShare() { // TODO add check owner
+	public function actionShare($type = 'share') { // TODO add check owner
+		if(($type == 'assign' || $type == 'dassign') && !((Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3))) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Not allowed for you')));
+			$this->redirect(array('manage'));
+			Yii::app()->end();
+		}
+		if($type == 'dassign' || $type == 'dshare') {
+			$this->double = 1;
+		}
 		$form = new ShareForm;
+		$form->type = $type;
 		if(isset($_POST['ShareForm'])) {
 			$form->attributes = $_POST['ShareForm'];
 			if($form->validate() && $form->save()) {
@@ -295,15 +305,30 @@ class CamsController extends Controller {
 			$form->cams = join(', ', array_map(array($this, 'compileCams'), $cams));
 			$form->hcams = join(',', array_map(array($this, 'compileHCams'), $cams));
 		}
-		$this->render('share', array('model' => $form));
+		$this->render('share', array('model' => $form, 'type' => $type));
 	}
 
 	public function actionManage() { // TODO add check owner
 		$id = Yii::app()->user->getId();
 		if(isset($_POST['CamsForm']) && !empty($_POST['CamsForm']) && array_sum($_POST['CamsForm']) != 0) {
+			if(isset($_POST['doubleShare'])) {
+				Yii::app()->user->setFlash('share', $_POST['CamsForm']);
+				$this->redirect($this->createUrl('cams/share', array('type' => 'dshare')));
+				Yii::app()->end();
+			}
+			if(isset($_POST['doubleAssign'])) {
+				Yii::app()->user->setFlash('share', $_POST['CamsForm']);
+				$this->redirect($this->createUrl('cams/share', array('type' => 'dassign')));
+				Yii::app()->end();
+			}
 			if(isset($_POST['share'])) {
 				Yii::app()->user->setFlash('share', $_POST['CamsForm']);
 				$this->redirect(array('share'));
+				Yii::app()->end();
+			}
+			if(isset($_POST['assign'])) {
+				Yii::app()->user->setFlash('share', $_POST['CamsForm']);
+				$this->redirect($this->createUrl('cams/share', array('type' => 'assign')));
 				Yii::app()->end();
 			}
 			foreach ($_POST['CamsForm'] as $key => $cam) {
@@ -355,7 +380,7 @@ class CamsController extends Controller {
 			}
 			$this->refresh();
 			Yii::app()->end();
-		} elseif(isset($_POST['show']) || isset($_POST['del']) || isset($_POST['share'])) {
+		} elseif(isset($_POST['show']) || isset($_POST['del']) || isset($_POST['share']) || isset($_POST['assign'])) {
 			Yii::app()->user->setFlash('notify', array('type' => 'warning', 'message' => Yii::t('cams', 'You must choose cams to modify')));
 		}
 		$public = array();
@@ -396,7 +421,7 @@ class CamsController extends Controller {
 
 	private function compileCams($cam) { 
 		$camName = explode('_', $cam);
-		$camName = Cams::model()->findByPK(Cams::model()->getRealId($camName[1]));
+		$camName = $this->double ? Shared::model()->findByPK($camName[1])->cam : Cams::model()->findByPK(Cams::model()->getRealId($camName[1]));
 		if(!$camName) {
 			throw new CHttpException(404, Yii::t('errors', 'There is no such cam'));
 		}

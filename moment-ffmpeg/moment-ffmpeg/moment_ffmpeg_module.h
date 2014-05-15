@@ -208,7 +208,8 @@ private:
             ChannelChecker::ChannelFileDiskTimes * const mt_nonnull chFileDiskTimes);
 
     static StRef<String>  statisticsToJson (
-            std::map<time_t, StatMeasure> * const mt_nonnull statPoints);
+            std::map<time_t, StatMeasure> * const mt_nonnull statPoints,
+            MomentServer * m_pMoment);
 
     Json::Value sourceInfoToJson (const std::string source_name, const stSourceInfo & si, Ref<ChannelChecker> pChannelChecker);
     std::string GetAllSourcesInfo ();

@@ -29,6 +29,7 @@ namespace MomentFFmpeg {
 
 static LogGroup libMary_logGroup_viewer ("mod_ffmpeg.media_viewer", LogLevel::E);
 static LogGroup libMary_logGroup_frames ("mod_ffmpeg.media_viewer_frames", LogLevel::E);
+static LogGroup libMary_logGroup_mutex ("mod_ffmpeg.media_viewer_mutex", LogLevel::D);
 
 MediaReader::ReadFrameResult
 MediaViewer::endFrame (Session              * const mt_nonnull session,
@@ -374,11 +375,13 @@ MediaViewer::rtmpStartWatching (ConstMemory        const stream_name,
     StRef<String> str_stream_name = st_makeString(stream_name);
     std::string streamName = std::string(str_stream_name->cstr());
 
+    logD(mutex, _func_, "MUTEX _locked");
     self->m_pMutex->lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_pStreams->find(streamName);
     if(itFFStream == self->m_pStreams->end())
     {
+        logD(mutex, _func_, "MUTEX unlocked");
         self->m_pMutex->unlock();
         logE(viewer, _func_, "there is no channel [", stream_name, "] in m_pStreams");
         return false;
@@ -386,6 +389,7 @@ MediaViewer::rtmpStartWatching (ConstMemory        const stream_name,
 
     Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
 
+    logD(mutex, _func_, "MUTEX unlocked");
     self->m_pMutex->unlock();
 
     ChannelChecker::ChannelFileDiskTimes channelFileDiskTimes = channelChecker->GetChannelFileDiskTimes();

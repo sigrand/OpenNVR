@@ -25,6 +25,49 @@ class AdminController extends Controller {
 			);
 	}
 
+	public function actionBackupManager() {
+		Yii::import('ext.Updater.index', 1);
+		$backups = backupHelper::getBackupsList();
+		$f = function($e) {
+			$e['size'] = $this->convertSize($e['size']);
+			return $e;
+		};
+		$backups = array_reverse(array_map($f, $backups));
+		$this->render('bumanager', array('backups' => $backups));
+	}
+
+	public function actionBackupAdd() {
+		Yii::import('ext.Updater.index', 1);
+		$status = backupHelper::makeBackup();
+		if($status == 1)  {
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! backup created')));
+		} elseif($status == 2) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Backup not created. Dir is not writeable: '.BKP)));
+		} elseif($status == 0) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Backup not created')));
+		}
+		$this->redirect($this->createUrl('admin/backupmanager'));
+	}
+
+	public function actionBackupDelete($id) {
+		Yii::import('ext.Updater.index', 1);
+		if(backupHelper::backupDelete($id)) {
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! backup deleted')));		
+			$this->redirect($this->createUrl('admin/backupmanager'));
+			Yii::app()->end();
+		}
+		Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Backup not deleted')));
+		$this->redirect($this->createUrl('admin/backupmanager'));
+	}
+
+	public function actionBackupDownload($id) {
+		Yii::import('ext.Updater.index', 1);
+		$backup = backupHelper::getBackup($id);
+		if(!empty($backup)) {
+			Yii::app()->getRequest()->sendFile($backup['file'], file_get_contents(BKP.$backup['file']));
+		}
+	}
+
 	public function actionCheckUpdate() {
 		$result = array();
 		Yii::import('ext.Updater.index', 1);
@@ -74,7 +117,7 @@ class AdminController extends Controller {
 			Yii::app()->end();
 		}
 		$filename = $d->getLast('SQLversion');
-		if(updaterHelper::update($filename)) {
+		if(updateHelper::update($filename)) {
 			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! updated')));
 		} else {
 			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Fail, cant execute update file')));
@@ -104,16 +147,13 @@ class AdminController extends Controller {
 			Yii::app()->end();
 		}
 		$filename = $d->getLast('version');
-		//updaterHelper::update($filename, 'files');
-		//*
-		if(updaterHelper::update($filename, 'files')) {
+		if(updateHelper::update($filename, 'files')) {
 			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! updated')));
 		} else {
 			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Fail, cant execute update file')));
 		}
 		Yii::app()->user->setFlash('versions', json_encode($result));
 		$this->redirect($this->createUrl('admin/updater'));
-		//*/
 	}
 
 	public function actionUpdater() {
@@ -132,7 +172,7 @@ class AdminController extends Controller {
 			}
 			$models[] = $model;
 		}
-		$this->render('updater', array('models' => $models, 'last_check' => updaterHelper::lastCheck()));
+		$this->render('updater', array('models' => $models, 'last_check' => updateHelper::lastCheck()));
 	}
 	
 	public function actionSettings() {
@@ -203,6 +243,7 @@ class AdminController extends Controller {
 		Yii::import('ext.moment.index', 1);
 		$momentManager = new momentManager($id);
 		$stat = $momentManager->stat($type);
+		//print_r($stat);
 		if(empty($stat)) {
 			$this->render('stat/index', array('title' => Yii::t('admin', 'Statistics not avaiable'), 'stat' => array(), 'type' => $type, 'id' => $id));
 			Yii::app()->end();
@@ -233,6 +274,16 @@ class AdminController extends Controller {
 				$all['time'][] = $value['time'];
 				foreach($value as $k => $v) {
 					if($k == 'time') { continue; }
+					if($k == 'rtmp_sessions') {
+						$all['rtmp_sessions']['sessions'][] = (float)$v;
+						continue;
+					}			
+					if($k == 'HDD utilization') {
+						foreach($v as $t) {
+							$all['hdd'][$t['device']][] = (float)$t['util'];
+						}
+						continue;
+					}
 					$all[$k]['min'][] = (float)$v['min'];
 					$all[$k]['max'][] = (float)$v['max'];
 					$all[$k]['avg'][] = (float)$v['avg'];

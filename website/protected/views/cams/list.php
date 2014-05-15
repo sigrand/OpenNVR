@@ -55,7 +55,8 @@
 							}
 							?>
 							<tr>
-								<td colspan="5"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
+								<td colspan="<?php echo (Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3) ? 4 : 5 ?>"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
+								<?php echo (Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3) ? '<td>'.CHtml::submitButton(Yii::t('cams', 'assign'), array('name' => 'assign', 'class' => 'btn btn-success')).'</td>' : ''; ?>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Share'), array('name' => 'share', 'class' => 'btn btn-success')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Record/Don\'t record'), array('name' => 'record', 'class' => 'btn btn-warning')); ?></td>
@@ -101,7 +102,9 @@
 							}
 							?>
 							<tr>
-								<td colspan="5"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
+								<td colspan="3"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
+								<?php echo (Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3) ? '<td>'.CHtml::submitButton(Yii::t('cams', 'assign'), array('name' => 'doubleAssign', 'class' => 'btn btn-success')).'</td>' : ''; ?>
+								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Share'), array('name' => 'doubleShare', 'class' => 'btn btn-success')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Show/Don\'t show'), array('name' => 'show', 'class' => 'btn btn-primary')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('cams', 'Delete'), array('name' => 'del', 'class' => 'btn btn-danger')); ?></td>
 							</tr>

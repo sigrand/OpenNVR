@@ -52,8 +52,9 @@
                     $chart->tooltip->formatter = new HighchartJsExpr("function() { return this.y + ' : ' + this.x; }");
                     $chart->printScripts();
                     $i = 0;
+                    //print_r($stat);
                     foreach ($stat as $key => $value) {
-                        if ($key == 'time') {
+                        if($key == 'time') {
                             continue;
                         }
                         echo '<div id="container' . $i . '"></div><br/>';
@@ -97,19 +98,32 @@
                             'borderWidth' => 0
                             );
                         $chart->series = array();
-                        $chart->series[] = array(
-                            'name' => 'min',
-                            'data' => $value['min']
-                            );
-                        $chart->series[] = array(
-                            'name' => 'max',
-                            'data' => $value['max']
-                            );
-                        $chart->series[] = array(
-                            'name' => 'avg',
-                            'data' => $value['avg']
-                            );
-
+                        if($key == 'rtmp_sessions') {
+                            $chart->series[] = array(
+                                'name' => 'sessions',
+                                'data' => $value['sessions']
+                                );
+                        } elseif($key == 'hdd') {
+                            foreach($value as $k => $v) {
+                                $chart->series[] = array(
+                                    'name' => $k,
+                                    'data' => $v
+                                    );
+                            }
+                        } else {
+                            $chart->series[] = array(
+                                'name' => 'min',
+                                'data' => $value['min']
+                                );
+                            $chart->series[] = array(
+                                'name' => 'max',
+                                'data' => $value['max']
+                                );
+                            $chart->series[] = array(
+                                'name' => 'avg',
+                                'data' => $value['avg']
+                                );
+                        }
                         echo '<script type="text/javascript">' . $chart->render("chart") . '</script>';
                         $i++;
                     }

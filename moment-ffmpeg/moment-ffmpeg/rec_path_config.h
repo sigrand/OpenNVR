@@ -49,7 +49,7 @@ private:
     ConfigMap m_configs;
     std::string m_configJson;
 
-    StateMutex m_mutex;
+    //StateMutex m_mutex;
     std::map<std::string, WeakRef<FFmpegStream> > * m_pStreams;
 };
 

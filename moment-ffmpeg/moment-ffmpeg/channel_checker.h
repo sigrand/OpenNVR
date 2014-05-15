@@ -93,6 +93,9 @@ private:
      void dumpData();
 
      static void refreshTimerTick (void *_self);
+
+     typedef std::map<std::string, std::map<std::string, Uint64> > DiskFileSizes;
+     DiskFileSizes m_occupSizes;
 };
 
 }

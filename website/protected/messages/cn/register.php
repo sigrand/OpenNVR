@@ -17,57 +17,25 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'Login form' => '登录表单',
-  'Registration form' => '注册表',
+  'Code:' => '',
+  'Enter password again:' => '',
+  'Enter password:' => '',
+  'Hello {nick},<br/><br/>Your activation code: {code}<br/>{link}' => '',
+  'Register' => '',
+  'Registration was successful.<br/>' => '',
+  'Registration was successful.<br/>To use your account, you need to confirm your email address.<br/>Confirmation code sent to your email.<br/>' => '',
+  'Remember me?' => '',
+  'You successfully confirmed your email address. Now you can login.' => '',
+  'Your password was successfully changed. go to {login} or {site}' => '',
+  'index' => '',
+  'login' => '',
   '
 		Registration was successful.<br/>
 		To use your account, you need to confirm your email address.<br/>
-		Confirmation code sent to your email.<br/>' => '
+		Confirmation code sent to your email.<br/>' => '@@
 		注册成功。<br/>
 		您需要确认您的电子邮件地址才能使用您的账户。<br/>
-		一封含有激活代码的邮件已发送给您。<br/>',
-  'Hello {nick},<br/><br/>
-
-
-					Your activation code: {code}<br/> 
-					{link}' => '
-您好 {nick},<br/><br/>
-
-
-					您的激活代码为: {code}<br/>
-
-					<br/>链接激活:<br/> 
-					{link}',
-  'Recovery link: {link}' => '重获链接： {link}',
-  'Account activation' => '账户激活',
-  'Your email' => '您的电子邮件',
-  'Your password was successfully changed' => '您的密码已成功变更。',
-  'Enter email and password' => '输入邮箱和密码',
-  'Enter your email:' => '输入您的邮箱：',
-  'Enter your nick:' => '输入您的昵称：',
-  'Enter nick, email and password' => '输入昵称，电子邮件以及密码',
-  'Enter password' => '输入密码',
-  'Login' => '登录',
-  'Recovery' => '复原',
-  'Password recovery' => '找回密码',
-  'You successfully confirmed your email address. Now you can login' => '您成功激活您的电子邮箱地址。现在您可以登录。',
-  'This user already confirmed his email address.' => '这个用户已经激活他的电子邮箱地址。',
-  'Remember me' => '还记得吗？',
-  'Password change' => '密码更改',
-  'Code' => '代码',
-  'Wrong code.' => '代码错误。',
-  'There is no such user' => '不存在此用户',
-  'Nick' => '昵称',
-  'Passwords not equal!' => '密码不匹配！',
-  'Password' => '密码',
-  'Password can\'t be empty.' => '密码不能为空。',
-  'Go to site' => '进入网站',
-  'Letter for password recovery was sended to your email' => '找回密码的信件已发送至您的邮箱',
-  'Confirm password:' => '确认密码：',
-  'Registration' => '注册',
-  'There is no such user.' => '不存在此用户。',
-  'or' => '或',
-  'Send recovery message' => '发送邮件复原',
+		一封含有激活代码的邮件已发送给您。<br/>@@',
   '
 Hello {nick},<br/><br/>
 
@@ -75,19 +43,63 @@ Hello {nick},<br/><br/>
 					Your activation code: {code}<br/>
 
 					<br/>Activation link:<br/> 
-					{link}' => '
+					{link}' => '@@
 您好 {nick},<br/><br/>
 
 
 					您的激活代码： {code}<br/>
 
 					<br/>激活链接：<br/> 
-					{link}',
+					{link}@@',
   '
 Recovery link: {link}
-' => '
+' => '@@
 复原链接： {link}
-',
-  'Refresh image' => '刷新图像',
+@@',
+  'Code' => '@@代码@@',
+  'Confirm password:' => '@@确认密码：@@',
+  'Enter email and password' => '@@输入邮箱和密码@@',
+  'Enter nick, email and password' => '@@输入昵称，电子邮件以及密码@@',
+  'Enter password' => '@@输入密码@@',
+  'Hello {nick},<br/><br/>
+
+
+					Your activation code: {code}<br/> 
+					{link}' => '@@
+您好 {nick},<br/><br/>
+
+
+					您的激活代码为: {code}<br/>
+
+					<br/>链接激活:<br/> 
+					{link}@@',
+  'Password change' => '@@密码更改@@',
+  'Recovery' => '@@复原@@',
+  'Refresh image' => '@@刷新图像@@',
+  'Remember me' => '@@还记得吗？@@',
+  'You successfully confirmed your email address. Now you can login' => '@@您成功激活您的电子邮箱地址。现在您可以登录。@@',
+  'Your password was successfully changed' => '@@您的密码已成功变更。@@',
+  'Account activation' => '账户激活',
   'Change' => '更改',
+  'Enter your email:' => '输入您的邮箱：',
+  'Enter your nick:' => '输入您的昵称：',
+  'Go to site' => '进入网站',
+  'Letter for password recovery was sended to your email' => '找回密码的信件已发送至您的邮箱',
+  'Login' => '登录',
+  'Login form' => '登录表单',
+  'Nick' => '昵称',
+  'Password' => '密码',
+  'Password can\'t be empty.' => '密码不能为空。',
+  'Password recovery' => '找回密码',
+  'Passwords not equal!' => '密码不匹配！',
+  'Recovery link: {link}' => '重获链接： {link}',
+  'Registration' => '注册',
+  'Registration form' => '注册表',
+  'Send recovery message' => '发送邮件复原',
+  'There is no such user' => '不存在此用户',
+  'There is no such user.' => '不存在此用户。',
+  'This user already confirmed his email address.' => '这个用户已经激活他的电子邮箱地址。',
+  'Wrong code.' => '代码错误。',
+  'Your email' => '您的电子邮件',
+  'or' => '或',
 );

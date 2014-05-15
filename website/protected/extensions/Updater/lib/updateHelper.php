@@ -1,6 +1,6 @@
 <?php
 
-class updaterHelper {
+class updateHelper {
 
 	public static function save($class, $option, $value, $mode = 0) {
 		$data = array();
@@ -82,5 +82,6 @@ class updaterHelper {
 			return date('d-m-Y H:i:s', filemtime(TMP.'versions.json'));
 		}
 	}
+
 }
 ?>

@@ -55,10 +55,16 @@
 
 	<?php
 		for ($i=1; $i<=4; $i++) {
-	?>
-	<div class="col-sm-12 carousel_players" style="width:10px;height:10px;padding:0px" id="player_<?php echo "$i\""; ?>>
-                <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo "$i\""; ?>
-                align="middle">
+			if(stristr($_SERVER['HTTP_USER_AGENT'], 'Mac os')) {
+            	$server = Servers::model()->findByPK($cam->server_id);
+                ?>
+                <div class="col-sm-12 carousel_players" style="width:10px;height:10px;padding:0px" id="player_<?php echo $i; ?>">
+                	<video controls style="width:100%;" id="MyPlayer<?php echo $i; ?>" src="<?php echo $server->protocol.'://'.$server->ip.':'.$server->port;?>/hls/<?php echo $cam->id; ?>.m3u8">
+                </div>
+				<div id="on_MyPlayer<?php echo "$i\""; ?> num="<?php echo "$i\""; ?> style="position:absolute;padding:0;margin:0;"></div>
+	<?php } else { ?>
+	<div class="col-sm-12 carousel_players" style="width:10px;height:10px;padding:0px" id="player_<?php echo $i; ?>">
+                <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo $i; ?>" align="middle">
                 <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
                 <param name="allowScriptAccess" value="always"/>
                 <param name="quality" value="high"/>
@@ -88,6 +94,7 @@
 	<div id="on_MyPlayer<?php echo "$i\""; ?> num="<?php echo "$i\""; ?> style="position:absolute;padding:0;margin:0;"></div>
 	<?php
 		}
+	}
 	?>
 <style type="text/css">
 .carousel-control {

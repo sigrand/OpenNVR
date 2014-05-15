@@ -4,20 +4,32 @@ class momentManager {
 	public function __construct($id) {
         $server = Servers::model()->findByPK($id);
         $http = new http;
-		//$http->setProxy('localhost', 666);
         $http->setTimeout(10);
         $this->moment = new moment(
-           $http,
-           array(
-            'server_ip' => $server->ip,
-            'server_port' => $server->s_port,
-            'web_port' => $server->w_port,
-            )
-           );
+            $http,
+            array(
+                'server_ip' => $server->ip,
+                'server_port' => $server->s_port,
+                'web_port' => $server->w_port,
+                )
+            );
     }
 
-	public function add($model) {
-		$result = $this->moment->add($model->id, $model->name, $model->url);
+    public function add($model) {
+        if(!is_null($model->user) && !empty($model->user)) {
+            $u = parse_url($model->url);
+            $usr = $model->user;
+            $ps = $model->pass;
+            $url = $u['scheme'].'://'.
+            (!is_null($usr) && !empty($usr) ? $usr.(!is_null($ps) && !empty($ps) ? ':'.$ps : '').'@' : '').
+            $u['host'].
+            (isset($u['port']) ? ':'.$u['port'] : '').
+            $u['path'].
+            (isset($u['query']) ? '?'.$u['query'] : '');
+        } else {
+            $url = $model->url;
+        }
+        $result = $this->moment->add($model->id, $model->name, $url);
         if($result !== true) {
             Notify::note(Yii::t('errors', 'Add cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
             return false;
