@@ -135,6 +135,9 @@ class Cams extends CActiveRecord {
 		$myPublicCams = $public;
 		$mySharedCams = $shared;
 		$allMyCams = array();
+
+		Yii::import('ext.moment.index', 1);
+
 		foreach ($myCams as $key => $cam) {
 
 			$server = Servers::model()->findByPK($cam->server_id);
