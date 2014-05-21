@@ -209,6 +209,7 @@ var markers_cluster = new L.MarkerClusterGroup();
 					$servers[$cam->server_id] = Servers::model()->findByPK($cam->server_id);
 					$server = $servers[$cam->server_id];
 				}
+				if (!$cam->show) continue;
 		?>
 				cams_hashes["<?php echo $cam->id; ?>"] = {low:"<?php echo $cam->getSessionId(true); ?>",
 						server_ip:"<?php echo $server->ip; ?>",
