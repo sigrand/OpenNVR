@@ -21,7 +21,7 @@ class CamsController extends Controller {
 	public function accessRules() {
 		return array(
 			array('allow',
-				'actions'=>array('index', 'fullscreen', 'playlist', 'check', 'map', 'list'),
+				'actions'=>array('index', 'fullscreen', 'playlist', 'check', 'map', 'list', 'archive'),
 				'users'=>array('*'),
 				),
 			array('allow',
@@ -175,6 +175,9 @@ class CamsController extends Controller {
 
 	public function actionArchive($id, $full = 0) {
 		//if(!is_numeric($id)) { $this->redirect('/player/'.$id); }
+		if (Yii::app()->user->isGuest) {
+			$this->redirect(array('fullscreen', 'id' => $id, 'full' => $full));
+		}
 		$this->layout = 'emptycolumn';
 		$id = Cams::model()->getRealId($id);
 		$cam = Cams::model()->findByPK($id);
