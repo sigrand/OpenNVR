@@ -241,6 +241,10 @@
 					start_time = parseInt(tmp_date.getTime()/1000);
 					window.open("<?php echo $down.$cam->getRealId($cam->getSessionId($full)); ?>"+"&start="+start_time+"&end="+(start_time+parseInt($("#download_duration").val())));
 				});
+				$("#hi_low_button").click(function(){
+					var link = '<?php echo $this->createUrl('cams/archive', array('id' => $cam->getSessionId(), 'full' => $full)); ?>';
+					window.location.href = link;
+				});
 				$("#timepicker").timepicker('setDate', new Date());
 				document['MyPlayer'].setSource('<?php echo $uri; ?>/live/<?php echo $cam->getSessionId($full); ?>', '<?php echo $cam->getSessionId($full); ?>');
 //				$("#timepicker").timepicker('setDate', new Date(<?php echo $unixtime; ?>*1000));
@@ -290,9 +294,10 @@
 			</object>
 		</td>
 		<td id='controls_right'>
-			<input type="text" id="download_duration" value="300" size="1"></input><span style="color:grey;">second</span>
-			<input type="button" id="download_button" value="Download"></input><br>
-			<input type="button" id="live_button" value="Live"></input>
+			<input type="text" id="download_duration" value="300" size="3"></input><span style="color:grey;"><?php echo Yii::t('cams', 'sec.'); ?></span>
+			<input type="button" id="download_button" value="<?php echo Yii::t('cams', 'Download'); ?>"></input><br>
+			<input type="button" id="live_button" value="<?php echo Yii::t('cams', 'Live'); ?>"></input>
+			<input type="button" id="hi_low_button" value="<?php echo Yii::t('cams', 'High/low quality'); ?>"></input>
 			<input class="w100" type="text" id="date" disabled="true">
 			<div id="datepicker"></div>
 			<input class="w100" type="text" id="time" disabled="true">
