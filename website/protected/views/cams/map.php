@@ -1,13 +1,28 @@
 <?php
 /* @var $this CamsController */
 ?>
-<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
-<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+<link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/leaflet.css" />
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/leaflet.js"></script>
+<?php
+	//returns true, if domain is availible, false if not
+	function isDomainAvailible($domain) {
+		if (function_exists('get_headers')) {
+			$check_url = get_headers($domain);
+			if (strpos($check_url[0],'200')) return true;
+				else return false;
+		} else
+			return false;
+	}
+
+if (isDomainAvailible('http://api-maps.yandex.ru') && isDomainAvailible('http://maps.google.com')) {
+?>
 <script src="http://api-maps.yandex.ru/2.0/?load=package.map&lang=ru-RU" type="text/javascript"></script>
 <script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/Google.js"></script>
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/Yandex.js"></script>
-
+<?php
+}
+?>
 <link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/MarkerCluster.Default.css" />
 <link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/MarkerCluster.css" />
 
@@ -252,17 +267,23 @@ var markers_cluster = new L.MarkerClusterGroup();
 			$("#map_div").css("height", Math.round($(window).height() - $(".navbar").height()-10));
 			if (!map) {
 				osm = new L.TileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
-				yndx = new L.Yandex();
-				googleLayer = new L.Google('ROADMAP')
-				map = L.map('map_div', {closePopupOnClick:false});
-				map.addLayer(osm);
-				map.addControl(new L.Control.Layers({'OSM':osm, "Yandex":yndx, "Google":googleLayer}));
+				if (L.Yandex) yndx = new L.Yandex();
+				if (L.Google) googleLayer = new L.Google('ROADMAP')
+				map = L.map('map_div', {closePopupOnClick:false, maxZoom:5});
+				if (osm) {
+					map.addLayer(osm);
+				} else {
+					map.setView([0, 0], 10);
+					L.imageOverlay("<?php echo Yii::app()->request->baseUrl; ?>/images/map_bg.png", [[-180, -180], [180, 180]]).addTo(map);
+				}
+
+				if (osm && yndx && osm) map.addControl(new L.Control.Layers({'OSM':osm, "Yandex":yndx, "Google":googleLayer}));
 				$.each(markers, function(key, val) {
 					val.bindPopup(document.getElementById("MyPlayer_div"), {maxWidth:'640px', maxHeight:'360px'});
 					view_areas[key].addTo(map);
 				});
 				map.addLayer(markers_cluster);
-				new L.Control.GeoSearch({
+				if (osm && yndx && osm) new L.Control.GeoSearch({
 					provider: new L.GeoSearch.Provider.OpenStreetMap()
 				}).addTo(map);
 			}
