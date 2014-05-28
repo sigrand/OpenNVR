@@ -235,9 +235,11 @@ class ScreensController extends Controller
 			}
 		}
 
+		$myCams = $this->getAvailableCams();
+		$myCams[''] = 'none';
 		$this->render('create',array(
 			'model'=>$model,
-			'myCams' => $this->getAvailableCams(),
+			'myCams' => $myCams,
 			'type' => $type
 		));
 	}
@@ -255,9 +257,11 @@ class ScreensController extends Controller
 				$this->redirect(array('manage'));
 		}
 
+		$myCams = $this->getAvailableCams();
+		$myCams[''] = Yii::t('screens', 'none');
 		$this->render('update',array(
 			'model'=>$model,
-			'myCams' => $this->getAvailableCams()
+			'myCams' => $myCams
 		));
 
 		}
