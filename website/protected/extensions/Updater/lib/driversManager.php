@@ -20,19 +20,19 @@ class driversManager {
 		}
 	}
 
-	public function getVersions($useCache = 0) {
+	public function getVersion($useCache = 0) {
 		if($useCache) {
-			if(file_exists(TMP.'versions.json')) {
-				return UpdaterHelper::get('versions.json', 0, 1);
+			if(file_exists(TMP.'version.json')) {
+				return UpdateHelper::get('version.json', 0, 1);
 			} else {
 				return false;
 			}
 		}
 		if(isset($this->driver)) {
 			$files = $this->driver->getFileList();
-			if(in_array('versions.json', array_keys($files))) {
-				$this->driver->get('versions.json', TMP);
-				return UpdaterHelper::get('versions.json', 0, 1);
+			if(in_array('version.json', array_keys($files))) {
+				$this->driver->get('version.json', TMP);
+				return UpdateHelper::get('version.json', 0, 1);
 			}
 		}
 	}
@@ -40,8 +40,8 @@ class driversManager {
 	public function getLast($what) {
 		if(isset($this->driver)) {
 			$files = $this->driver->getFileList();
-			if(in_array('versions.json', array_keys($files))) {
-				$data = UpdaterHelper::get('versions.json', 0, 1);
+			if(in_array('version.json', array_keys($files))) {
+				$data = UpdateHelper::get('version.json', 0, 1);
 				if(isset($data['files'][$what]) && !empty($data['files'][$what])) {
 					if(in_array($data['files'][$what], array_keys($files))) {
 						if(file_exists(TMP.$data['files'][$what])) {

@@ -35,16 +35,12 @@ class updateHelper {
 		}
 	}
 
-	public static function changeVersion($mode, $ver = '') {
-		if($mode == 'sql') {
-			$version = Settings::model()->findByAttributes(array('option' => 'SQLversion'));
-		} else {
-			$version = Settings::model()->findByAttributes(array('option' => 'version'));
-		}
+	public static function changeVersion($ver = '') {
+		$version = Settings::model()->findByAttributes(array('option' => 'version'));
 		if($ver != '') {
-			self::save(__CLASS__, $mode.'ver', $version->value);
+			self::save(__CLASS__, 'version', $version->value);
 		} else {
-			$ver = self::get(__CLASS__, $mode.'ver');
+			$ver = self::get(__CLASS__, 'version');
 		}
 		$version->value = $ver;
 		return $version->save();
@@ -78,8 +74,8 @@ class updateHelper {
 	}
 
 	public static function lastCheck() {
-		if(file_exists(TMP.'versions.json')) {
-			return date('d-m-Y H:i:s', filemtime(TMP.'versions.json'));
+		if(file_exists(TMP.'version.json')) {
+			return date('d-m-Y H:i:s', filemtime(TMP.'version.json'));
 		}
 	}
 

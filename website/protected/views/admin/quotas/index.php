@@ -39,7 +39,6 @@
 								<td>'.CHtml::link(Yii::t('admin', 'Edit'), $this->createUrl('admin/serverEdit', array('id' => $serv->id)), array('name' => 'show', 'class' => 'btn btn-primary')).'</td>
 								<td>'.CHtml::link(Yii::t('admin', 'Delete'), $this->createUrl('admin/serverDelete', array('id' => $serv->id)), array('name' => 'del', 'class' => 'btn btn-danger')).'</td>
 								<td>'.CHtml::link(Yii::t('admin', 'Stat'), $this->createUrl('admin/stat', array('type'=> 'disk', 'id' => $serv->id)), array('class' => 'btn btn-warning')).'</td>
-								<!--<td>'.CHtml::link(Yii::t('admin', 'Quotas'), $this->createUrl('admin/quotas', array('id' => $serv->id)), array('class' => 'btn btn-info')).'</td>-->
 								</tr>';
 							}
 							?>

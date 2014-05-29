@@ -1,5 +1,8 @@
 <?php
 /* @var $this CamsController */
+Yii::import('ext.mobile.XDetectMobileBrowser', 1);
+$hls = new XDetectMobileBrowser;
+$hls = (int)$hls->getShowMobile();
 ?>
 <link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/leaflet.css" />
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/leaflet.js"></script>
@@ -66,18 +69,13 @@ if (isDomainAvailible('http://api-maps.yandex.ru') && isDomainAvailible('http://
 
 <div class="col-sm-12" style="padding-left:5px;padding-right:5px;">
 <div class="col-sm-10" id="map_div" style="height:100%;z-index:0;"></div>
+	<?php
+	if(!$hls) {
+		?>
 	<div class="col-sm-2 carousel_players carousel_players_wrapper" style="padding-left:5px;padding-right:0px;">
-
 	<?php
 		for ($i=1; $i<=4; $i++) {
-			if(false && stristr($_SERVER['HTTP_USER_AGENT'], 'Mac os')) {
-            	$server = Servers::model()->findByPK($cam->server_id);
-                ?>
-                <div class="col-sm-12 carousel_players" style="width:10px;height:10px;padding:0px" id="player_<?php echo $i; ?>">
-                	<video controls style="width:100%;" id="MyPlayer<?php echo $i; ?>" src="<?php echo $server->protocol.'://'.$server->ip.':'.$server->port;?>/hls/<?php echo $cam->id; ?>.m3u8">
-                </div>
-				<div id="on_MyPlayer<?php echo "$i\""; ?> num="<?php echo "$i\""; ?> style="position:absolute;padding:0;margin:0;"></div>
-	<?php } else { ?>
+			?>
 	<div class="col-sm-12 carousel_players" style="width:10px;height:10px;padding:0px" id="player_<?php echo $i; ?>">
                 <object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" width="100%" height="100%" id="MyPlayer<?php echo $i; ?>" align="middle">
                 <param name="movie" value="<?php echo Yii::app()->request->baseUrl; ?>/player/MyPlayer_hi_lo.swf"/>
@@ -149,18 +147,20 @@ if (isDomainAvailible('http://api-maps.yandex.ru') && isDomainAvailible('http://
   filter: alpha(opacity=90);
 }
 </style>
+<?php if(!$hls) { ?>
 	<a id="left_button" class="carousel-control left" href="#myCarousel" data-slide="prev">^</a>
 	<a id="right_button" class="carousel-control right" href="#myCarousel" data-slide="next">^</a>
-
-	</div> <!-- carousel div end-->
-
+</div> <!-- carousel div end-->
+<?php } ?>
 </div> <!-- carousel and map wrapper div end -->
 
 <script>
+	var hls = <?php echo $hls; ?>;
 	var carousel_cams = {};
 	var carousel_position = 0;
 	var server_ip = "";
 	var server_port = "";
+	var server_web_port = "";
 	var cam_id = "";
 	var cams = [];
 	var cams_hashes = {};
@@ -175,15 +175,23 @@ if (isDomainAvailible('http://api-maps.yandex.ru') && isDomainAvailible('http://
 	function flashInitialized() {
 		if (cam_id != "") {
 			// for popup player;
-			document["MyPlayer"].setSource('rtmp://' + server_ip + ':' + server_port + '/live/', cams_hashes[cam_id].low, cams_hashes[cam_id].high);
-			document.getElementById("open_link").href="<?php echo $this->createUrl('cams/archive', array('full' => 1, 'id' => '')); ?>/"+cams_hashes[cam_id].high;
+			if(!hls) {
+				document["MyPlayer"].setSource('rtmp://' + server_ip + ':' + server_port + '/live/', cams_hashes[cam_id].low, cams_hashes[cam_id].high);
+				document.getElementById("open_link").href="<?php echo $this->createUrl('cams/archive', array('full' => 1, 'id' => '')); ?>/"+cams_hashes[cam_id].high;
+			} else {
+				$(document["MyPlayer"]).remove();
+				$(document["MyPlayer"]).html('<video controls style="width:100%;" src="http://' + server_ip + ':' + server_web_port + '/hls/' + cam_id + '_low.m3u8"></video>');
+				document.getElementById("open_link").href="<?php echo $this->createUrl('cams/archive', array('full' => 1, 'id' => '')); ?>/"+cams_hashes[cam_id].high;
+			}
 			cam_id = "";
 		} else {
 			// for carousel players
-			for (i=1;i<=4;i++) {
-				document["MyPlayer"+i].setSource('rtmp://' + cams_hashes[carousel_cams[i]].server_ip + ':' 
-						+ cams_hashes[carousel_cams[i]].server_port + '/live/', cams_hashes[carousel_cams[i]].low,
-						 cams_hashes[carousel_cams[i]].high);
+			if(!hls) {
+				for (i=1;i<=4;i++) {
+					document["MyPlayer"+i].setSource('rtmp://' + cams_hashes[carousel_cams[i]].server_ip + ':' 
+							+ cams_hashes[carousel_cams[i]].server_port + '/live/', cams_hashes[carousel_cams[i]].low,
+							 cams_hashes[carousel_cams[i]].high);
+				}
 			}
 		}
 	}
@@ -229,6 +237,7 @@ var markers_cluster = new L.MarkerClusterGroup();
 				cams_hashes["<?php echo $cam->id; ?>"] = {low:"<?php echo $cam->getSessionId(true); ?>",
 						server_ip:"<?php echo $server->ip; ?>",
 						server_port:"<?php echo $server->l_port; ?>",
+						server_web_port:"<?php echo $server->s_port; ?>",
 						high:"<?php echo $cam->getSessionId(false); ?>"};
 				cams.push(<?php echo "\"$cam->id\""; ?>);
 				servers.push("<?php echo $server->ip; ?>");
@@ -246,6 +255,7 @@ var markers_cluster = new L.MarkerClusterGroup();
 					cam_id = <?php echo "$cam->id"; ?>;
 					server_ip = '<?php echo $server->ip; ?>';
 					server_port = '<?php echo $server->l_port; ?>';
+					server_web_port = '<?php echo $server->s_port; ?>';
 				});
 		<?php
 				}

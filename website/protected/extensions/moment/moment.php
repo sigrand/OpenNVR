@@ -1,7 +1,6 @@
 <?php
 
 /*
-
 conf_file - это id камеры, тут надо бы убедиться в том, что юниксовая система поймет имя файла такое как id
 Живое видео от сервера:
 
@@ -9,13 +8,26 @@ rtmp://<server_ip>:1935/<cam_id>
 Записанное видео от сервера
 
 rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
- where start — unixtime of begin playing position from 00:00 1 Jan 1970 in UTC
- sony - name of stream
-         //http://127.0.0.1:8082/mod_nvr_admin/rec_on?stream=sony&seq=1 - turn on record
-        //http://127.0.0.1:8082/mod_nvr_admin/rec_off?stream=sony&seq=1 - turn off record
+where start — unixtime of begin playing position from 00:00 1 Jan 1970 in UTC
+sony - name of stream
+
+http://127.0.0.1:8082/mod_nvr_admin/rec_on?stream=sony&seq=1 - turn on record
+http://127.0.0.1:8082/mod_nvr_admin/rec_off?stream=sony&seq=1 - turn off record
+
+add quota
+http://192.168.10.21:8080/admin/add_quota?id=1&size=2048000
+
+remove quota
+http://192.168.10.21:8080/admin/remove_quota?id=1
+
+get list of quotas
+http://192.168.10.21:8080/admin/quota_list
+
+get quota info
+http://192.168.10.21:8080/admin/quota_info?id=1
 */
 
- class moment {
+class moment {
     private $http;
     private $options = array(
         'protocol' => 'http',
@@ -30,12 +42,14 @@ rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
     }
 
     public function add($id, $name, $url) {
-        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=$name&uri=".base64_encode($url));
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&uri=".base64_encode($url)."&quota=1");
+        //$result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&uri=".base64_encode($url)."&quota=".$qid);
         return trim($result) == 'OK' ? true : $result;
     }
 
     public function modify($id, $name, $url) {
-        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=$name&update&uri=".base64_encode($url));
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&update&uri=".base64_encode($url)."&quota=1");
+        //$result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&update&uri=".base64_encode($url)."&quota=".$qid);
         return trim($result) == 'OK' ? true : $result;
     }
 
@@ -74,9 +88,30 @@ rtmp://127.0.0.1:1935/nvr/sony?start=1368828341
     }
 
     public function alive($stream) {
+        //return 1;
         $this->http->setPort($this->options['web_port']);
         $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/mod_nvr_admin/alive?stream={$stream}");
         $this->http->setPort($this->options['server_port']);
+        return trim($result);
+    }
+
+    public function addQuota($id, $size) {
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_quota?id={$id}&size={$size}");
+        return trim($result);
+    }    
+
+    public function removeQuota($id) {
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/remove_quota?id={$id}");
+        return trim($result);
+    }
+
+    public function quotaList() {
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/quota_list");
+        return trim($result);
+    }
+
+    public function quotaInfo($id) {
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/quota_info?id={$id}");
         return trim($result);
     }
 

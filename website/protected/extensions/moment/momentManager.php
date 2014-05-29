@@ -112,6 +112,38 @@ class momentManager {
         return $result;
     }
 
+    public function addQuota($id, $size) {
+        $result = $this->moment->addQuota($id, $size);
+        if(!$result) {
+            Notify::note(Yii::t('errors', 'Can not add quota, problem with nvr'));
+        }
+        return $result;
+    }
+
+    public function removeQuota($id) {
+        $result = $this->moment->removeQuota($id);
+        if(!$result) {
+            Notify::note(Yii::t('errors', 'Can not remove quota, problem with nvr'));
+        }
+        return $result;
+    }
+
+    public function quotaList() {
+        $result = $this->moment->quotaList();
+        if(!$result) {
+            Notify::note(Yii::t('errors', 'Can not get quota list, problem with nvr'));
+        }
+        return json_decode($result, 1);
+    }
+
+    public function quotaInfo($id) {
+        $result = $this->moment->quotaInfo($id);
+        if(!$result) {
+            Notify::note(Yii::t('errors', 'Can not quota info, problem with nvr'));
+        }
+        return $result;
+    }
+
     public function stat($type) {
         $result = $this->moment->stat($type);
         if(!$result) {

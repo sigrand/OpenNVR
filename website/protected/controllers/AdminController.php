@@ -76,105 +76,84 @@ class AdminController extends Controller {
 			$this->redirect($this->createUrl('admin/updater'));
 			Yii::app()->end();
 		}
-		$versions = $d->getVersions();
-		if(!$versions) {
-			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update checking failed. Repo access problem')));
-			$this->redirect($this->createUrl('admin/updater'));	
-			Yii::app()->end();
-		}
-		$params = array('version', 'SQLversion');
-		foreach($params as $value) {
-			$model = Settings::model()->findByAttributes(array('option' => $value));
-			if($versions[$value] == $model->value) {
-				$result[$value] = 1;
-			} else {
-				$result[$value] = $versions[$value];
-			}
-		}
-		Yii::app()->user->setFlash('versions', json_encode($result));
-		Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! update checked')));
-		$this->redirect($this->createUrl('admin/updater'));
-	}
-
-	public function actionUpdateSQLVersion() {
-		$result = array();
-		Yii::import('ext.Updater.index', 1);
-		$d = new driversManager;
-		if(!$d->init()) {
-			$this->redirect($this->createUrl('admin/updater'));
-			Yii::app()->end();
-		}
-		$versions = $d->getVersions(1);
-		if(!$versions) {
-			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update checking failed. Repo access problem')));
-			$this->redirect($this->createUrl('admin/updater'));	
-			Yii::app()->end();
-		}
-		$model = Settings::model()->findByAttributes(array('option' => 'SQLversion'));
-		if($versions['SQLversion'] == $model->value) {
-			Yii::app()->user->setFlash('notify', array('type' => 'warning', 'message' => Yii::t('admin', 'No new version')));	
-			$this->redirect($this->createUrl('admin/updater'));	
-			Yii::app()->end();
-		}
-		$filename = $d->getLast('SQLversion');
-		if(updateHelper::update($filename)) {
-			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! updated')));
-		} else {
-			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Fail, cant execute update file')));
-		}
-		Yii::app()->user->setFlash('versions', json_encode($result));
-		$this->redirect($this->createUrl('admin/updater'));
-	}
-
-	public function actionUpdateVersion() {
-		$result = array();
-		Yii::import('ext.Updater.index', 1);
-		$d = new driversManager;
-		if(!$d->init()) {
-			$this->redirect($this->createUrl('admin/updater'));
-			Yii::app()->end();
-		}
-		$versions = $d->getVersions(1);
-		if(!$versions) {
+		$version = $d->getVersion();
+		if(!$version) {
 			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update checking failed. Repo access problem')));
 			$this->redirect($this->createUrl('admin/updater'));	
 			Yii::app()->end();
 		}
 		$model = Settings::model()->findByAttributes(array('option' => 'version'));
-		if($versions['version'] == $model->value) {
+		if($version == $model->value) {
+			$result['version'] = 1;
+		} else {
+			$result['version'] = $version;
+		}
+		Yii::app()->user->setFlash('version', json_encode($result));
+		Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! update checked')));
+		$this->redirect($this->createUrl('admin/updater'));
+	}
+
+	public function updateSQLVersion($d) {
+		$result = array();
+		$version = $d->getVersion(1);
+		$filename = $d->getLast('SQL');
+		if($filename == 'none') { return 1; }
+		if(updateHelper::update($filename)) {
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! SQL updated')));
+			return 1;
+		} else {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Fail, cant execute SQL update file')));
+		}
+	}
+
+	public function actionUpdate() {
+		$result = array();
+		Yii::import('ext.Updater.index', 1);
+		$d = new driversManager;
+		if(!$d->init()) {
+			$this->redirect($this->createUrl('admin/updater'));
+			Yii::app()->end();
+		}
+		$version = $d->getVersion(1);
+		if(!$version) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update checking failed. Repo access problem')));
+			$this->redirect($this->createUrl('admin/updater'));	
+			Yii::app()->end();
+		}
+		$model = Settings::model()->findByAttributes(array('option' => 'version'));
+		if($version == $model->value) {
 			Yii::app()->user->setFlash('notify', array('type' => 'warning', 'message' => Yii::t('admin', 'No new version')));	
 			$this->redirect($this->createUrl('admin/updater'));	
 			Yii::app()->end();
 		}
-		$filename = $d->getLast('version');
+		$filename = $d->getLast('files');
 		if(updateHelper::update($filename, 'files')) {
-			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! updated')));
+			if($this->updateSQLVersion($d)) {
+				UpdateHelper::changeVersion($version);
+				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! updated')));
+			}
 		} else {
 			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Fail, cant execute update file')));
 		}
-		Yii::app()->user->setFlash('versions', json_encode($result));
+		Yii::app()->user->setFlash('version', json_encode($result));
 		$this->redirect($this->createUrl('admin/updater'));
 	}
 
 	public function actionUpdater() {
 		Yii::import('ext.Updater.index', 1);
 		$d = new driversManager;
-		$versions = $d->getVersions(1);
-		Yii::app()->user->setFlash('versions', json_encode($versions));
-		$params = array('version', 'SQLversion');
-		foreach($params as $value) {
-			$model = Settings::model()->findByAttributes(array('option' => $value));
-			if(!$model) {
-				$model = new Settings;
-				$model->option = $value;
-				$model->value = '0.1';
-				$model->save();
-			}
-			$models[] = $model;
+		$version = $d->getVersion(1);
+		Yii::app()->user->setFlash('version', json_encode($version));
+		$model = Settings::model()->findByAttributes(array('option' => 'version'));
+		if(!$model) {
+			$model = new Settings;
+			$model->option = $value;
+			$model->value = '0.1';
+			$model->save();
 		}
-		$this->render('updater', array('models' => $models, 'last_check' => updateHelper::lastCheck()));
+		$this->render('updater', array('model' => $model, 'last_check' => updateHelper::lastCheck()));
 	}
-	
+
 	public function actionSettings() {
 		if(isset($_POST['Settings'])) {
 			foreach ($_POST['Settings'] as $k => $model) {
@@ -207,7 +186,7 @@ class AdminController extends Controller {
 		}
 		$this->render('servers/edit', array('model' => $model));
 	}
-	
+
 	public function actionServerEdit($id) { // TODO add check owner
 		$model = Servers::model()->findByPK($id);
 		if(!$model) {
@@ -243,7 +222,15 @@ class AdminController extends Controller {
 		Yii::import('ext.moment.index', 1);
 		$momentManager = new momentManager($id);
 		$stat = $momentManager->stat($type);
-		//print_r($stat);
+		$units = array(
+			'packet time from ffmpeg to nvr' => Yii::t('admin', 'ms'),
+			'packet time from ffmpeg to restreamer' => Yii::t('admin', 'ms'),
+			'RAM utilization' => Yii::t('admin', 'Kb'),
+			'CPU utilization' => Yii::t('admin', '%'),
+			'HDD utilization' => Yii::t('admin', '%'),
+			'rtmp_sessions' => Yii::t('admin', 'units'),
+			);
+
 		if(empty($stat)) {
 			$this->render('stat/index', array('title' => Yii::t('admin', 'Statistics not avaiable'), 'stat' => array(), 'type' => $type, 'id' => $id));
 			Yii::app()->end();
@@ -271,19 +258,33 @@ class AdminController extends Controller {
 			$stat = array_slice($stat, 0, 100);
 			$stat = array_reverse($stat);
 			foreach($stat as $key => $value) {
-				$all['time'][] = $value['time'];
+				//$all['time'][] = $value['time'];
+				$time = explode(' ', $value['time']);
+				$all['time'][] = $time[1];
+				/*
+				//$time = explode(':', $time[1]);
+				if(!isset($timecache[$time[0]])) {
+					$timecache[$time[0]] = 1;
+					$all['time'][] = $time[0].':'.($time[1] < 10 ? '0'.$time[1] : $time[1]);
+				} else {
+					$all['time'][] = '';
+				}
+				//*/
 				foreach($value as $k => $v) {
 					if($k == 'time') { continue; }
 					if($k == 'rtmp_sessions') {
+						$all['rtmp_sessions']['unit'] = $units[$k];
 						$all['rtmp_sessions']['sessions'][] = (float)$v;
 						continue;
 					}			
 					if($k == 'HDD utilization') {
+						$all['hdd']['unit'] = $units[$k];
 						foreach($v as $t) {
 							$all['hdd'][$t['device']][] = (float)$t['util'];
 						}
 						continue;
 					}
+					$all[$k]['unit'] = $units[$k];
 					$all[$k]['min'][] = (float)$v['min'];
 					$all[$k]['max'][] = (float)$v['max'];
 					$all[$k]['avg'][] = (float)$v['avg'];
@@ -399,6 +400,8 @@ class AdminController extends Controller {
 	}
 
 	private function userAction($actions, $user) {
+		//Yii::import('ext.moment.index', 1);
+		//$momentManager = new momentManager($id);
 		$this->userActions = array(
 			'ban' => array(4, Yii::t('admin', 'banned')),
 			'unban' => array(1, Yii::t('admin', 'unbanned')),
@@ -410,7 +413,13 @@ class AdminController extends Controller {
 			if(isset($actions[$key])) {
 				if($key == 'levelup' && Yii::app()->user->permissions == 3) {
 					$user->status++;
+					if($user->status >= 2) {
+						//$momentManager->addQuota($user->id, Settings::getValue('quota_size'));
+					}
 				} elseif($key == 'dismiss' && Yii::app()->user->permissions == 3) {
+					if($user->status >= 2 && $user->status-1 <= 2) {
+						//$momentManager->removeQuota($user->id, Settings::getValue('quota_size'));
+					}
 					$user->status--;
 				} else {
 					$user->status = $value[0];

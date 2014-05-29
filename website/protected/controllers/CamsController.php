@@ -10,6 +10,7 @@ class CamsController extends Controller {
 	public function __construct($id,$module=null) {
 		parent::__construct($id, $module);
 		Yii::import('ext.moment.index', 1);
+		//Yii::import('ext.mobile.XDetectMobileBrowser', 1);
 	}	
 
 	public function filters() {
@@ -115,7 +116,7 @@ class CamsController extends Controller {
 	}
 
 	public function actionIndex() {
-		$this->redirect($this->createUrl('cams/'.Settings::model()->getValue('index')));
+		$this->redirect($this->createUrl('cams/'.trim(Settings::model()->getValue('index'))));
 	}
 
 	public function actionList() {

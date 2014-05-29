@@ -62,18 +62,21 @@
                             'renderTo' => 'container' . $i,
                             'type' => 'line',
                             'marginRight' => 130,
-                            'marginBottom' => 50,
+                            'marginBottom' => 70,
                             'spacingBottom' => 30,
                             );
 
                         $chart->title = array(
-                            'text' => $key,
+                            'text' => $key.'['.$value['unit'].']',
                             'x' => -20
                             );
 
                         $chart->xAxis = array(
                             'categories' => $stat['time'],
                             'offset' => 20,
+                            'labels' => array(
+                                'step' => 5,
+                            )
                             );
 
                         $chart->yAxis = array(
@@ -105,6 +108,8 @@
                                 );
                         } elseif($key == 'hdd') {
                             foreach($value as $k => $v) {
+                                if($k == 'unit') { continue; }
+                                if($k == 'Series 1') { continue; }
                                 $chart->series[] = array(
                                     'name' => $k,
                                     'data' => $v

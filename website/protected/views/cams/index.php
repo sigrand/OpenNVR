@@ -127,7 +127,7 @@ if (!Yii::app()->user->isGuest) {
                                     if(stristr($_SERVER['HTTP_USER_AGENT'], 'Mac os')) {
                                         $server = Servers::model()->findByPK($cam->server_id);
                                         ?>
-                                        <video controls style="width:100%; display: none;"  id="pcam_<?php echo $key; ?>" src="<?php echo $server->protocol.'://'.$server->ip.':'.$server->w_port;?>/hls/<?php echo $cam->id; ?>.m3u8">
+                                        <video controls style="width:100%; display: none;"  id="pcam_<?php echo $key; ?>" src="<?php echo $server->protocol.'://'.$server->ip.':'.$server->w_port;?>/hls/<?php echo $cam->id; ?>.m3u8"></video>
                                             <?php } else { ?>
                                             <iframe
                                             id="pcam_<?php echo $key; ?>"
