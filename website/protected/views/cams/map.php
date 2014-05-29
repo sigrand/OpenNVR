@@ -269,7 +269,7 @@ var markers_cluster = new L.MarkerClusterGroup();
 				osm = new L.TileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
 				if (L.Yandex) yndx = new L.Yandex();
 				if (L.Google) googleLayer = new L.Google('ROADMAP')
-				map = L.map('map_div', {closePopupOnClick:false, maxZoom:5});
+				map = L.map('map_div', {closePopupOnClick:false, maxZoom:18});
 				if (osm) {
 					map.addLayer(osm);
 				} else {
