@@ -297,7 +297,7 @@
 			<input type="text" id="download_duration" value="300" size="3"></input><span style="color:grey;"><?php echo Yii::t('cams', 'sec.'); ?></span>
 			<input type="button" id="download_button" value="<?php echo Yii::t('cams', 'Download'); ?>"></input><br>
 			<input type="button" id="live_button" value="<?php echo Yii::t('cams', 'Live'); ?>"></input>
-			<input type="button" id="hi_low_button" value="<?php echo Yii::t('cams', 'High/low quality'); ?>"></input>
+			<input type="button" id="hi_low_button" value="<?php if ($full) echo(Yii::t('cams', 'High quality')); else echo(Yii::t('cams', 'Low quality'));?>"></input>
 			<input class="w100" type="text" id="date" disabled="true">
 			<div id="datepicker"></div>
 			<input class="w100" type="text" id="time" disabled="true">
