@@ -184,8 +184,8 @@
 								s2 = parseInt(tmp.getTime()/1000);
 								e2 = s2+60*60-1;
 								if (s2 < v.end && v.start < e2) {
-									$(".ui_tpicker_hour td:contains("+(h<=9?('0'+h):h)+")").css("color", "#00FF00");
-									rec_div = "<div class='ui-slider-range ui-widget-header rec_div' style='width:4.166666666666667%;left:"+(4.166666666666667*h)+"%;background:#00FF00;'></div>";
+									$(".ui_tpicker_hour td:contains("+(h<=9?('0'+h):h)+")").css("color", "white");
+									rec_div = "<div class='ui-slider-range ui-widget-header rec_div' style='width:4.166666666666667%;left:"+(4.166666666666667*h)+"%;background:white;'></div>";
 									$(".ui_tpicker_hour_slider .ui-slider-handle").before(rec_div);
 									if (h == hh) {
 										for (m = 0; m < 60; m++) {
@@ -193,8 +193,8 @@
 											s3 = parseInt(tmp2.getTime()/1000);
 											e3 = s3+60-1;
 											if (s3 < v.end && v.start < e3) {
-												$(".ui_tpicker_minute td:contains("+(m<=9?('0'+m):m)+")").css("color", "#00FF00");
-												rec_div = "<div class='ui-slider-range ui-widget-header rec_div' style='width:1.666666666666667%;left:"+(1.666666666666667*m)+"%;background: #00FF00;'></div>";
+												$(".ui_tpicker_minute td:contains("+(m<=9?('0'+m):m)+")").css("color", "blue");
+												rec_div = "<div class='ui-slider-range ui-widget-header rec_div' style='width:1.666666666666667%;left:"+(1.666666666666667*m)+"%;background:blue;'></div>";
 												$(".ui_tpicker_minute_slider .ui-slider-handle").before(rec_div);
 												if (m == mm) {
 													for (s = 0; s < 60; s++) {
@@ -202,8 +202,8 @@
 														s4 = parseInt(tmp3.getTime()/1000);
 														e4 = s4+60-1;
 														if (s4 < v.end && v.start < e4) {
-															$(".ui_tpicker_second td:contains("+(s<=9?('0'+s):s)+")").css("color", "#00FF00");
-															rec_div = "<div class='ui-slider-range ui-widget-header rec_div' style='width:1.666666666666667%;left:"+(1.666666666666667*s)+"%;background: #00FF00;'></div>";
+															$(".ui_tpicker_second td:contains("+(s<=9?('0'+s):s)+")").css("color", "red");
+															rec_div = "<div class='ui-slider-range ui-widget-header rec_div' style='width:1.666666666666667%;left:"+(1.666666666666667*s)+"%;background:red;'></div>";
 															$(".ui_tpicker_second_slider .ui-slider-handle").before(rec_div);
 														}
 													}
