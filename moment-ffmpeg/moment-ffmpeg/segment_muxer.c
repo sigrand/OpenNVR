@@ -386,7 +386,7 @@ static int segment_end(AVFormatContext *s, int write_trailer, int is_last)
 end:
 #ifdef MOMENT_CHANGE    // MOMENT_CHANGE [
     avio_close(oc->pb);
-    Notify(oc->filename, 1, 0);
+    Notify(oc->filename, 1, oc->pb->pos+1);
 #else   // MOMENT_CHANGE ], [ !MOMENT_CHANGE
     avio_close(oc->pb);
 #endif  // !MOMENT_CHANGE ]

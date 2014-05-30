@@ -343,8 +343,22 @@ RtmpServer::doPlay (Uint32       const msg_stream_id,
 		else
 		{
 			id = id_raw;
-		}
-        if(id.length() == HASHSIZE)
+        }
+
+        size_t id_len = id.length();
+        bool bValidHash = true;
+        for(int i = 0; i < id_len; i++)
+        {
+            if(!((id[i] >= '0' && id[i] <= '9') ||
+                 (id[i] >= 'A' && id[i] <= 'Z') ||
+                 (id[i] >= 'a' && id[i] <= 'z') ))
+            {
+                bValidHash = false;
+                break;
+            }
+        }
+
+        if(id_len == HASHSIZE && bValidHash)
         {
             root_req["id"] = id;
             std::string sRequest = std::string("data=") + json_writer_styled.write(root_req);

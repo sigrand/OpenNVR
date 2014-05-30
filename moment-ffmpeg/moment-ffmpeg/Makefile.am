@@ -53,10 +53,6 @@ libmoment_ffmpeg_1_0_la_SOURCES =	\
         stat_measurer.h                 \
         video_part_maker.cpp            \
         video_part_maker.h              \
-        memory_dispatcher.cpp           \
-        memory_dispatcher.h             \
-        rec_path_config.cpp             \
-        rec_path_config.h               \
         ffmpeg_common.h                 \
         iostat.h                        \
         inc.h

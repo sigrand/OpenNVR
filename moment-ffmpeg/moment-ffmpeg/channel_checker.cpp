@@ -1,5 +1,6 @@
 #include <moment-ffmpeg/inc.h>
 
+#include <moment/path_manager.h>
 #include <moment-ffmpeg/channel_checker.h>
 #include <moment-ffmpeg/media_reader.h>
 #include <moment-ffmpeg/time_checker.h>
@@ -23,28 +24,8 @@ namespace MomentFFmpeg {
 #define TIMER_TICK 5 // in seconds
 
 static LogGroup libMary_logGroup_channelcheck ("mod_ffmpeg.channelcheck", LogLevel::E);
-static LogGroup libMary_logGroup_mutex ("mod_ffmpeg.mutex", LogLevel::E);
 
 #ifdef __linux__
-uint64_t get_file_space(const char *filepath)
-{
-  struct stat st;
-  uint64_t totalsize = 0LL;
-
-  if(lstat(filepath, &st) == -1)
-  {
-    logE(channelcheck, _func_, "Couldn't stat: ", filepath);
-    return totalsize;
-  }
-
-  if(S_ISREG(st.st_mode)) // We only want to count regular files
-  {
-    totalsize = st.st_size;
-  }
-
-  return totalsize;
-}
-
 uint64_t get_dir_space(char *dirname)
 {
   DIR *dir;
@@ -148,45 +129,44 @@ double FastGetDuration(const char * file_name_path)
     return m_dDuration;
 }
 
-bool ChannelChecker::writeIdx(const std::string & dir_name, std::vector<std::string> & files_changed)
+bool ChannelChecker::writeIdx(std::map<std::string, std::string> & files_changed)
 {
     TimeChecker tc;tc.Start();
 
     bool bRes = false;
 
-    std::vector<std::string> paths_idx;
+    std::map<std::string, std::string> paths_idx;
     std::string path_prev;
-    for(int i = 0; i < files_changed.size(); i++)
+    for(std::map<std::string, std::string>::iterator itr = files_changed.begin(); itr != files_changed.end(); itr++)
     {
-        std::string path = files_changed[i].substr(0,files_changed[i].rfind("/"));
+        std::string path = itr->first.substr(0,itr->first.rfind("/"));
         if(path.compare(path_prev) != 0) // equal
         {
             path_prev = path;
-            paths_idx.push_back(path);
+            paths_idx[path] = itr->second;
         }
     }
 
-    for(int i = 0; i < paths_idx.size(); i++)
+    for(std::map<std::string, std::string>::iterator itrIdx = paths_idx.begin(); itrIdx != paths_idx.end(); itrIdx++)
     {
-        StRef<String> const str_idx_file = st_makeString (dir_name.c_str(), "/", paths_idx[i].c_str(), "/", m_channel_name, ".idx");
+        StRef<String> const str_idx_file = st_makeString (itrIdx->second.c_str(), "/", itrIdx->first.c_str(), "/", m_channel_name, ".idx");
         std::string idxFileName = str_idx_file->cstr();
         std::ofstream idxFile;
         idxFile.open(idxFileName);
         logD(channelcheck, _func_,"ChannelChecker.writeIdx idxFileName = ", idxFileName.c_str());
-        ChannelFileTimes * channelFileTimes = & m_chDiskFileTimes[dir_name];
-        ChannelFileTimes::const_iterator it = channelFileTimes->begin();
+        ChannelFileDiskTimes::const_iterator it = m_fileDiskTimes.begin();
         bool bIsDone = false;
-        logD(channelcheck, _func_,"ChannelChecker.writeIdx files_existence.size() = ", channelFileTimes->size());
-        for(it; it != channelFileTimes->end(); ++it)
+        logD(channelcheck, _func_,"ChannelChecker.writeIdx m_fileDiskTimes.size() = ", m_fileDiskTimes.size());
+        for(it; it != m_fileDiskTimes.end(); ++it)
         {
             std::string path = it->first.substr(0,it->first.rfind("/"));
-            if(path.compare(paths_idx[i]) == 0)
+            if(path.compare(itrIdx->first) == 0 && itrIdx->second.compare(it->second.diskName) == 0)
             {
                 idxFile << it->first;
                 idxFile << "|";
-                idxFile << it->second.timeStart;
+                idxFile << it->second.times.timeStart;
                 idxFile << "|";
-                idxFile << it->second.timeEnd;
+                idxFile << it->second.times.timeEnd;
                 idxFile << std::endl;
 
                 bIsDone = true;
@@ -212,11 +192,12 @@ bool ChannelChecker::readIdx()
 
     bool bRes = false;
 
-    std::string curPath = m_recpathConfig->GetNextPath();
+    std::vector<std::string> disks;
+    PathManager::Instance().GetDiskForSrc(std::string(this->m_channel_name->cstr()), disks);
 
-    while(curPath.length() != 0)
+    for(int i = 0; i < disks.size(); i++)
     {
-        StRef<String> strRecDir = st_makeString(curPath.c_str());
+        StRef<String> strRecDir = st_makeString(disks[i].c_str());
 
         IdxFileIterator idx_iter;
         Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
@@ -251,15 +232,29 @@ bool ChannelChecker::readIdx()
                     strToInt32_safe(strToken->cstr(), &initTime);
                     line.erase(pos);
 
-                    ChChDiskTimes chChDiskTimes;
-                    chChDiskTimes.times.timeStart = initTime;
-                    chChDiskTimes.times.timeEnd = endTime;
-                    chChDiskTimes.diskName = std::string(curPath);
+                    ChChTimes chChTimes;
+                    chChTimes.timeStart = initTime;
+                    chChTimes.timeEnd = endTime;
 
-                    m_chFileDiskTimes[line] = chChDiskTimes;
+                    // fullfil m_chFileDiskTimes
+                    {
+                        ChChDiskTimes diskTimes;
+                        diskTimes.diskName = disks[i];
+                        diskTimes.times = chChTimes;
 
-                    m_chDiskFileTimes[chChDiskTimes.diskName][line] = chChDiskTimes.times;
+                        m_fileDiskTimes[line] = diskTimes;
+                    }
 
+                    // fullfil m_diskFileTimes
+                    {
+                        if(m_diskFileTimes.find(disks[i]) == m_diskFileTimes.end())
+                        {
+                            ChannelFileTimes cft;
+                            m_diskFileTimes[disks[i]] = cft;
+                        }
+
+                        m_diskFileTimes[disks[i]][line] = chChTimes;
+                    }
                 }
                 idxFile.close();
                 logD(channelcheck, _func_, "read successful, idxfile: ", path.c_str());
@@ -273,8 +268,6 @@ bool ChannelChecker::readIdx()
 
             str_path = idx_iter.getNext();
         }
-
-        curPath = m_recpathConfig->GetNextPath(curPath);
     }
 
     Time t;tc.Stop(&t);
@@ -290,31 +283,24 @@ ChannelChecker::GetChannelTimes()
 
     TimeChecker tc;tc.Start();
 
-    logD(mutex, _func_, "QQQQC 1");
     cleanCache();
-    logD(mutex, _func_, "QQQQC 2");
-    updateCache(true);
+    completeCache(true);
 
-    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
     ChannelTimes chFileTimes;
-    ChannelFileDiskTimes::iterator it;
-    chFileTimes.reserve(m_chFileDiskTimes.size());
-    for(it = m_chFileDiskTimes.begin(); it != m_chFileDiskTimes.end(); ++it)
+
+    chFileTimes.reserve(m_fileDiskTimes.size());
+    for(ChannelFileDiskTimes::iterator it = m_fileDiskTimes.begin(); it != m_fileDiskTimes.end(); ++it)
     {
-        ChChTimes chChTimes;
-        chChTimes.timeStart = (*it).second.times.timeStart;
-        chChTimes.timeEnd = (*it).second.times.timeEnd;
-        chFileTimes.push_back(chChTimes);
+        chFileTimes.push_back(it->second.times);
     }
 
     if(chFileTimes.size() >= 2)
     {
-        logD(mutex, _func_, "QQQQC chFileTimes.size() >= 2");
         ChannelTimes::iterator itr = chFileTimes.begin();
         std::advance (itr,1);
-logD(mutex, _func_, "QQQQC BEFORE concatination");
+
         while(1)
         {
             if (itr == chFileTimes.end())
@@ -343,14 +329,8 @@ logD(mutex, _func_, "QQQQC BEFORE concatination");
             }
             else ++itr;
         }
-logD(mutex, _func_, "QQQQC AFTER concatination");
-    }
-    else
-    {
-        logD(mutex, _func_, "QQQQC chFileTimes.size() IS NOT >= 2");
     }
 
-    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 
     Time t;tc.Stop(&t);
@@ -359,20 +339,41 @@ logD(mutex, _func_, "QQQQC AFTER concatination");
     return chFileTimes;
 }
 
-std::pair<std::string, ChChDiskTimes>
-ChannelChecker::GetOldestFileDiskTimes ()
+ChannelChecker::ChannelFileTimes
+ChannelChecker::GetChannelFileTimes ()
 {
     logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
-    if(m_chFileDiskTimes.size())
+    TimeChecker tc;tc.Start();
+
+    cleanCache();
+    completeCache(true);
+
+    Time t;tc.Stop(&t);
+    logD(channelcheck, _func_,"getChannelFileDiskTimes exectime = [", t, "]");
+
+    m_mutex.lock();
+
+    ChannelFileTimes fileTimes;
+    for(ChannelFileDiskTimes::iterator it = m_fileDiskTimes.begin(); it != m_fileDiskTimes.end(); ++it)
     {
-        logD(channelcheck, _func_,"dirname: [", m_chFileDiskTimes.begin()->first.c_str(), "]");
-        return std::pair<std::string, ChChDiskTimes>(m_chFileDiskTimes.begin()->first, m_chFileDiskTimes.begin()->second);
+        fileTimes.insert(std::pair<std::string, ChChTimes>(it->first, it->second.times));
     }
-    else
-    {
-        return std::pair<std::string, ChChDiskTimes>();
-    }
+
+    m_mutex.unlock();
+
+    return fileTimes;
+}
+
+ChannelChecker::ChannelDiskFileTimes
+ChannelChecker::GetChannelDiskFileTimes ()
+{
+    logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
+
+    cleanCache();
+    completeCache(true);
+
+    return m_diskFileTimes;
 }
 
 ChannelChecker::ChannelFileDiskTimes
@@ -380,42 +381,32 @@ ChannelChecker::GetChannelFileDiskTimes ()
 {
     logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
-    TimeChecker tc;tc.Start();
-
     cleanCache();
-    updateCache(true);
+    completeCache(true);
 
-    Time t;tc.Stop(&t);
-    logD(channelcheck, _func_,"getChannelFileDiskTimes exectime = [", t, "]");
-
-    return m_chFileDiskTimes;
+    return m_fileDiskTimes;
 }
 
-ChannelChecker::DiskSizes
-ChannelChecker::GetDiskSizes ()
+bool
+ChannelChecker::GetOldestFile (std::string & filename, std::string & disk)
 {
-    logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
+    bool bRes = true;
 
-    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
-    DiskSizes ds;
-
-    DiskFileSizes::iterator itr = m_occupSizes.begin();
-    for(itr; itr != m_occupSizes.end(); itr++)
+    if(m_fileDiskTimes.size())
     {
-        ds[itr->first] = 0;
-        std::map<std::string, Uint64>::iterator itr1 = itr->second.begin();
-        for(itr1; itr1 != itr->second.end(); itr1++)
-        {
-            ds[itr->first] += itr1->second;
-        }
+        filename = m_fileDiskTimes.begin()->first;
+        disk = m_fileDiskTimes.begin()->second.diskName;
+    }
+    else
+    {
+        bRes = false;
     }
 
-    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 
-    return ds;
+    return bRes;
 }
 
 ChannelChecker::CheckResult
@@ -425,13 +416,11 @@ ChannelChecker::initCache()
 
     TimeChecker tc;tc.Start();
 
-    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
     initCacheFromIdx();
-    completeCache();
+    completeCache(true);
 
-    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 
     Time t;tc.Stop(&t);
@@ -449,17 +438,10 @@ ChannelChecker::initCacheFromIdx()
 
     readIdx();
 
-    if(!m_chFileDiskTimes.empty()) // if cache is not empty, then we update only last record duration
+    if(!m_fileDiskTimes.empty()) // if cache is not empty, then we update only last record duration
     {
-        ChannelFileDiskTimes::reverse_iterator itr = m_chFileDiskTimes.rbegin();
+        ChannelFileDiskTimes::reverse_iterator itr = m_fileDiskTimes.rbegin();
         addRecordInCache(itr->first, itr->second.diskName, true);
-    }
-
-    ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin();
-    for(itr; itr != m_chFileDiskTimes.end(); itr++)
-    {
-        StRef<String> st_fullname = st_makeString(itr->second.diskName.c_str(), "/", itr->first.c_str(), ".flv");
-        m_occupSizes[itr->second.diskName][itr->first] = get_file_space(st_fullname->cstr());
     }
 
     Time t;tc.Stop(&t);
@@ -469,193 +451,90 @@ ChannelChecker::initCacheFromIdx()
 }
 
 bool
-ChannelChecker::DeleteFromCache(const std::string & dirName, const std::string & fileName)
+ChannelChecker::DeleteFromCache(const std::string & fileName)
 {
-    logD(channelcheck, _func_,"filename: [", dirName.c_str(), "/", fileName.c_str(), "]");
+    logD(channelcheck, _func_,"filename: [", fileName.c_str(), "]");
 
-    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
-    m_chFileDiskTimes.erase(fileName);
-    m_chDiskFileTimes[dirName].erase(fileName);
+    m_fileDiskTimes.erase(fileName);
 
-    std::vector<std::string> files_changed;
-    files_changed.push_back(fileName);
-    writeIdx(dirName, files_changed);
+    std::string disk_to_erase;
+    for(ChannelDiskFileTimes::iterator itr = m_diskFileTimes.begin();
+        itr != m_diskFileTimes.end(); itr++)
+    {
+        if(itr->second.find(fileName) != itr->second.end())
+        {
+            disk_to_erase = itr->first;
+            itr->second.erase(fileName);
+            break;
+        }
+    }
 
-    m_occupSizes[dirName].erase(fileName);
+    if(disk_to_erase.size() != 0)
+    {
+        std::map<std::string, std::string> files_changed;
+        files_changed[fileName] = disk_to_erase;
+        writeIdx(files_changed);
+    }
 
-    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 
     return true;
 }
 
 ChannelChecker::CheckResult
-ChannelChecker::updateCache(bool bForceUpdate)
-{
-    logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
-
-    CheckResult rez = CheckResult_Success;
-
-    logD(mutex, _func_, "QQQQC 2 MUTEX _locked");
-    m_mutex.lock();
-
-    TimeChecker tc;tc.Start();
-
-    ChannelFileDiskTimes::reverse_iterator itr = m_chFileDiskTimes.rbegin();
-logD(mutex, _func_, "QQQQC update 1");
-    if(itr != m_chFileDiskTimes.rend()) // if last recorded file exists
-    {
-logD(mutex, _func_, "QQQQC update 2");
-        std::string lastfile = itr->first;
-        std::string lastdir = itr->second.diskName;
-
-        Time timeOfRecord = 0;
-        StRef<String> const flv_filename = st_makeString (lastfile.c_str(), ".flv");
-        FileNameToUnixTimeStamp().Convert(flv_filename, timeOfRecord);
-        timeOfRecord = timeOfRecord / 1000000000LL;
-
-        bool bNewerFile = false; // false - last recorded file is recording file now, true - there is newer file
-        std::string curPath = m_recpathConfig->GetNextPath();
-logD(mutex, _func_, "QQQQC update 2.1");
-        while(curPath.length() != 0)
-        {
-            NvrFileIterator file_iter;
-            StRef<String> strRecDir = st_makeString(curPath.c_str());
-            Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
-            file_iter.init (vfs, m_channel_name->mem(), timeOfRecord);
-            StRef<String> path = file_iter.getNext();
-            // here path is last recorded file (if it is the same disk as for last recorded file)
-            // or just some old last file (if it is not the same disk as for last recorded file)
-            // or NULL (if current disk(curPath) doesnt contain files)
-            // OR "" (if current disk(curPath) didnt contain files and now has one recording file)
-            if(path != NULL)
-            {
-                StRef<String> pathNext = file_iter.getNext();
-                // pathNext is new recording file
-                // or NULL (if nvr writes on other disk or last recorded file is recording now)
-                if(pathNext != NULL && !pathNext->isNullString())
-                {
-                    // update duration for last recorded file
-                    addRecordInCache(lastfile, lastdir, true);
-
-                    // update occup size of last recorded file
-                    StRef<String> st_fullname = st_makeString(lastdir.c_str(), "/", lastfile.c_str(), ".flv");
-                    Int64 occupSizeFile = get_file_space(st_fullname->cstr());
-                    m_occupSizes[lastdir][lastfile] = occupSizeFile;
-
-                    // add new recording file in cache
-                    std::string strpathNext = std::string(pathNext->cstr());
-                    addRecordInCache(strpathNext, curPath, false);
-
-                    std::vector<std::string> files_changed;
-                    files_changed.push_back(lastfile);
-                    writeIdx(lastdir, files_changed);
-                    if(lastdir.compare(curPath) != 0)
-                    {
-                        std::vector<std::string> files_changed_new;
-                        files_changed_new.push_back(strpathNext);
-                        writeIdx(curPath, files_changed_new);
-                    }
-
-                    bNewerFile = true;
-                    break; // recording file is only one for one source
-                }
-            }
-            curPath = m_recpathConfig->GetNextPath(curPath);
-        }
-logD(mutex, _func_, "QQQQC update 2.2");
-        if(!bNewerFile)
-        {
-            // update duration for last recorded file
-            addRecordInCache(lastfile, lastdir, bForceUpdate);
-            std::vector<std::string> files_changed;
-            if(bForceUpdate)
-                files_changed.push_back(lastfile);
-            writeIdx(lastdir, files_changed);
-        }
-logD(mutex, _func_, "QQQQC update 2.3");
-    }
-    else // no one records exist
-    {
-logD(mutex, _func_, "QQQQC update 3");
-        std::string curPath = m_recpathConfig->GetNextPath();
-        while(curPath.length() != 0)
-        {
-            NvrFileIterator file_iter;
-            StRef<String> strRecDir = st_makeString(curPath.c_str());
-            Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
-            file_iter.init (vfs, m_channel_name->mem(), 0);
-            StRef<String> path = file_iter.getNext();
-            if(path != NULL && !path->isNullString()) // if it is not null, then it is recording file
-            {
-                std::string strpath = std::string(path->cstr());
-                addRecordInCache(strpath, curPath, false);
-                std::vector<std::string> files_changed;
-                files_changed.push_back(path->cstr());
-                writeIdx(curPath, files_changed);
-                break; // recording file is only one for one source
-            }
-            curPath = m_recpathConfig->GetNextPath(curPath);
-        }
-logD(mutex, _func_, "QQQQC update 3.1");
-    }
-logD(mutex, _func_, "QQQQC update 4");
-    Time t;tc.Stop(&t);
-    logD(channelcheck, _func_,"ChannelChecker.updateCache exectime = [", t, "]");
-
-    logD(mutex, _func_, "QQQQC 2 MUTEX unlocked");
-    m_mutex.unlock();
-
-    return rez;
-}
-
-ChannelChecker::CheckResult
-ChannelChecker::completeCache()
+ChannelChecker::completeCache(bool bForceUpdate)
 {
     logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
     TimeChecker tc;tc.Start();
 
     CheckResult rez = CheckResult_Success;
-    std::string curPath = m_recpathConfig->GetNextPath();
-    while(curPath.length() != 0)
+
+    std::vector<std::string> disks;
+    PathManager::Instance().GetDiskForSrc(m_channel_name->cstr(), disks);
+
+    for(int i = 0; i < disks.size(); i++)
     {
         Time timeOfRecord = 0;
-        ChannelFileTimes * channelFileTimes = & m_chDiskFileTimes[curPath];
-        if(!channelFileTimes->empty())
+
+        if(!m_diskFileTimes[disks[i]].empty())
         {
-            std::string lastfile = channelFileTimes->rbegin()->first;
+            std::string lastfile = m_diskFileTimes[disks[i]].rbegin()->first;
             StRef<String> const flv_filename = st_makeString (lastfile.c_str(), ".flv");
             FileNameToUnixTimeStamp().Convert(flv_filename, timeOfRecord);
             timeOfRecord = timeOfRecord / 1000000000LL;
         }
 
         NvrFileIterator file_iter;
-        StRef<String> strRecDir = st_makeString(curPath.c_str());
+        StRef<String> strRecDir = st_makeString(disks[i].c_str());
         Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
         file_iter.init (vfs, m_channel_name->mem(), timeOfRecord);
 
-        std::vector<std::string> files_changed;
+        std::map<std::string, std::string> files_changed;
 
         StRef<String> path = file_iter.getNext();
         while(path != NULL && !path->isNullString())
         {
             std::string strpath = std::string(path->cstr());
-            addRecordInCache(strpath, curPath, true);
-            ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin();
 
-            StRef<String> st_fullname = st_makeString(curPath.c_str(), "/", strpath.c_str(), ".flv");
-            m_occupSizes[curPath][strpath] = get_file_space(st_fullname->cstr());
+            StRef<String> pathNext = file_iter.getNext();
+            if(pathNext != NULL && !pathNext->isNullString())
+            {
+                addRecordInCache(strpath, disks[i], true);
+                files_changed[strpath] = disks[i];
+            }
+            else
+            {
+                addRecordInCache(strpath, disks[i], bForceUpdate);
+                files_changed[strpath] = disks[i];
+            }
 
-            files_changed.push_back(strpath);
-            path = file_iter.getNext();
+            path = st_makeString(pathNext);
         }
 
-        writeIdx(curPath, files_changed);
-
-        curPath = m_recpathConfig->GetNextPath(curPath);
+        writeIdx(files_changed);
     }
 
     Time t;tc.Stop(&t);
@@ -669,36 +548,30 @@ ChannelChecker::cleanCache()
 {
     logD(channelcheck, _func_,"channel_name: [", m_channel_name, "]");
 
-    logD(mutex, _func_, "QQQQC 1 MUTEX _locked");
     m_mutex.lock();
 
-    if(m_chFileDiskTimes.empty())
+    if(m_diskFileTimes.empty())
     {
-        logD(mutex, _func_, "QQQQC 1 MUTEX unlocked");
         m_mutex.unlock();
         return CheckResult_Success;
     }
 
     TimeChecker tc;tc.Start();
 
-    std::string curPath = m_recpathConfig->GetNextPath();
-logD(mutex, _func_, "QQQQC clean 1");
-    while(curPath.length() != 0)
+    for(ChannelDiskFileTimes::iterator itrD = m_diskFileTimes.begin(); itrD != m_diskFileTimes.end(); itrD++)
     {
-        StRef<String> strRecDir = st_makeString(curPath.c_str());
+        StRef<String> strRecDir = st_makeString(itrD->first.c_str());
         ConstMemory record_dir = strRecDir->mem();
         Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir);
 
         NvrFileIterator file_iter;
         file_iter.init (vfs, m_channel_name->mem(), 0); // get the oldest file
 
-        std::vector<std::string> files_changed;
+        std::map<std::string, std::string> files_changed;
 
         StRef<String> path = file_iter.getNext();
-logD(mutex, _func_, "QQQQC clean 2");
         if(path != NULL)
         {
-            logD(mutex, _func_, "QQQQC clean 3");
             Time timeOfFirstFile = 0;
             {
                 StRef<String> const flv_filename = st_makeString (path, ".flv"); // replace by read from idx ??????
@@ -706,91 +579,66 @@ logD(mutex, _func_, "QQQQC clean 2");
                 timeOfFirstFile = timeOfFirstFile / 1000000000LL;
             }
 
-            ChannelFileDiskTimes::iterator it = m_chFileDiskTimes.begin();
-logD(mutex, _func_, "QQQQC clean 3.1");
-            while(it != m_chFileDiskTimes.end())
+            ChannelFileTimes::iterator itrF = itrD->second.begin();
+            while(itrF != itrD->second.end())
             {
-                if(it->second.diskName.compare(curPath) == 0)
+                logD(channelcheck, _func_,"file [", itrF->first.c_str(), ",{", itrF->second.timeStart, ",", itrF->second.timeEnd, "}]");
+                Time timeOfRecord = 0;
+                StRef<String> const flv_filename = st_makeString (itrF->first.c_str(), ".flv");
+                FileNameToUnixTimeStamp().Convert(flv_filename, timeOfRecord);
+                timeOfRecord = timeOfRecord / 1000000000LL;
+
+                logD(channelcheck, _func_,"timeOfFirstFile: [", timeOfFirstFile, "], timeOfRecord: [", timeOfRecord, "]");
+                if(timeOfRecord < timeOfFirstFile)
                 {
-                    logD(channelcheck, _func_,"file [", it->first.c_str(), ",{", it->second.times.timeStart, ",", it->second.times.timeEnd, "}]");
-                    Time timeOfRecord = 0;
-                    StRef<String> const flv_filename = st_makeString ((*it).first.c_str(), ".flv");
-                    FileNameToUnixTimeStamp().Convert(flv_filename, timeOfRecord);
-                    timeOfRecord = timeOfRecord / 1000000000LL;
-
-                    logD(channelcheck, _func_,"timeOfFirstFile: [", timeOfFirstFile, "], timeOfRecord: [", timeOfRecord, "]");
-                    if(timeOfRecord < timeOfFirstFile)
-                    {
-                        logD(channelcheck, _func_,"clean it!");
-                        files_changed.push_back(it->first);
-
-                        m_chDiskFileTimes[it->second.diskName].erase(it->first);
-                        m_chFileDiskTimes.erase(it);
-
-                        m_occupSizes[it->second.diskName].erase(it->first);
-
-                        it++;
-                    }
-                    else
-                    {
-                        logD(channelcheck, _func_,"all expired records have been deleted");
-                        break;
-                    }
+                    logD(channelcheck, _func_,"clean it!");
+                    files_changed[itrF->first] = itrD->first;
+                    itrD->second.erase(itrF);
+                    itrF++;
                 }
                 else
                 {
-                    it++;
+                    logD(channelcheck, _func_,"all expired records have been deleted");
+                    break;
                 }
             }
-logD(mutex, _func_, "QQQQC clean 3.2");
         }
         else
         {
-logD(mutex, _func_, "QQQQC clean 4");
             logD(channelcheck, _func_,"there is no files at all, clean all cache");
 
-            ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin();
-            while(itr != m_chFileDiskTimes.end())
+            ChannelFileTimes::iterator itrF = itrD->second.begin();
+            while(itrF != itrD->second.end())
             {
-                if(itr->second.diskName.compare(curPath) == 0)
-                {
-                    files_changed.push_back(itr->first);
-
-                    m_chDiskFileTimes[itr->second.diskName].erase(itr->first);
-                    m_chFileDiskTimes.erase(itr);
-                    m_occupSizes[itr->second.diskName].erase(itr->first);
-                }
-                itr++;
+                files_changed[itrF->first] = itrD->first;
+                itrF++;
             }
-logD(mutex, _func_, "QQQQC clean 4.1");
+            itrD->second.clear();
         }
-logD(mutex, _func_, "QQQQC clean 5");
-        writeIdx(curPath, files_changed);
 
-        curPath = m_recpathConfig->GetNextPath(curPath);
-logD(mutex, _func_, "QQQQC clean 6");
+        writeIdx(files_changed);
     }
+
 
     Time t;tc.Stop(&t);
     logD(channelcheck, _func_,"ChannelChecker.cleanCache exectime = [", t, "]");
 
-    logD(mutex, _func_, "QQQQC 1 MUTEX unlocked");
     m_mutex.unlock();
 
     return CheckResult_Success;
 }
 
 ChannelChecker::CheckResult
-ChannelChecker::addRecordInCache(const std::string & path, const std::string & strRecDir, bool bUpdate)
+ChannelChecker::addRecordInCache(const std::string & filename, const std::string & disk, bool bUpdate)
 {
-    logD(channelcheck, _func_,"addRecordInCache:", path.c_str());
+    logD(channelcheck, _func_,"addRecordInCache:", filename.c_str());
 
     TimeChecker tc;tc.Start();
 
-    if(m_chFileDiskTimes.find(path) == m_chFileDiskTimes.end() || bUpdate)
+    if(m_fileDiskTimes.find(filename) == m_fileDiskTimes.end() || bUpdate)
     {
-        StRef<String> const flv_filename = st_makeString (path.c_str(), ".flv");
-        StRef<String> flv_filenameFull = st_makeString(strRecDir.c_str(), "/", flv_filename);
+        StRef<String> const flv_filename = st_makeString (filename.c_str(), ".flv");
+        StRef<String> flv_filenameFull = st_makeString(disk.c_str(), "/", flv_filename);
 
         Time timeOfRecord = 0;
         FileNameToUnixTimeStamp().Convert(flv_filenameFull, timeOfRecord);
@@ -815,13 +663,21 @@ ChannelChecker::addRecordInCache(const std::string & path, const std::string & s
         int const unixtime_timestamp_end = unixtime_timestamp_start + duration;
         logD(channelcheck, _func_,"flv duration = [", duration, "]");
 
-        ChChDiskTimes chChDiskTimes;
-        chChDiskTimes.times.timeStart = unixtime_timestamp_start;
-        chChDiskTimes.times.timeEnd = unixtime_timestamp_end;
-        chChDiskTimes.diskName = strRecDir;
-        m_chFileDiskTimes[path] = chChDiskTimes;
+        ChChTimes chChTimes;
+        chChTimes.timeStart = unixtime_timestamp_start;
+        chChTimes.timeEnd = unixtime_timestamp_end;
 
-        m_chDiskFileTimes[chChDiskTimes.diskName][path] = chChDiskTimes.times;
+        ChChDiskTimes chchDiskTimes;
+        chchDiskTimes.diskName = disk;
+        chchDiskTimes.times = chChTimes;
+
+        m_fileDiskTimes[filename] = chchDiskTimes;
+        if(m_diskFileTimes.find(disk) == m_diskFileTimes.end())
+        {
+            ChannelFileTimes chFileTimes;
+            m_diskFileTimes[disk] = chFileTimes;
+        }
+        m_diskFileTimes[disk].insert(std::pair<std::string, ChChTimes>(filename, chChTimes));
     }
 
     Time t;tc.Stop(&t);
@@ -838,13 +694,12 @@ ChannelChecker::refreshTimerTick (void * const _self)
     logD (channelcheck, _func_);
 
     self->cleanCache();
-    self->updateCache(false);
+    self->completeCache(false);
 }
 
 mt_const void
-ChannelChecker::init (Timers * const mt_nonnull timers, RecpathConfig * recpathConfig, StRef<String> & channel_name)
+ChannelChecker::init (Timers * const mt_nonnull timers, const std::string & diskName, StRef<String> & channel_name)
 {
-    m_recpathConfig = recpathConfig;
     m_channel_name = channel_name;
 
     logD(channelcheck, _func_,"m_channel_name=", m_channel_name);
@@ -864,21 +719,19 @@ void ChannelChecker::dumpData()
 {
     logD(channelcheck, _func_,"m_channel_name = [", m_channel_name, "]");
 
-    logD(mutex, _func_, "QQQQC MUTEX _locked");
     m_mutex.lock();
 
     logD(channelcheck, _func_, "File summary:");
-    for(ChannelFileDiskTimes::iterator itr = m_chFileDiskTimes.begin(); itr != m_chFileDiskTimes.end(); ++itr)
+    for(ChannelFileDiskTimes::iterator itr = m_fileDiskTimes.begin(); itr != m_fileDiskTimes.end(); ++itr)
     {
-        logD(channelcheck, _func_,"file [", itr->first.c_str(), " on ", itr->second.diskName.c_str(), "] = {",
+        logD(channelcheck, _func_,"file [", itr->second.diskName.c_str(), "/", itr->first.c_str(), "] = {",
              itr->second.times.timeStart, ",", itr->second.times.timeEnd, "}");
     }
 
-    logD(mutex, _func_, "QQQQC MUTEX unlocked");
     m_mutex.unlock();
 }
 
-ChannelChecker::ChannelChecker(): m_timers(this),m_timer_key(NULL), m_recpathConfig(NULL)
+ChannelChecker::ChannelChecker(): m_timers(this),m_timer_key(NULL)
 {
 
 }
@@ -889,7 +742,6 @@ ChannelChecker::~ChannelChecker ()
         m_timers->deleteTimer (this->m_timer_key);
         m_timer_key = NULL;
     }
-    m_recpathConfig = NULL;
 }
 
 }

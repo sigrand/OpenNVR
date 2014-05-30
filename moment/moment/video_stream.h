@@ -294,15 +294,30 @@ public:
 	    Metadata
 	};
 
+	// we use ffmpeg, therefore it is more convenient to have such framerate (instead of 'double'):
+	class FrameRate
+	{
+	public:
+
+		Int32 num;
+		Int32 den;
+
+		FrameRate() : num(0), den(0) {}
+	};
+
 	VideoFrameType frame_type;
 	VideoCodecId codec_id;
+	Int32 width, height;
+	FrameRate frame_rate;
         // TODO 'is_saved_frame' seems unused and unnecessary now.
         bool is_saved_frame;
 
 	VideoMessage ()
             : Message    (Message::Type_Video),
               frame_type (VideoFrameType::Unknown),
-	      codec_id   (VideoCodecId::Unknown),
+              codec_id   (VideoCodecId::Unknown),
+              width(0),
+              height(0),
               is_saved_frame (false)
 	{}
     };

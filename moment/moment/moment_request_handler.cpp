@@ -6,12 +6,14 @@ using namespace Moment;
 
 namespace Moment {
 
+static LogGroup libMary_logGroup_req_handler ("req_handler", LogLevel::D);
 
 //======== common handler
 
 
 static void commonHandleRequest(HTTPServerRequest &req, HTTPServerResponse &resp, HandlerMap &handlerMap)
 {
+    logD(req_handler, _func_, "request = ", req.getHost().c_str(), req.getURI().c_str());
     URI uri(req.getURI());
     std::vector < std::string > segments;
     uri.getPathSegments(segments);

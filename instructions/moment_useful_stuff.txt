@@ -108,10 +108,10 @@ to manage sources via http-requests
 examples:
 
 add channel
-http://192.168.10.21:8080/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp
+http://192.168.10.21:8080/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp&quota=1
 
 modify channel
-http://192.168.10.21:8080/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp&update
+http://192.168.10.21:8080/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp&update&quota=1
 
 remove channel
 http://192.168.10.21:8080/admin/remove_channel?conf_file=sony0
@@ -252,3 +252,16 @@ RESPONSES:
 1920 1080
 -if videostream of source is more than one:
 1920 1080 640 480
+
+=====================================================================================
+add quota
+http://192.168.10.21:8080/admin/add_quota?id=1&size=2048000
+
+remove quota
+http://192.168.10.21:8080/admin/remove_quota?id=1
+
+get list of quotas
+http://192.168.10.21:8080/admin/quota_list
+
+get quota info
+http://192.168.10.21:8080/admin/quota_info?id=1

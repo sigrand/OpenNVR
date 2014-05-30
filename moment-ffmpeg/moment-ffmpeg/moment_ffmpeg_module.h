@@ -33,7 +33,7 @@
 #include <moment-ffmpeg/channel_checker.h>
 #include <moment-ffmpeg/media_viewer.h>
 #include <moment-ffmpeg/stat_measurer.h>
-#include <moment-ffmpeg/rec_path_config.h>
+#include <moment/path_manager.h>
 #include <moment/moment_request_handler.h>
 
 
@@ -144,7 +144,7 @@ private:
     mt_const PagePool *m_pPage_pool;
     mt_const StRef<String> m_confd_dir;
     mt_const StRef<String> m_recpath_conf;
-    RecpathConfig m_recpath_config;
+
     Uint64 m_nDownloadLimit;
 
     mt_const bool m_bServe_playlist_json;
@@ -205,7 +205,7 @@ private:
             ChannelChecker::ChannelTimes * const mt_nonnull existence);
 
     static StRef<String>  channelFilesExistenceToJson (
-            ChannelChecker::ChannelFileDiskTimes * const mt_nonnull chFileDiskTimes);
+            ChannelChecker::ChannelFileTimes * const mt_nonnull chFileDiskTimes);
 
     static StRef<String>  statisticsToJson (
             std::map<time_t, StatMeasure> * const mt_nonnull statPoints,
@@ -227,6 +227,11 @@ private:
     static bool adminHttpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
 
     static bool httpRequest(HTTPServerRequest &req, HTTPServerResponse &resp, void * _self);
+
+    // funcs for PathManager
+    static Uint64 removeAllFilesCallback(const std::string & path, const std::string & src);
+    static Int64 removeFiles(void * self, const std::string & src, Time const start, Time const end, std::map<std::string,Int64> & diskSizeDeletedOut);
+    static Int64 removeOldestFiles(void * self, std::vector<std::string> & srcList, std::string & pathOut, std::string & srcOut);
 
     void createPlaylistChannel (ConstMemory     playlist_filename,
                                 bool            is_dir,

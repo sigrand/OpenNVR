@@ -32,7 +32,6 @@
 #include <moment/libmoment.h>
 #include <moment-ffmpeg/nvr_cleaner.h>
 #include <moment-ffmpeg/stat_measurer.h>
-#include <moment-ffmpeg/rec_path_config.h>
 #include <moment-ffmpeg/channel_checker.h>
 #include <moment-ffmpeg/time_checker.h>
 
@@ -174,8 +173,8 @@ public:
     ffmpegStreamData(void);
     ~ffmpegStreamData();
 
-    InitRes Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
-                Timers * timers, RecpathConfig * recpathConfig, AVDictionary **opts);
+    InitRes Init(const char * uri, const char * channel_name, const std::string & dir_name, const Ref<MConfig::Config> & config,
+                Timers * timers, AVDictionary **opts);
     void Deinit();
 
     // if PushMediaPacket returns 'false' consequently it is the end of stream (EOS).
@@ -210,7 +209,6 @@ private /*variables*/:
     bool m_bGotFirstFrame;
 
     nvrData m_nvrData;
-    RecpathConfig * m_pRecpathConfig;
 
     AVBitStreamFilterContext * m_absf_ctx; // filter for malformed aac
 
@@ -269,7 +267,6 @@ private:
 
     ffmpegStreamData m_ffmpegStreamData;
     Ref<MConfig::Config> config;
-    RecpathConfig * m_pRecpathConfig;
     Ref<ChannelChecker> m_channel_checker;
     StatMeasurer m_statMeasurer;
 #ifdef LIBMARY_PERFORMANCE_TESTING
@@ -475,9 +472,7 @@ public:
 			Time               initial_seek,
                         ChannelOptions    *channel_opts,
                         PlaybackItem      *playback_item,
-                        MConfig::Config *config,
-                        RecpathConfig *recpathConfig,
-                        ChannelChecker * channel_checker);
+                        MConfig::Config *config);
 
      FFmpegStream ();
     ~FFmpegStream ();

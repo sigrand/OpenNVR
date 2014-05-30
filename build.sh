@@ -23,7 +23,7 @@ if [ -z "${CHECK_GLIB}" ]; then
     checkErr "glib-2.0 isn't installed. Please install glib-2.0"
 fi
 
-CHECK_XML="`pkg-config --cflags libxml-2.0`"
+CHECK_XML="`pkg-config --static --cflags libxml-2.0`"
 if [ -z "${CHECK_XML}" ]; then
     checkErr "libxml-2.0 isn't installed. Please install libxml-2.0"
 fi
@@ -128,6 +128,7 @@ ffmpegPath="${DST}/ffmpeg"
         mkdir -p "${ffmpegPath}/include/libavformat"
         cp config.h "${ffmpegPath}/include/ffmpeg_config.h" || checkErr "ffmpeg headers delivery failed"
         cp libavformat/internal.h "${ffmpegPath}/include/libavformat/internal.h" || checkErr "ffmpeg headers delivery failed"
+	cp libavformat/url.h "${ffmpegPath}/include/libavformat/url.h" || checkErr "ffmpeg headers delivery failed"
     fi
     ProjectBuildFinish
     ffmpegIncludeDir="-I${ffmpegPath}/include"  
@@ -269,8 +270,8 @@ momenthlsPath="${DST}/moment"
     ProjectBuildStart "moment-hls" "${SC_DIR}/moment-hls" $momenthlsPath \
      "${momenthlsPath}/lib/moment-1.0/libmoment-hls-1.0.so"
         if [ $CurrentProjectStatus_ -eq 0 ]; then
-            THIS_CFLAGS="${libmaryInclideDir} ${glibIncludeDir} ${pargenInclideDir} ${scruffyIncludeDir} ${mconfigIncludeDir} ${ctemplateIncludeDir} ${xmlIncludeDir} ${jsonIncludeDir} ${momentIncludeDir} ${pocoIncludeDir}" \
-            THIS_LIBS="${ctemplateLibs} ${xmlLibs} ${jsonLibs} ${glibLibs} ${libmaryLibs} ${pargenLibs} ${scruffyLibs} ${mconfigLibs} ${momentLibs}" \
+            THIS_CFLAGS="${libmaryInclideDir} ${glibIncludeDir} ${pargenInclideDir} ${scruffyIncludeDir} ${mconfigIncludeDir} ${ctemplateIncludeDir} ${xmlIncludeDir} ${jsonIncludeDir} ${ffmpegIncludeDir} ${momentIncludeDir} ${pocoIncludeDir}" \
+            THIS_LIBS="${ctemplateLibs} ${xmlLibs} ${jsonLibs} ${glibLibs} ${libmaryLibs} ${pargenLibs} ${scruffyLibs} ${mconfigLibs} ${momentLibs} ${ffmpegLibs} -Wl,-Bsymbolic -lz -lm" \
             ./configure --prefix="${momenthlsPath}" \
                 --enable-shared --disable-static  || checkErr "moment-ffmpeg config failed"            
         fi  

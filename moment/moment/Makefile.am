@@ -88,6 +88,7 @@ moment_target_headers +=        \
                                 \
         transcoder.h            \
                                 \
+        path_manager.h          \
         moment_http_server.h    \
         moment_request_handler.h
 
@@ -147,6 +148,7 @@ libmoment_1_0_la_SOURCES =	\
 	hmac/hmac_sha2.c        \
                                 \
         moment_request_handler.cpp \
+        path_manager.cpp        \
         moment_http_server.cpp  \
         $(moment_target_sources)
 

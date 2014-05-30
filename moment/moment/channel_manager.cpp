@@ -20,15 +20,16 @@
 #include <fstream>
 #include <algorithm>
 #include <string>
+#include <sstream>
 
 #include <libmary/types.h>
 #include <cctype>
-#include <sstream>
 #include "Poco/Base64Decoder.h"
 #include <mconfig/mconfig.h>
 #include <moment/libmoment.h>
 
 #include <moment/channel_manager.h>
+#include <moment/path_manager.h>
 
 #include <json/json.h>
 
@@ -97,23 +98,28 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
     else if (segments.size() >= 2 && segments[1].compare("add_channel") == 0)
     {
         HTMLForm form( req );
-
         NameValueCollection::ConstIterator item_name_iter = form.find("conf_file");
         std::string item_name =(item_name_iter != form.end()) ? item_name_iter->second : "";
         NameValueCollection::ConstIterator item_uri_iter = form.find("uri");
         std::string item_uri =(item_uri_iter != form.end()) ? item_uri_iter->second : "";
         NameValueCollection::ConstIterator item_title_iter = form.find("title");
         std::string item_title =(item_title_iter != form.end()) ? item_title_iter->second : "";
+        NameValueCollection::ConstIterator item_quota_iter = form.find("quota");
+        std::string str_item_quota =(item_quota_iter != form.end()) ? item_quota_iter->second : "";
+        std::istringstream converter(str_item_quota);
+        Int64 item_quota;
+        converter >> item_quota;
         NameValueCollection::ConstIterator update_iter = form.find("update");
         bool const update = (update_iter != form.end());
 
         if (item_name.size() == 0 ||
             item_uri.size() == 0 ||
-            item_title.size() == 0)
+            item_title.size() == 0 ||
+            str_item_quota.size() == 0)
         {
             resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
             std::ostream& out = resp.send();
-            out << "400 Bad Request: no conf_file or uri or title parameter";
+            out << "400 Bad Request: no conf_file or uri or title or quota parameter";
             out.flush();
 
             logA_ ("moment__channel_manager 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
@@ -124,23 +130,15 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
         {
             std::string item_uri64 = item_uri;
             std::istringstream istr(item_uri64);
-            std::ostringstream ostr;
-            Poco::Base64Decoder b64in(istr);
-            std::copy(std::istreambuf_iterator<char>(b64in),
-                std::istreambuf_iterator<char>(),
-                std::ostreambuf_iterator<char>(ostr));
-            item_uri = ostr.str();
+            Poco::Base64Decoder decoder(istr);
+            decoder >> item_uri;
         }
-//        {
-//            std::string item_title64 = item_title;
-//            std::istringstream istr(item_title64);
-//            std::ostringstream ostr;
-//            Poco::Base64Decoder b64in(istr);
-//            std::copy(std::istreambuf_iterator<char>(b64in),
-//                std::istreambuf_iterator<char>(),
-//                std::ostreambuf_iterator<char>(ostr));
-//            item_title = ostr.str();
-//        }
+        {
+            std::string item_title64 = item_title;
+            std::istringstream istr(item_title64);
+            Poco::Base64Decoder decoder(istr);
+            decoder >> item_title;
+        }
 
         // checking for existing url
         {
@@ -231,54 +229,74 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
 
             goto _return;
         }
-        else
+
+        if(!update)
         {
-            bool bDisableRecord = false;
-            std::ifstream file (path->cstr());
-            if (file.good())
+            QuotaResult res = PathManager::Instance().CreateNewSrc(item_name, item_quota);
+            if(res == QuotaResult::QuotaErrNotFound)
             {
-                std::string line;
-                while ( std::getline(file, line) )
+                resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+                std::ostream& out = resp.send();
+                out << "there is no such quota";
+                out.flush();
+
+                goto _return;
+            }
+            else if (res == QuotaResult::QuotaErrAlreadyExist)
+            {
+                resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+                std::ostream& out = resp.send();
+                out << "src is already exist";
+                out.flush();
+
+                goto _return;
+            }
+            else if (res == QuotaResult::QuotaErrOther)
+            {
+                resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+                std::ostream& out = resp.send();
+                out << "PathManager isn't inited";
+                out.flush();
+
+                goto _return;
+            }
+        }
+
+        bool bDisableRecord = false;
+        std::ifstream file (path->cstr());
+        if (file.good())
+        {
+            std::string line;
+            while ( std::getline(file, line) )
+            {
+                size_t beg = line.find("disable_record = \"");
+                if(beg == std::string::npos)
+                    continue;
+                beg += strlen("disable_record = \"");
+                size_t end = line.rfind("\"");
+                std::string strDisableRecord = line.substr(beg, end - beg);
+                std::transform(strDisableRecord.begin(), strDisableRecord.end(), strDisableRecord.begin(), ::tolower);
+                if(strDisableRecord.compare("true") == 0)
                 {
-                    size_t beg = line.find("disable_record = \"");
-                    if(beg == std::string::npos)
-                        continue;
-                    beg += strlen("disable_record = \"");
-                    size_t end = line.rfind("\"");
-                    std::string strDisableRecord = line.substr(beg, end - beg);
-                    std::transform(strDisableRecord.begin(), strDisableRecord.end(), strDisableRecord.begin(), ::tolower);
-                    if(strDisableRecord.compare("true") == 0)
-                    {
-                        bDisableRecord = true;
-                    }
+                    bDisableRecord = true;
                 }
             }
+        }
 
-            std::ofstream ofs;
-            ofs.open(path->cstr(), std::ofstream::out);
-            if(ofs.good())
-            {
-                std::string strDisableRecord = bDisableRecord ? "true" : "false";
-                StRef<String> content = st_makeString ("title = \"", item_title.c_str(),
-                                                       "\"\nuri = \"", item_uri.c_str(),
-                                                       "\"\ndisable_record = \"", strDisableRecord.c_str(), "\"\n");
-                ofs << content->cstr();
-                ofs.close();
-            }
+        std::ofstream ofs;
+        ofs.open(path->cstr(), std::ofstream::out);
+        if(ofs.good())
+        {
+            std::string strDisableRecord = bDisableRecord ? "true" : "false";
+            StRef<String> content = st_makeString ("title = \"", item_title.c_str(),
+                                                   "\"\nuri = \"", item_uri.c_str(),
+                                                   "\"\ndisable_record = \"", strDisableRecord.c_str(), "\"\n");
+            ofs << content->cstr();
+            ofs.close();
         }
 
         ConstMemory item_name_mem = ConstMemory(item_name.c_str(), item_name.size());
-        if (!self->loadConfigItem (item_name_mem, path->mem()))
-        {
-            resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
-            std::ostream& out = resp.send();
-            out << "500 Internal Server Error: loadConfigItem() failed";
-            out.flush();
-
-            logA_ ("moment__channel_manager 500 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
-
-            goto _return;
-        }
+        self->loadConfigItem (item_name_mem, path->mem());
 
         resp.setStatus(HTTPResponse::HTTP_OK);
         resp.setContentType("text/plain");
@@ -294,7 +312,6 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
         NameValueCollection::ConstIterator item_name_iter = form.find("conf_file");
         std::string item_name = (item_name_iter != form.end()) ? item_name_iter->second: "";
 
-        //ConstMemory const item_name = req->getParameter ("conf_file");
         if (item_name.size() == 0)
         {
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -318,8 +335,31 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
 
         if(bSourceExist)
         {
+            QuotaResult res = PathManager::Instance().DeleteSrc(item_name);
+
+            if(res == QuotaResult::QuotaSuccess)
+            {
+                resp.setStatus(HTTPResponse::HTTP_OK);
+                resp.setContentType("text/plain");
+                std::ostream& out = resp.send();
+                out << "OK";
+                out.flush();
+            }
+            else if(res == QuotaResult::QuotaErrNotFound)
+            {
+                resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+                std::ostream& out = resp.send();
+                out << "pathmanager: no source to delete";
+                out.flush();
+
+                goto _return;
+            }
+
             if( remove( path->cstr() ) != 0 )
                 logE_ (_func, "could not delete file", path->cstr());
+
+            ConstMemory item_name_mem = ConstMemory(item_name.c_str(), item_name.size());
+            self->loadConfigItem (item_name_mem, path->mem());
         }
         else
         {
@@ -330,15 +370,288 @@ ChannelManager::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &re
 
             goto _return;
         }
+    }
+    else if (segments.size() >= 2 && segments[1].compare("add_quota") == 0)
+    {
+        HTMLForm form( req );
 
-        ConstMemory item_name_mem = ConstMemory(item_name.c_str(), item_name.size());
-        self->loadConfigItem (item_name_mem, path->mem());
+        NameValueCollection::ConstIterator item_id_iter = form.find("id");
+        std::string str_id = (item_id_iter != form.end()) ? item_id_iter->second: "";
+        std::istringstream converter(str_id);
+        Int64 id;
+        converter >> id;
 
-        resp.setStatus(HTTPResponse::HTTP_OK);
-        resp.setContentType("text/plain");
-        std::ostream& out = resp.send();
-        out << "OK";
-        out.flush();
+        NameValueCollection::ConstIterator item_size_iter = form.find("size");
+        std::string str_size = (item_size_iter != form.end()) ? item_size_iter->second: "";
+        std::istringstream converter1(str_size);
+        Int64 size;
+        converter1 >> size;
+
+        if (str_id.size() == 0 || str_size.size() == 0)
+        {
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "400 Bad Request: no id or size parameter";
+            out.flush();
+
+            logA_ ("moment__channel_manager 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        QuotaResult res = PathManager::Instance().AddQuota(id, size);
+
+        if(res == QuotaResult::QuotaSuccess)
+        {
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            resp.setContentType("text/plain");
+            std::ostream& out = resp.send();
+            out << "OK";
+            out.flush();
+        }
+        else if (res == QuotaResult::QuotaErrAlreadyExist)
+        {
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "quota already exists";
+            out.flush();
+            logE_ (_func, "quota already exists ", id);
+            goto _return;
+        }
+        else if (res == QuotaResult::QuotaErrSpace)
+        {
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "not enough space";
+            out.flush();
+            logE_ (_func, "not enough space");
+            goto _return;
+        }
+    }
+    else if (segments.size() >= 2 && segments[1].compare("update_quota") == 0)
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator item_id_iter = form.find("id");
+        std::string str_id = (item_id_iter != form.end()) ? item_id_iter->second: "";
+        std::istringstream converter(str_id);
+        Int64 id;
+        converter >> id;
+        NameValueCollection::ConstIterator item_size_iter = form.find("size");
+        std::string str_size = (item_size_iter != form.end()) ? item_size_iter->second: "";
+        std::istringstream converter1(str_size);
+        Int64 size;
+        converter1 >> size;
+
+        if (str_id.size() == 0 || str_size.size() == 0)
+        {
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "400 Bad Request: no id or size parameter";
+            out.flush();
+
+            logA_ ("moment__channel_manager 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+//        bool bRes = PathManager::Instance().UpdateQuota(id, size);
+
+//        if(bRes)
+//        {
+//            resp.setStatus(HTTPResponse::HTTP_OK);
+//            resp.setContentType("text/plain");
+//            std::ostream& out = resp.send();
+//            out << "OK";
+//            out.flush();
+//        }
+//        else
+        {
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "not implemented yet";//"quota doesnt exist";
+            out.flush();
+            logE_ (_func, "quota doesnt exist ", id);
+            goto _return;
+        }
+    }
+    else if (segments.size() >= 2 && segments[1].compare("remove_quota") == 0)
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator item_id_iter = form.find("id");
+        std::string str_id = (item_id_iter != form.end()) ? item_id_iter->second: "";
+        std::istringstream converter(str_id);
+        Int64 id;
+        converter >> id;
+
+        if (str_id.size() == 0)
+        {
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "400 Bad Request: no id parameter";
+            out.flush();
+
+            logA_ ("moment__channel_manager 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        QuotaResult res = PathManager::Instance().RemoveQuota(id);
+
+        if(res == QuotaResult::QuotaSuccess)
+        {
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            resp.setContentType("text/plain");
+            std::ostream& out = resp.send();
+            out << "OK";
+            out.flush();
+        }
+        else if (res == QuotaResult::QuotaErrNotEmpty)
+        {
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "quota is not empty";
+            out.flush();
+            logE_ (_func, "quota is not empty ", id);
+            goto _return;
+        }
+        else if (res == QuotaResult::QuotaErrNotFound)
+        {
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "quota is not found";
+            out.flush();
+            logE_ (_func, "quota is not found ", id);
+            goto _return;
+        }
+    }
+    else if (segments.size() >= 2 && segments[1].compare("quota_info") == 0)
+    {
+        HTMLForm form( req );
+
+        NameValueCollection::ConstIterator item_id_iter = form.find("id");
+        std::string str_id = (item_id_iter != form.end()) ? item_id_iter->second: "";
+        std::istringstream converter(str_id);
+        Int64 id;
+        converter >> id;
+
+        if (str_id.size() == 0)
+        {
+            resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
+            std::ostream& out = resp.send();
+            out << "400 Bad Request: no id parameter";
+            out.flush();
+
+            logA_ ("moment__channel_manager 400 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
+            goto _return;
+        }
+
+        Quota quota = PathManager::Instance().GetQuotaInfo(id);
+
+        if(quota.diskSrcSizes.size() > 0)
+        {
+            Json::Value json_quota;
+            json_quota["id"] = Json::Value::Int64(id);
+            Json::Value json_quota_data;
+
+            for(DiskSrcSizes::iterator itrD = quota.diskSrcSizes.begin(); itrD != quota.diskSrcSizes.end(); itrD++)
+            {
+                Json::Value json_disk;
+                json_disk["diskname"] = itrD->first;
+                json_disk["totalSize"] = Json::Int64(itrD->second.totalSize);
+                Json::Value json_sources;
+                for(SrcSizes::iterator itrS = itrD->second.srcSizes.begin(); itrS != itrD->second.srcSizes.end(); itrS++)
+                {
+                    Json::Value json_source;
+
+                    json_source["source"] = itrS->first;
+                    json_source["occupSize"] = Json::Int64(itrS->second.occupSize);
+                    json_source["reservedFileSize"] = Json::Int64(itrS->second.reservedFileSize);
+                    json_source["writing"] = itrS->second.writing;
+
+                    json_sources.append(json_source);
+                }
+
+                json_disk["sources"] = json_sources;
+                json_quota_data.append(json_disk);
+            }
+
+            json_quota["quota"] = json_quota_data;
+
+            Json::StyledWriter json_writer_styled;
+            std::string str_json_quota = json_writer_styled.write(json_quota);
+
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            resp.setContentType("text/plain");
+            std::ostream& out = resp.send();
+            out << str_json_quota;
+            out.flush();
+        }
+        else
+        {
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "quota doesnt exist";
+            out.flush();
+            logE_ (_func, "quota doesnt exist ", id);
+            goto _return;
+        }
+    }
+    else if (segments.size() >= 2 && segments[1].compare("quota_list") == 0)
+    {
+        IdQuota quotas = PathManager::Instance().GetQuotaList();
+
+        if(quotas.size() > 0)
+        {
+            Json::Value json_quotas;
+            for(IdQuota::iterator itrQ = quotas.begin(); itrQ != quotas.end(); itrQ++)
+            {
+                Json::Value json_quota;
+                json_quota["id"] = Json::Value::Int64(itrQ->first);
+                Json::Value json_quota_data;
+
+                for(DiskSrcSizes::iterator itrD = itrQ->second.diskSrcSizes.begin(); itrD != itrQ->second.diskSrcSizes.end(); itrD++)
+                {
+                    Json::Value json_disk;
+                    json_disk["diskname"] = itrD->first;
+                    json_disk["totalSize"] = Json::Int64(itrD->second.totalSize);
+                    Json::Value json_sources;
+                    for(SrcSizes::iterator itrS = itrD->second.srcSizes.begin(); itrS != itrD->second.srcSizes.end(); itrS++)
+                    {
+                        Json::Value json_source;
+
+                        json_source["source"] = itrS->first;
+                        json_source["occupSize"] = Json::Int64(itrS->second.occupSize);
+                        json_source["reservedFileSize"] = Json::Int64(itrS->second.reservedFileSize);
+                        json_source["writing"] = itrS->second.writing;
+
+                        json_sources.append(json_source);
+                    }
+
+                    json_disk["sources"] = json_sources;
+                    json_quota_data.append(json_disk);
+                }
+
+                json_quota["quota"] = json_quota_data;
+                json_quotas.append(json_quota);
+            }
+
+            Json::StyledWriter json_writer_styled;
+            std::string str_json_root = json_writer_styled.write(json_quotas);
+
+            resp.setStatus(HTTPResponse::HTTP_OK);
+            resp.setContentType("text/plain");
+            std::ostream& out = resp.send();
+            out << str_json_root;
+            out.flush();
+        }
+        else
+        {
+            resp.setStatus(HTTPResponse::HTTP_BAD_REQUEST);
+            std::ostream& out = resp.send();
+            out << "there is no quotas";
+            out.flush();
+            logE_ (_func, "there is no quotas");
+            goto _return;
+        }
     }
     else
     {
@@ -564,7 +877,13 @@ ChannelManager::loadConfigFull ()
             continue;
 
         StRef<String> const path = st_makeString (dir_name, "/", filename->mem());
-        if (!loadConfigItem (filename->mem(), path->mem()))
+        Result res = loadConfigItem (filename->mem(), path->mem());
+        if (res)
+        {
+            res = PathManager::Instance().CreateOldSrc(filename->cstr()) ? Result::Success: Result::Failure;
+        }
+
+        if (!res)
             return Result::Failure;
     }
 

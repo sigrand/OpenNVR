@@ -23,6 +23,7 @@
 #include <sys/time.h>
 #include <moment-ffmpeg/nvr_file_iterator.h>
 #include <moment-ffmpeg/inc.h>
+#include <moment/path_manager.h>
 #include <moment-ffmpeg/ffmpeg_common.h>
 #include <moment-ffmpeg/time_checker.h>
 #include <moment-ffmpeg/nvr_cleaner.h>
@@ -37,11 +38,14 @@ namespace MomentFFmpeg {
 static LogGroup libMary_logGroup_cleaner ("mod_ffmpeg.nvr_cleaner", LogLevel::E);
 
 void
-NvrCleaner::doRemoveFiles (ConstMemory const filename, Vfs * vfs)
+NvrCleaner::doRemoveFiles (StRef<String> filename, const std::string & path, const std::string & src, Vfs * vfs)
 {
-  // TODO Check return values;
-    vfs->removeFile (filename);
-    vfs->removeSubdirsForFilename (filename);
+    bool bRes = PathManager::Instance().RemoveExpiredFiles(std::string(filename->cstr()), path, src);
+    if(bRes)
+    {
+        vfs->removeFile (filename->mem());
+        vfs->removeSubdirsForFilename (filename->mem());
+    }
 }
 
 void
@@ -53,11 +57,13 @@ NvrCleaner::cleanupTimerTick (void * const _self)
 
     TimeChecker tc;tc.Start();
 
-    std::string curPath = self->m_recpathConfig->GetNextPath();
-    while(curPath.length() != 0)
+    std::vector<std::string> disks;
+    PathManager::Instance().GetDiskForSrc(std::string(self->stream_name->cstr()), disks);
+
+    for(int i = 0; i < disks.size(); i++)
     {
-        StRef<String> strRecDir = st_makeString(curPath.c_str());
-        ConstMemory record_dir = strRecDir->mem();
+        StRef<String> dir_name = st_makeString(disks[i].c_str());
+        ConstMemory record_dir = dir_name->mem();
         logD(cleaner, _func_, "record_dir = ", record_dir);
         Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (record_dir);
 
@@ -101,7 +107,7 @@ NvrCleaner::cleanupTimerTick (void * const _self)
             {
                 StRef<String> const flv_filename = st_makeString (filename, ".flv");
                 logD (cleaner, _func, "Removing ", flv_filename);
-                self->doRemoveFiles (flv_filename->mem(), vfs);
+                self->doRemoveFiles (flv_filename, std::string(dir_name->cstr()), std::string(self->stream_name->cstr()), vfs);
             } else {
                 logD (cleaner, _func, "end of removing");
                 break;
@@ -113,7 +119,7 @@ NvrCleaner::cleanupTimerTick (void * const _self)
         gettimeofday(&tv, NULL);
         Time curTime = tv.tv_sec;
 
-        StRef<String> strRecdirStream = st_makeString(curPath.c_str(), "/", self->stream_name);
+        StRef<String> strRecdirStream = st_makeString(dir_name, "/", self->stream_name);
         ConstMemory recdirStream_dir = strRecdirStream->mem();
         Ref<Vfs> const vfsDownloads = Vfs::createDefaultLocalVfs (recdirStream_dir);
         Ref<Vfs::VfsDirectory> const dir = vfsDownloads->openDirectory (DOWNLOAD_DIR);
@@ -144,8 +150,6 @@ NvrCleaner::cleanupTimerTick (void * const _self)
                 dir->getNextEntry(filename);
             }
         }
-
-        curPath = self->m_recpathConfig->GetNextPath(curPath);
     }
 
     Time t;tc.Stop(&t);
@@ -154,13 +158,10 @@ NvrCleaner::cleanupTimerTick (void * const _self)
 
 mt_const void
 NvrCleaner::init (Timers      * const mt_nonnull timers,
-                  RecpathConfig * const mt_nonnull recpathConfig,
                   ConstMemory   const stream_name,
                   Time          const max_age_sec,
                   Time          const clean_interval_sec)
 {
-    //this->vfs = vfs;
-    this->m_recpathConfig = recpathConfig;
     this->stream_name = st_grab (new (std::nothrow) String (stream_name));
     this->max_age_sec = max_age_sec;
 
@@ -177,7 +178,7 @@ NvrCleaner::init (Timers      * const mt_nonnull timers,
     MOMENT_FFMPEG__NVR_CLEANER
 }
 
-NvrCleaner::NvrCleaner(): timers(this), timer_key (NULL), m_recpathConfig(NULL)
+NvrCleaner::NvrCleaner(): timers(this), timer_key (NULL)
 {
 
 }
@@ -188,7 +189,6 @@ NvrCleaner::~NvrCleaner()
         this->timers->deleteTimer (this->timer_key);
         this->timer_key = NULL;
     }
-    m_recpathConfig = NULL;
 }
 
 }

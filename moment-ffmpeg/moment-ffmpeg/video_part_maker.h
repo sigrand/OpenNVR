@@ -46,7 +46,6 @@ private:
     Time nCurFileStartTime;
     Time nCurFileShift;
     Time nEndTime;
-
 };
 
 }

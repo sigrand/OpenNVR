@@ -2,7 +2,7 @@
 #include <moment-ffmpeg/ffmpeg_common.h>
 #include <moment-ffmpeg/naming_scheme.h>
 #include <moment-ffmpeg/video_part_maker.h>
-#include <moment-ffmpeg/memory_dispatcher.h>
+#include <moment/path_manager.h>
 
 
 using namespace M;
@@ -128,7 +128,7 @@ bool VideoPartMaker::Init (ChannelChecker::ChannelFileDiskTimes * channelFileDis
         }
     }
 
-    if(!MemoryDispatcher::Instance().GetPermission(m_filepath->cstr(), end_unixtime_sec - start_unixtime_sec))
+    if(!PathManager::Instance().GetPermission(m_filepath->cstr(), end_unixtime_sec - start_unixtime_sec))
     {
         logE_(_func_, "no space for file");
         return false;
@@ -208,7 +208,7 @@ VideoPartMaker::Process ()
 
             fileSize += packet.size;
 
-            MemoryDispatcher::Instance().Notify(m_filepath->cstr(), false, fileSize);
+            PathManager::Instance().Notify(m_filepath->cstr(), false, fileSize);
 
             ptsExtraPrv = packet.pts;
             dtsExtraPrv = packet.dts;
@@ -237,7 +237,7 @@ VideoPartMaker::Process ()
         }
     }
 
-    MemoryDispatcher::Instance().Notify(m_filepath->cstr(), true, 0);
+    PathManager::Instance().Notify(m_filepath->cstr(), true, 0);
 
     return true;
 }

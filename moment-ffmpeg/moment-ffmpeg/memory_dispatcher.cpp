@@ -18,13 +18,13 @@ StateMutex MemoryDispatcher::g_mutexMemoryDispatcher;
 
 extern "C"
 {
-    unsigned long GetPermission(const char * filename, int64_t nDuration)
+    unsigned long GetPermission0(const char * filename, int64_t nDuration)
     {
         logD(memdisp, _func_, "filename = ", filename, ", nDuration = ", nDuration);
         return MemoryDispatcher::Instance().GetPermission(filename, nDuration);
     }
 
-    int Notify(const char * filename, int bDone, unsigned long size)
+    int Notify0(const char * filename, int bDone, unsigned long size)
     {
         logD(memdisp, _func_, "filename = ", filename, ", size = ", size);
         return MemoryDispatcher::Instance().Notify(filename, bDone != 0, size) ? 1: 0;

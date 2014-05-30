@@ -10,9 +10,6 @@ else
     COMMON_CFLAGS += -pthread # -rdynamic
 endif
 
-if MOMENT_HLS_DEMO
-    COMMON_CFLAGS += -DMOMENT_HLS_DEMO
-endif
 
 AM_CFLAGS   += -std=gnu99 $(COMMON_CFLAGS)
 AM_CXXFLAGS += $(COMMON_CFLAGS)
@@ -24,12 +21,20 @@ moment_hls_target_headers =
 moment_hls_target_sources =
 include Makefile.inc.am
 
+moment_hls_includedir = $(includedir)/moment-ffmpeg-1.0/moment-ffmpeg
+
 moment_hlsdir = $(libdir)/moment-1.0
 moment_hls_LTLIBRARIES = libmoment-hls-1.0.la
-libmoment_hls_1_0_la_SOURCES =	\
-        mod_hls.cpp             \
-        tsmux/tsmux.c           \
-        tsmux/tsmuxstream.c     \
+libmoment_hls_1_0_la_SOURCES =	     \
+        mod_hls.cpp                  \
+        ffmpeg_support.cpp           \
+        ffmpeg_support.h             \
+        ffmpeg_ts_muxer.cpp          \
+        ffmpeg_ts_muxer.h            \
+        ffmpeg_pipeline_protocol.cpp \
+        ffmpeg_pipeline_protocol.h   \
+        ffmpeg_h264_mp4toannexb_bsf.h \
+        ffmpeg_h264_mp4toannexb_bsf.c \
         $(moment_hls_target_sources)
 
 moment_hls_extra_dist =

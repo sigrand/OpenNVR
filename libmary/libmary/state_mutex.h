@@ -61,12 +61,29 @@ private:
 #ifdef LIBMARY_MT_SAFE
 private:
     StateMutex * const mutex;
+	bool locked;
 
 public:
     StateMutexLock (StateMutex * const mt_nonnull mutex)
-        : mutex (mutex) { mutex->lock (); }
+        : mutex (mutex)
+		, locked(true)
+	{
+		mutex->lock ();
+	}
 
-    ~StateMutexLock () { mutex->unlock (); }
+    ~StateMutexLock ()
+	{
+		unlock();
+	}
+
+	void unlock()
+	{
+		if(locked)
+		{
+			locked = false;
+			mutex->unlock ();
+		}
+	}
 #else
 public:
     StateMutexLock (StateMutex * const /* mutex */) {}

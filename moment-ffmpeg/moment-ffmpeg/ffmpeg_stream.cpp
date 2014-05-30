@@ -22,6 +22,7 @@
 #include <moment-ffmpeg/media_reader.h>
 #include <moment-ffmpeg/memory_dispatcher.h>
 #include <moment-ffmpeg/ffmpeg_common.h>
+#include <moment/path_manager.h>
 #include "naming_scheme.h"
 #include <libmary/vfs.h>
 #include <iostream>
@@ -259,7 +260,6 @@ ffmpegStreamData::ffmpegStreamData(void)
     m_bRecordingEnable = false;
     m_bIsRecording = false;
     m_bGotFirstFrame = false;
-    m_pRecpathConfig = NULL;
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
@@ -314,7 +314,6 @@ void ffmpegStreamData::Deinit()
     m_bRecordingEnable = false;
     m_bIsRecording = false;
     m_bGotFirstFrame = false;
-    m_pRecpathConfig = NULL;
 
     audio_stream_idx = video_stream_idx = -1;
     m_file_duration_sec = -1;
@@ -344,8 +343,8 @@ static int get_bit_rate(AVCodecContext *ctx)
     return bit_rate;
 }
 
-ffmpegStreamData::InitRes ffmpegStreamData::Init(const char * uri, const char * channel_name, const Ref<MConfig::Config> & config,
-                              Timers * timers, RecpathConfig * recpathConfig, AVDictionary ** opts)
+ffmpegStreamData::InitRes ffmpegStreamData::Init(const char * uri, const char * channel_name, const std::string & dir_name, const Ref<MConfig::Config> & config,
+                              Timers * timers, AVDictionary ** opts)
 {
     if(!uri || !uri[0])
     {
@@ -514,8 +513,6 @@ ffmpegStreamData::InitRes ffmpegStreamData::Init(const char * uri, const char * 
         }
 
         // reading configs
-        m_pRecpathConfig = recpathConfig;
-        ConstMemory record_dir;
         ConstMemory confd_dir;
         Uint64 max_age_minutes = MAX_AGE;
         m_file_duration_sec = FILE_DURATION;
@@ -571,23 +568,15 @@ ffmpegStreamData::InitRes ffmpegStreamData::Init(const char * uri, const char * 
             logD(stream, _func_, opt_name, ": [", confd_dir, "]");
         }
 
-        if(m_pRecpathConfig == 0 || !m_pRecpathConfig->IsInit())
+        if(!PathManager::Instance().IsInit())
             m_bRecordingEnable = false;
 
         if(m_bRecordingEnable)
         {
-            if(m_pRecpathConfig->IsEmpty())
-            {
-                m_recordDir = st_makeString("");
-            }
-            else
-            {
-                m_recordDir = st_makeString(m_pRecpathConfig->GetNextPathForStream().c_str());
-            }
-
             m_channelName = st_makeString(channel_name);
             m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
-            m_nvr_cleaner->init (timers, m_pRecpathConfig, ConstMemory(channel_name, strlen(channel_name)), max_age_minutes * 60, 5);
+            m_nvr_cleaner->init (timers, ConstMemory(channel_name, strlen(channel_name)),
+                                 max_age_minutes * 60, 5);
 
             bool bDisableRecord = false;
             StRef<String> st_confd_dir = st_makeString(confd_dir);
@@ -841,72 +830,41 @@ bool ffmpegStreamData::PushMediaPacket(FFmpegStream * pParent)
         {
             if(m_bRecordingState)
             {
-                while(true) // check paths until we got successful writing of packet OR we checked all paths
+                // prepare to write in file
+                if(!m_nvrData.IsInit())
                 {
-                    bool bNeedNextPath = false;
-                    // prepare to write in file
-                    if(!m_nvrData.IsInit())
+                    std::string path = PathManager::Instance().GetPathForRecord(m_channelName->cstr());
+                    StRef<String> filepath = st_makeString (path.c_str(), "/", m_channelName, ".flv");
+                    int nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec);
+                    logD(frames,_func_, "m_nvrData.Init = ", (nvrResult == 0) ? "Success" : "Failed");
+                }
+
+                // write in file
+                if(m_nvrData.IsInit())
+                {
+                    TimeChecker tc;tc.Start();
+
+                    int res = m_nvrData.WritePacket(format_ctx, packet);
+                    if(res == ERR_NOSPACE)
                     {
-                        if(m_recordDir == NULL || m_recordDir->len() == 0)
-                        {
-                            bNeedNextPath = true;
-                            logD(frames,_func_, "m_recordDir is 0");
-                        }
-                        else
-                        {
-                            StRef<String> filepath = st_makeString (m_recordDir, "/", m_channelName, ".flv");
-                            int nvrResult = m_nvrData.Init(format_ctx, m_channelName->cstr(), filepath->cstr(), "segment2", m_file_duration_sec);
-                            if(nvrResult == 1)
-                                bNeedNextPath = true;
-                            logD(frames,_func_, "m_nvrData.Init = ", (nvrResult == 0) ? "Success" : "Failed");
-                        }
+                        bRecordingSuccess = false;
+                    }
+                    else
+                    {
+                        bRecordingSuccess = true;
                     }
 
-                    // write in file
-                    if(m_nvrData.IsInit())
-                    {
-                        TimeChecker tc;tc.Start();
+                    logD(frames, _func_, "NvrData.WritePacket res = ", res);
 
-                        int res = m_nvrData.WritePacket(format_ctx, packet);
-                        if(res == ERR_NOSPACE)
-                        {
-                            bNeedNextPath = true;
-                        }
-                        else
-                        {
-                            bRecordingSuccess = true;
-                        }
+                    Time t;tc.Stop(&t);
+                    logD(frames, _func_, "NvrData.WritePacket exectime = [", t, "]");
 
-                        logD(frames, _func_, "NvrData.WritePacket res = ", res);
-
-                        Time t;tc.Stop(&t);
-                        logD(frames, _func_, "NvrData.WritePacket exectime = [", t, "]");
-
-                        Time tInNvr;tcInNvr.Stop(&tInNvr);
-                        pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
-                    }
-                    if(!m_pRecpathConfig->IsPathExist(m_recordDir->cstr()))
-                    {
-                        bNeedNextPath = true;
-                    }
-                    if(bNeedNextPath)
-                    {
-                        if(!m_pRecpathConfig->IsEmpty())
-                        {
-                            m_recordDir = st_makeString(m_pRecpathConfig->GetNextPathForStream().c_str());
-                        }
-                        else
-                            m_recordDir = st_makeString("");
-                        logD(frames,_func_, "next m_recordDir = [", m_recordDir, "]");
-
-                        m_nvrData.Deinit();
-                    }
-
-                    // if packet is successfully written OR we checked all paths and all of them have not free space
-                    if(bRecordingSuccess || m_recordDir == NULL || m_recordDir->len() == 0)
-                    {
-                        break;
-                    }
+                    Time tInNvr;tcInNvr.Stop(&tInNvr);
+                    pParent->m_statMeasurer.AddTimeInNvr(tInNvr);
+                }
+                if(!bRecordingSuccess)
+                {
+                    m_nvrData.Deinit();
                 }
             }
             else
@@ -978,9 +936,9 @@ int nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, const
         return -1;
     }
 
-    if(!MemoryDispatcher::Instance().IsInit())
+    if(!PathManager::Instance().IsInit())
     {
-        logE_ (_func, "fail MemoryDispatcher::Init");
+        logE_ (_func, "fail PathManager::Instance().Init");
         return -1;
     }
 
@@ -993,17 +951,11 @@ int nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, const
     // set internal members
     m_file_duration_sec = file_duration_sec;
 
-    StRef<String> temp_channel_name = st_makeString(channel_name);
-    m_channelName = st_grab (new (std::nothrow) String);
-    m_channelName->set(temp_channel_name->mem());
+    m_channelName = st_makeString(channel_name);
 
-    StRef<String> temp_filepath = st_makeString(filepath);
-    m_filepath = st_grab (new (std::nothrow) String);
-    m_filepath->set(temp_filepath->mem());
+    m_filepath = st_makeString(filepath);
 
-    StRef<String> temp_segMuxer = st_makeString(segMuxer);
-    m_segMuxer = st_grab (new (std::nothrow) String);
-    m_segMuxer->set(temp_segMuxer->mem());
+    m_segMuxer = st_makeString(segMuxer);
 
     logD(stream, _func, "filepath: ", m_filepath);
     logD(stream, _func, "segMuxer: ", !m_segMuxer->isNullString() ? m_segMuxer->cstr() : "NONE");
@@ -1030,7 +982,6 @@ int nvrData::Init(AVFormatContext * format_ctx, const char * channel_name, const
 
             if(avcodec_copy_context(pOutCodec, pInpCodec) == 0)
             {
-
                 if (!m_out_format_ctx->oformat->codec_tag ||
                     av_codec_get_id (m_out_format_ctx->oformat->codec_tag, pInpCodec->codec_tag) == pOutCodec->codec_id ||
                     av_codec_get_tag(m_out_format_ctx->oformat->codec_tag, pInpCodec->codec_id) <= 0)
@@ -1589,6 +1540,8 @@ FFmpegStream::createSmartPipelineForUri ()
         return;
     }
 
+    std::string dir_name = PathManager::Instance().GetPathForRecord(channel_opts->channel_name->cstr());
+
     AVDictionary *opts = 0;
     ffmpegStreamData::InitRes res = ffmpegStreamData::InitRes::Success;
     bool bForcedTCP = false;
@@ -1602,20 +1555,22 @@ FFmpegStream::createSmartPipelineForUri ()
 
     logD(pipeline, _func, "uri: ", playback_item->stream_spec);
 
+    m_channel_checker->init(this->timers, dir_name, channel_opts->channel_name);
+
     while(true)
     {
         if(bForcedTCP && !bForcedTCPTried)
         {
             av_dict_set(&opts, "rtsp_transport", "tcp", 0);
             res = m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(),
-                                                this->config, this->timers, this->m_pRecpathConfig, &opts);
+                                                dir_name, this->config, this->timers, &opts);
             bForcedTCPTried = true;
             bForcedTCP = false;
         }
         else
         {
             res = m_ffmpegStreamData.Init( playback_item->stream_spec->cstr(), channel_opts->channel_name->cstr(),
-                                                this->config, this->timers, this->m_pRecpathConfig, NULL);
+                                                dir_name, this->config, this->timers, NULL);
         }
 
         if(res == ffmpegStreamData::InitRes::FailFindInfo && !bForcedTCPTried)
@@ -1824,7 +1779,11 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
         }
     }
 
-    VideoStream::VideoCodecId const tmp_video_codec_id = video_codec_id;
+	Uint64 const timestamp_nanosec = packet.pts / (double)time_base_den * 1000000000LL;
+	VideoStream::VideoCodecId const tmp_video_codec_id = video_codec_id;
+	logD (frames, _func, "packet attrs, pts = ", packet.pts, ", timestamp_nanosec = ", timestamp_nanosec,
+		", stream.tb.num(", stream.time_base.num, "),den(", stream.time_base.den,
+		"), ctx.tb.num(", pctx->time_base.num, "),den(", pctx->time_base.den, ")");
 
     if (is_h264_stream) {
 
@@ -1863,11 +1822,6 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
         }
 
         if (report_avc_codec_data) {
-            // TODO vvv This doesn't sound correct.
-            //
-            // Timestamps for codec data buffers are seemingly random.
-            Uint64 const timestamp_nanosec = 0;
-
             Size msg_len = 0;
 
             if (logLevelOn (frames, LogLevel::D)) {
@@ -1901,6 +1855,10 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
             msg.prechunk_size = (playback_item->enable_prechunking ? RtmpConnection::PrechunkSize : 0);
             msg.frame_type = VideoStream::VideoFrameType::AvcSequenceHeader;
             msg.codec_id = tmp_video_codec_id;
+			msg.width = pctx->width;
+			msg.height = pctx->height;
+			msg.frame_rate.num = stream.time_base.num;
+			msg.frame_rate.den = stream.time_base.den;
 
             msg.page_pool = page_pool;
             msg.page_list = page_list;
@@ -1932,11 +1890,13 @@ FFmpegStream::doVideoData (AVPacket & packet, const AVStream & stream)
         return;
     }
 
-    Uint64 const timestamp_nanosec = packet.pts / (double)time_base_den * 1000000000LL;
-
     VideoStream::VideoMessage msg;
     msg.frame_type = VideoStream::VideoFrameType::InterFrame;
-    msg.codec_id = tmp_video_codec_id;
+	msg.codec_id = tmp_video_codec_id;
+	msg.width = pctx->width;
+	msg.height = pctx->height;
+	msg.frame_rate.num = stream.time_base.num;
+	msg.frame_rate.den = stream.time_base.den;
 
     if (packet.flags & AV_PKT_FLAG_KEY)
     {
@@ -2548,9 +2508,7 @@ FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
                  Time                const initial_seek,
                  ChannelOptions    * const channel_opts,
                  PlaybackItem      * const playback_item,
-                 MConfig::Config   * const config,
-                 RecpathConfig     * const recpathConfig,
-                 ChannelChecker    * const channel_checker)
+                 MConfig::Config   * const config)
 {
     logD (pipeline, _this_func_);
 
@@ -2570,8 +2528,8 @@ FFmpegStream::init (CbDesc<MediaSource::Frontend> const &frontend,
         initial_seek_complete = true;
 
     this->config = config;
-    this->m_pRecpathConfig = recpathConfig;
-    this->m_channel_checker = channel_checker;
+
+    this->m_channel_checker = grab (new (std::nothrow) ChannelChecker);
 
     std::string channel_name = this->channel_opts->channel_name->cstr();
 
@@ -2667,8 +2625,7 @@ FFmpegStream::FFmpegStream ()
       tlocal (NULL),
       m_bIsRestreaming(false),
       m_bIsReallyRestreaming(false),
-      m_bReleaseCalled(false),
-      m_pRecpathConfig(NULL)
+      m_bReleaseCalled(false)
 {
     logD (pipeline, _this_func_);
 

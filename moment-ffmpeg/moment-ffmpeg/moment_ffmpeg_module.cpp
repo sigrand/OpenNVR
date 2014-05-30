@@ -29,7 +29,17 @@
 #include <moment-ffmpeg/memory_dispatcher.h>
 #include <moment-ffmpeg/moment_ffmpeg_module.h>
 #include <moment-ffmpeg/video_part_maker.h>
+#include <moment-ffmpeg/naming_scheme.h>
+#include <moment/path_manager.h>
 
+#ifdef __linux__
+#include <dirent.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
 
 using namespace M;
 using namespace Moment;
@@ -43,7 +53,6 @@ namespace MomentFFmpeg {
 #define TIMER_UPDATE_SOURCES_TIMES 2    // 2 seconds
 
 static LogGroup libMary_logGroup_ffmpeg_module ("mod_ffmpeg.ffmpeg_module", LogLevel::E);
-static LogGroup libMary_logGroup_mutex ("mod_ffmpeg.mutex", LogLevel::E);
 
 extern std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
 extern std::vector<std::string> split(const std::string &s, char delim);
@@ -51,6 +60,27 @@ extern std::vector<std::string> split(const std::string &s, char delim);
 static StRef<String> this_rtmp_server_addr;
 static StRef<String> this_rtmpt_server_addr;
 static StRef<String> this_hls_server_addr;
+
+#ifdef __linux__
+uint64_t get_file_space(const char *filepath)
+{
+  struct stat st;
+  uint64_t totalsize = 0LL;
+
+  if(lstat(filepath, &st) == -1)
+  {
+    logE(ffmpeg_module, _func_, "Couldn't stat: ", filepath);
+    return totalsize;
+  }
+
+  if(S_ISREG(st.st_mode)) // We only want to count regular files
+  {
+    totalsize = st.st_size;
+  }
+
+  return totalsize;
+}
+#endif
 
 Result
 MomentFFmpegModule::updatePlaylist (ConstMemory   const channel_name,
@@ -65,12 +95,10 @@ MomentFFmpegModule::updatePlaylist (ConstMemory   const channel_name,
         return Result::Failure;
     }
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
 
     ChannelEntry * const channel_entry = m_channel_entry_hash.lookup (channel_name);
     if (!channel_entry) {
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	Ref<String> const err_msg = makeString ("Channel not found: ", channel_name);
 	logE_ (_func, err_msg);
@@ -79,7 +107,6 @@ MomentFFmpegModule::updatePlaylist (ConstMemory   const channel_name,
     }
 
     if (!channel_entry->playlist_filename) {
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	Ref<String> const err_msg = makeString ("No playlist for channel \"", channel_name, "\"");
 	logE_ (_func, err_msg);
@@ -94,14 +121,12 @@ MomentFFmpegModule::updatePlaylist (ConstMemory   const channel_name,
                 channel_entry->channel_opts->default_item,
                 &err_msg))
     {
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	logE_ (_func, "channel->loadPlaylistFile() failed: ", err_msg);
 	*ret_err_msg = makeString ("Playlist parsing error: ", err_msg->mem());
 	return Result::Failure;
     }
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 
     return Result::Success;
@@ -119,12 +144,10 @@ MomentFFmpegModule::setPosition (ConstMemory const channel_name,
 	return Result::Failure;
     }
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
 
     ChannelEntry * const channel_entry = m_channel_entry_hash.lookup (channel_name);
     if (!channel_entry) {
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	logE_ (_func, "Channel not found: ", channel_name);
 	return Result::Failure;
@@ -136,7 +159,6 @@ MomentFFmpegModule::setPosition (ConstMemory const channel_name,
     } else {
 	Uint32 item_idx;
 	if (!strToUint32_safe (item_name, &item_idx)) {
-        logD(mutex, _func_, "MUTEX unlocked");
         m_mutex.unlock ();
 	    logE_ (_func, "Failed to parse item index");
 	    return Result::Failure;
@@ -146,13 +168,11 @@ MomentFFmpegModule::setPosition (ConstMemory const channel_name,
     }
 
     if (!res) {
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 	logE_ (_func, "Item not found: ", item_name, item_name_is_id ? " (id)" : " (idx)", ", channel: ", channel_name);
 	return Result::Failure;
     }
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 
     return Result::Success;
@@ -198,10 +218,8 @@ MomentFFmpegModule::createPlaylistChannel (ConstMemory      const playlist_filen
 
     channel->init (m_pMoment, channel_opts);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_channel_entry_hash.add (channel_entry);
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
     m_channel_set.addChannel (channel, channel_opts->channel_name->mem());
 
@@ -268,10 +286,8 @@ MomentFFmpegModule::createStreamChannel (ChannelOptions * const channel_opts,
 
     channel->init (m_pMoment, channel_opts);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_channel_entry_hash.add (channel_entry);
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
     m_channel_set.addChannel (channel, channel_opts->channel_name->mem());
 
@@ -339,10 +355,8 @@ MomentFFmpegModule::createDummyChannel (ConstMemory   const channel_name,
 
     channel->init (m_pMoment, opts);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_channel_entry_hash.add (channel_entry);
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
     m_channel_set.addChannel (channel, channel_name);
 
@@ -373,10 +387,8 @@ MomentFFmpegModule::createPlaylistRecorder (ConstMemory const recorder_name,
 		    filename_prefix,
                     m_default_channel_opts->min_playlist_duration_sec);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_recorder_entry_hash.add (recorder_entry);
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 
     {
@@ -410,10 +422,8 @@ MomentFFmpegModule::createChannelRecorder (ConstMemory const recorder_name,
 		    filename_prefix,
                     m_default_channel_opts->min_playlist_duration_sec);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock ();
     m_recorder_entry_hash.add (recorder_entry);
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock ();
 
     recorder->setSingleChannel (channel_name);
@@ -458,9 +468,9 @@ MomentFFmpegModule::printChannelInfoJson (PagePool::PageListHead * const page_li
 
 StRef<String>
 MomentFFmpegModule::channelFilesExistenceToJson (
-        ChannelChecker::ChannelFileDiskTimes * const mt_nonnull chFileDiskTimes)
+        ChannelChecker::ChannelFileTimes * const mt_nonnull chFileTimes)
 {
-    if(!chFileDiskTimes)
+    if(!chFileTimes)
     {
         logE_(_func_, "chFileDiskTimes is NULL");
         return NULL;
@@ -468,18 +478,18 @@ MomentFFmpegModule::channelFilesExistenceToJson (
 	
      std::ostringstream s;
 	 
-     for(ChannelChecker::ChannelFileDiskTimes::iterator it = chFileDiskTimes->begin(); it != chFileDiskTimes->end(); ++it)
+     for(ChannelChecker::ChannelFileTimes::iterator it = chFileTimes->begin(); it != chFileTimes->end(); ++it)
      {
          s << "{\n\"path\":\"";
          s << (*it).first;
          s <<"\",\n\"start\":";
-         s << (*it).second.times.timeStart;
+         s << (*it).second.timeStart;
          s << ",\n\"end\":";
-         s << (*it).second.times.timeEnd;
+         s << (*it).second.timeEnd;
          s << "\n}";
-        ChannelChecker::ChannelFileDiskTimes::iterator it1 = it;
+        ChannelChecker::ChannelFileTimes::iterator it1 = it;
         it1++;
-         if(it1 != chFileDiskTimes->end())
+         if(it1 != chFileTimes->end())
              s << ",\n";
          else
              s << "\n";
@@ -659,10 +669,11 @@ MomentFFmpegModule::sourceInfoToJson (const std::string source_name, const stSou
     json_source["times"] = json_times;
 
     // disk occupation
-    ChannelChecker::DiskSizes diskSizes = pChannelChecker->GetDiskSizes ();
-    Json::Value json_disks;
+    std::map<std::string, Int64> diskOccupSize;
+    PathManager::Instance().GetDiskOccupation(source_name, diskOccupSize);
 
-    for(ChannelChecker::DiskSizes::iterator itr = diskSizes.begin(); itr != diskSizes.end(); itr++)
+    Json::Value json_disks;
+    for(std::map<std::string, Int64>::iterator itr = diskOccupSize.begin(); itr != diskOccupSize.end(); itr++)
     {
         if(itr->second > 0)
         {
@@ -682,7 +693,6 @@ MomentFFmpegModule::GetAllSourcesInfo ()
 {
     logD(ffmpeg_module, _func_);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = m_streams.begin();
@@ -691,8 +701,8 @@ MomentFFmpegModule::GetAllSourcesInfo ()
 
     for(itFFStream; itFFStream != m_streams.end(); itFFStream++)
     {
-        stSourceInfo si = itFFStream->second.getRefPtr()->GetSourceInfo();
-        Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
+        stSourceInfo si = itFFStream->second.getRef()->GetSourceInfo();
+        Ref<ChannelChecker> channelChecker = itFFStream->second.getRef()->GetChannelChecker();
 
         Json::Value json_source = sourceInfoToJson(itFFStream->first, si, channelChecker);
 
@@ -702,7 +712,6 @@ MomentFFmpegModule::GetAllSourcesInfo ()
 
     json_root["sources"] = json_sources;
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     Json::StyledWriter json_writer_styled;
@@ -716,17 +725,15 @@ MomentFFmpegModule::GetSourceInfo (const std::string & source_name)
 {
     logD(ffmpeg_module, _func_);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     if(m_streams.find(source_name) != m_streams.end())
     {
-        stSourceInfo si = m_streams[source_name].getRefPtr()->GetSourceInfo();
-        Ref<ChannelChecker> channelChecker = m_streams[source_name].getRefPtr()->GetChannelChecker();
+        stSourceInfo si = m_streams[source_name].getRef()->GetSourceInfo();
+        Ref<ChannelChecker> channelChecker = m_streams[source_name].getRef()->GetChannelChecker();
 
         Json::Value json_source = sourceInfoToJson(source_name, si, channelChecker);
 
-        logD(mutex, _func_, "MUTEX unlocked");
         m_mutex.unlock();
 
         Json::StyledWriter json_writer_styled;
@@ -736,7 +743,6 @@ MomentFFmpegModule::GetSourceInfo (const std::string & source_name)
     }
     else
     {
-        logD(mutex, _func_, "MUTEX unlocked");
         m_mutex.unlock();
 
         return std::string();
@@ -851,48 +857,150 @@ MomentFFmpegModule::removeVideoFiles(StRef<String> const channel_name,
 {
     bool bRes = false;
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
-    std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = m_streams.find(std::string(channel_name->cstr()));
-    if(itFFStream == m_streams.end())
-    {
-        logE_(_func_, "there is no ", channel_name, " in m_streams");
-        return false;
-    }
-    Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
+    bRes = PathManager::Instance().RemoveFiles(std::string(channel_name->cstr()), startTime, endTime);
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
-    ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = channelChecker->GetChannelFileDiskTimes();
-    ChannelChecker::ChannelFileDiskTimes::iterator itr = chFileDiskTimes.begin();
+    return bRes;
+}
 
-    for(itr; itr != chFileDiskTimes.end(); itr++)
-    {	
-        if(itr->second.times.timeStart > startTime && itr->second.times.timeEnd < endTime)
+Int64
+MomentFFmpegModule::removeFiles(void * _self, const std::string & src, Time const startTime, Time const endTime, std::map<std::string,Int64> & diskSizeDeletedOut)
+{
+    Int64 ret = 0;
+
+    MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
+
+    std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(src);
+    if(itFFStream == self->m_streams.end())
+    {
+        logE_(_func_, "there is no ", src.c_str(), " in m_streams");
+        return -1;
+    }
+    Ref<ChannelChecker> channelChecker = itFFStream->second.getRef()->GetChannelChecker();
+
+    ChannelChecker::ChannelDiskFileTimes diskFileTimes = channelChecker->GetChannelDiskFileTimes();
+    for(ChannelChecker::ChannelDiskFileTimes::iterator itrD = diskFileTimes.begin();
+        itrD != diskFileTimes.end(); itrD++)
+    {
+        for(ChannelChecker::ChannelFileTimes::iterator itrF = itrD->second.begin();
+            itrF != itrD->second.end(); itrF++)
         {
-            StRef<String> dir_name = st_makeString(itr->second.diskName.c_str());
-            Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (dir_name->mem());
+            if(itrF->second.timeStart > startTime && itrF->second.timeEnd < endTime)
+            {
+                StRef<String> dir_name = st_makeString(itrD->first.c_str());
+                Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (dir_name->mem());
+                StRef<String> const filenameFull = st_makeString(itrF->first.c_str(), ".flv");
 
-            StRef<String> const filenameFull = st_makeString(itr->first.c_str(), ".flv");
+                logD(ffmpeg_module, _func_, "remove by request: [", filenameFull, "]");
 
-            logD(ffmpeg_module, _func_, "remove by request: [", filenameFull, "]");
+                channelChecker->DeleteFromCache(itrF->first);
+                if(diskSizeDeletedOut.find(itrD->first) == diskSizeDeletedOut.end())
+                {
+                    diskSizeDeletedOut[itrD->first] = 0;
+                }
+                StRef<String> const diskfilenameFull = st_makeString(itrD->first.c_str(), "/", itrF->first.c_str(), ".flv");
+                diskSizeDeletedOut[itrD->first] += Int64(get_file_space(diskfilenameFull->cstr()));
 
-            vfs->removeFile (filenameFull->mem());
-            vfs->removeSubdirsForFilename (filenameFull->mem());
+                vfs->removeFile (filenameFull->mem());
+                vfs->removeSubdirsForFilename (filenameFull->mem());
 
-            channelChecker->DeleteFromCache(itr->second.diskName, itr->first);
-
-            bRes = true;
+                ret = 1;
+            }
         }
     }
 
     logD(ffmpeg_module,_func_, "end of removing");
 
-
-    return bRes;
+    return ret;
 }
+
+Int64
+MomentFFmpegModule::removeOldestFiles(void * _self, std::vector<std::string> & srcList, std::string & pathOut, std::string & srcOut)
+{
+    Int64 res = 0;
+
+    MomentFFmpegModule * const self = static_cast <MomentFFmpegModule*> (_self);
+
+    std::map<std::string, std::string> fileSrcs; // [filename, src]
+    std::map<std::string, std::string> fileDisks; // [filename, disk]
+    std::map<Time, std::string> timeFiles; // [time, filename]
+
+    for(int i = 0; i < srcList.size(); i++)
+    {
+        std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(srcList[i]);
+        if(itFFStream == self->m_streams.end())
+        {
+            logE_(_func_, "there is no ", srcList[i].c_str(), " in m_streams"); // very strange situation
+            continue;
+        }
+        Ref<ChannelChecker> channelChecker = itFFStream->second.getRef()->GetChannelChecker();
+
+        std::string filename;
+        std::string disk;
+        if(!channelChecker->GetOldestFile(filename, disk))
+            break;
+        Time timeOfRecord = 0;
+        StRef<String> const flv_filename = st_makeString (filename.c_str(), ".flv");
+        FileNameToUnixTimeStamp().Convert(flv_filename, timeOfRecord);
+        timeOfRecord = timeOfRecord / 1000000000LL;
+
+        timeFiles[timeOfRecord] = filename;
+        fileDisks[filename] = disk;
+        fileSrcs[filename] = srcList[i];
+    }
+
+    if(timeFiles.size())
+    {
+        std::string resFilename = timeFiles.begin()->second; // oldest file
+
+        pathOut = fileDisks[resFilename];
+        srcOut = fileSrcs[resFilename];
+
+        // delete from disk
+        StRef<String> dir_name = st_makeString(pathOut.c_str());
+        Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (dir_name->mem());
+        StRef<String> const filenameFull = st_makeString(resFilename.c_str(), ".flv");
+        StRef<String> const diskfilenameFull = st_makeString(pathOut.c_str(), "/", filenameFull);
+
+        res = Int64(get_file_space(diskfilenameFull->cstr())) / 1024; // to kB
+
+        vfs->removeFile (filenameFull->mem());
+        vfs->removeSubdirsForFilename (filenameFull->mem());
+
+        // delete from cache
+        std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(srcOut);
+        Ref<ChannelChecker> channelChecker = itFFStream->second.getRef()->GetChannelChecker();
+        channelChecker->DeleteFromCache(resFilename);
+    }
+    else
+    {
+        res = -1;
+    }
+
+    return res;
+}
+
+//Uint64
+//MomentFFmpegModule::removeDownloadFiles(const std::string & path, const std::string & src)
+//{
+//    Uint64 sizeDeleted = 0;
+
+//    // delete from disk
+//    StRef<String> dir_name = st_makeString(path.c_str());
+//    Ref<Vfs> vfs = Vfs::createDefaultLocalVfs (dir_name->mem());
+//    StRef<String> const filenameFull = st_makeString(resFilename.c_str(), ".flv");
+//    StRef<String> const diskfilenameFull = st_makeString(path.c_str(), "/", src.c_str(), ".flv");
+
+//    res = Int64(get_file_space(diskfilenameFull->cstr()));
+
+//    vfs->removeFile (filenameFull->mem());
+//    vfs->removeSubdirsForFilename (filenameFull->mem());
+
+//    return sizeDeleted;
+//}
 
 bool
 MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse &resp, void * _self)
@@ -922,16 +1030,14 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
         bool channelIsFound = false;
         bool const set_on = (segments[1].compare("rec_on") == 0);
 
-        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator it = self->m_streams.find(st_channel_name->cstr());
-        if(it != self->m_streams.end() && it->second.getRefPtr())
+        if(it != self->m_streams.end() && it->second.getRef())
             channelIsFound = true;
 
         if (!channelIsFound)
         {
-            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -943,10 +1049,9 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             goto _return;
         }
 
-        it->second.getRefPtr()->SetRecordingState(set_on);
-        it->second.getRefPtr()->GetRecordingState(channel_state);
+        it->second.getRef()->SetRecordingState(set_on);
+        it->second.getRef()->GetRecordingState(channel_state);
 
-        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         bool bDisableRecordFound = false;
@@ -1021,14 +1126,12 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         StRef<String> st_channel_name = st_makeString(channel_name.c_str());
 
-        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
 
         if (itFFStream == self->m_streams.end())
         {
-            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -1039,13 +1142,12 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             goto _return;
         }
 
-        Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
-        ChannelChecker::ChannelFileDiskTimes chFileDiskTimes = channelChecker->GetChannelFileDiskTimes ();
+        Ref<ChannelChecker> channelChecker = itFFStream->second.getRef()->GetChannelChecker();
+        ChannelChecker::ChannelFileTimes chFileTimes = channelChecker->GetChannelFileTimes ();
 
-        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
-        StRef<String> const reply_body = channelFilesExistenceToJson (&chFileDiskTimes);
+        StRef<String> const reply_body = channelFilesExistenceToJson (&chFileTimes);
         logD(ffmpeg_module, _func, "reply: ", reply_body);
 
         resp.setStatus(HTTPResponse::HTTP_OK);
@@ -1141,14 +1243,12 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         logE_(_func_, "channel_name = ", channel_name.c_str());
 
-        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
 
         if (itFFStream == self->m_streams.end())
         {
-            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -1161,7 +1261,6 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         bool bIsRestreaming = itFFStream->second.getRefPtr()->IsRestreaming();
 
-        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         logD(ffmpeg_module, _func, "OK");
@@ -1181,14 +1280,12 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         logE_(_func_, "channel_name = ", channel_name.c_str());
 
-        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
 
         if (itFFStream == self->m_streams.end())
         {
-            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -1201,7 +1298,6 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 
         stSourceInfo si = itFFStream->second.getRefPtr()->GetSourceInfo();
 
-        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         logD(ffmpeg_module, _func, "OK");
@@ -1299,7 +1395,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
     }
     else if(segments.size() == 2 && (segments[1].compare("reload_recpath") == 0))
     {
-//        bool bRes = self->m_recpath_config.LoadConfig(self->m_recpath_conf->cstr());
+//        bool bRes = PathManager::Instance().Init(self->m_recpath_conf->cstr());
 
 //        if(bRes)
 //        {
@@ -1307,7 +1403,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
 //            resp.setContentType("text/html");
 //            std::ostream& out = resp.send();
 //            out << "recpath.conf is reloaded";
-//            out << self->m_recpath_config.GetConfigJson();
+//            out << PathManager::Instance().GetConfigJson();
 //            out.flush();
 //        }
 //        else
@@ -1315,7 +1411,7 @@ MomentFFmpegModule::adminHttpRequest (HTTPServerRequest &req, HTTPServerResponse
             logD(ffmpeg_module, _func_, "reply: 500 Internal server error");
             resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
             std::ostream& out = resp.send();
-            out << "500 Internal Server Error: fail to reload recpath.conf: not implemented";
+            out << "500 Internal Server Error: fail to reload recpath.conf (not supported)";
             out.flush();
         }
     }
@@ -1361,7 +1457,6 @@ MomentFFmpegModule::clearEmptyChannels()
 {
     logD(ffmpeg_module, _func);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator it1 = m_streams.begin();
@@ -1370,13 +1465,13 @@ MomentFFmpegModule::clearEmptyChannels()
     {
         if(!it1->second.getRef() || it1->second.getRef()->IsClosed())
         {
+            PathManager::Instance().DeleteSrc(it1->first);
             m_streams.erase(it1++);
         }
         else
             it1++;
     }
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 }
 
@@ -1417,16 +1512,14 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
         bool channel_state = false; // false - isn't writing
         bool channelIsFound = false;
 
-        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
 
         std::map<std::string, WeakRef<FFmpegStream> >::iterator it = self->m_streams.find(channel_name);
-        if(it != self->m_streams.end() && it->second.getRefPtr())
+        if(it != self->m_streams.end() && it->second.getRef())
             channelIsFound = true;
 
         if (!channelIsFound)
         {
-            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
 
             logE_ (_func, "Channel Not Found (mod_nvr): ", channel_name.c_str());
@@ -1438,9 +1531,8 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
             goto _return;
         }
 
-        it->second.getRefPtr()->GetRecordingState(channel_state);
+        it->second.getRef()->GetRecordingState(channel_state);
 
-        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
         StRef<String> const reply_body = st_makeString ("{ \"seq\": \"", seq.c_str(), "\", \"recording\": ", channel_state, " }");
@@ -1527,14 +1619,12 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
 
         logD(ffmpeg_module, _func_, "channel_name: [", channel_name.c_str(), "]");
 
-        logD(mutex, _func_, "MUTEX _locked");
         self->m_mutex.lock();
-logD(mutex, _func_, "QQQQQ 1");
+
         std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = self->m_streams.find(channel_name);
 
         if (itFFStream == self->m_streams.end())
         {
-            logD(mutex, _func_, "MUTEX unlocked");
             self->m_mutex.unlock();
             logE_ (_func, "Channel Not Found (mod_nvr): ", channel_name.c_str());
             resp.setStatus(HTTPResponse::HTTP_NOT_FOUND);
@@ -1545,12 +1635,10 @@ logD(mutex, _func_, "QQQQQ 1");
             goto _return;
         }
 
-logD(mutex, _func_, "QQQQQ 2");
-        Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
+        Ref<ChannelChecker> channelChecker = itFFStream->second.getRef()->GetChannelChecker();
         std::string reply_body_str;
         if(!channelChecker.isNull())
         {
-            logD(mutex, _func_, "QQQQQ 3");
             ChannelChecker::ChannelTimes channel_existence = channelChecker->GetChannelTimes ();
             StRef<String> reply_body = channelExistenceToJson (&channel_existence);
             reply_body_str = reply_body->cstr();
@@ -1560,14 +1648,12 @@ logD(mutex, _func_, "QQQQQ 2");
             logE_(_func_, "channelChecker is empty");
         }
 
-        logD(mutex, _func_, "MUTEX unlocked");
         self->m_mutex.unlock();
 
-        //StRef<String> reply_body = channelExistenceToJson (&channel_existence);
         resp.setStatus(HTTPResponse::HTTP_OK);
         resp.setContentType("text/html");
         std::ostream& out = resp.send();
-        out << reply_body_str;//reply_body->cstr();
+        out << reply_body_str;
         out.flush();
         logA(ffmpeg_module, _func_, "mod_nvr 200 ", req.clientAddress().toString().c_str(), " ", req.getURI().c_str());
     }
@@ -1609,20 +1695,17 @@ MomentFFmpegModule::doGetFile (ConstMemory   const channel_name,
     StRef<String> str_ch_name = st_makeString(channel_name);
     std::string ch_name = str_ch_name->cstr();
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator itFFStream = m_streams.find(ch_name);
     if(itFFStream == m_streams.end())
     {
-        logD(mutex, _func_, "MUTEX unlocked");
         m_mutex.unlock();
         logE_(_func_, "there is no ", channel_name, " in m_streams");
         return false;
     }
-    Ref<ChannelChecker> channelChecker = itFFStream->second.getRefPtr()->GetChannelChecker();
+    Ref<ChannelChecker> channelChecker = itFFStream->second.getRef()->GetChannelChecker();
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     ChannelChecker::ChannelFileDiskTimes chlFileDiskTimes = channelChecker->GetChannelFileDiskTimes();
@@ -1654,16 +1737,12 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
 
     Ref<MConfig::Config> const config = this->m_pMoment->getConfig ();
 
-
     Ref<FFmpegStream> const ffmpeg_stream = grab (new (std::nothrow) FFmpegStream);
     if(!ffmpeg_stream)
     {
         logE_(_func_, "cannot allocate ffmpeg_stream");
         return NULL;
     }
-	
-    Ref<ChannelChecker> channel_checker = grab (new (std::nothrow) ChannelChecker);
-    channel_checker->init (timers, &m_recpath_config, channel_opts->channel_name);
 
     ffmpeg_stream->init (frontend,
                       timers,
@@ -1674,16 +1753,12 @@ MomentFFmpegModule::createMediaSource (CbDesc<MediaSource::Frontend> const &fron
                       initial_seek,
                       channel_opts,
                       playback_item,
-                      config,
-                      &m_recpath_config,
-                      channel_checker);
+                      config);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     m_streams[channel_opts->channel_name->cstr()] = ffmpeg_stream;
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     return ffmpeg_stream;
@@ -1695,17 +1770,17 @@ MomentFFmpegModule::CreateStatPoint()
     StatMeasure stmRes;
     std::vector<StatMeasure> stmFromStreams;
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     std::map<std::string, WeakRef<FFmpegStream> >::iterator it = m_streams.begin();
     for(it; it != m_streams.end(); ++it)
     {
-        if(it->second.getRefPtr())
-            stmFromStreams.push_back(it->second.getRefPtr()->GetStatMeasure());
+        if(it->second.getRef() && !it->second.getRef()->IsClosed())
+        {
+            stmFromStreams.push_back(it->second.getRef()->GetStatMeasure());
+        }
     }
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     // find out most minimum, most maximum, most average, etc
@@ -2002,7 +2077,6 @@ MomentFFmpegModule::UpdateSourceTimes()
 {
     logD(ffmpeg_module, _func);
 
-    logD(mutex, _func_, "MUTEX _locked");
     m_mutex.lock();
 
     struct timeval tv;
@@ -2090,7 +2164,6 @@ MomentFFmpegModule::UpdateSourceTimes()
         itr1++;
     }
 
-    logD(mutex, _func_, "MUTEX unlocked");
     m_mutex.unlock();
 
     return true;
@@ -2116,14 +2189,31 @@ MomentFFmpegModule::init (MomentServer * const moment)
         confd_dir_mem = config->getString (opt_name, &confd_dir_is_set);
         if (!confd_dir_is_set)
         {
-            logE_ (_func, opt_name, " config option is not set, disabling writing");
+            logE_ (_func, opt_name, " config option is not set, disabling writing, exit");
             // we can not write without output path
-            return Result::Failure;
+            exit(1);
         }
         logD(ffmpeg_module, _func, opt_name, ": [", confd_dir_mem, "]");
     }
 	
     m_confd_dir = st_grab (new (std::nothrow) String (confd_dir_mem));
+
+    ConstMemory quotas_file_mem;
+    // get path for recording
+    {
+        ConstMemory const opt_name = "moment/quotas_file";
+        bool quotas_file_is_set = false;
+        quotas_file_mem = config->getString (opt_name, &quotas_file_is_set);
+        if (!quotas_file_is_set)
+        {
+            logE_ (_func, opt_name, " config option is not set, disabling writing, exit");
+            // we can not write without output path
+            exit(1);
+        }
+        logD(ffmpeg_module, _func, opt_name, ": [", quotas_file_mem, "]");
+    }
+
+    StRef<String> st_quotas_file = st_grab (new (std::nothrow) String (quotas_file_mem));
 
     m_nDownloadLimit = DOWNLOAD_LIMIT;
     {
@@ -2136,24 +2226,27 @@ MomentFFmpegModule::init (MomentServer * const moment)
             logD(ffmpeg_module, _func_, opt_name, ": ", m_nDownloadLimit);
     }
 
-    bool bRes = MemoryDispatcher::Instance().Init();
-    if (!bRes)
-        logE_ (_func, " fail to init MemoryDispatcher ");
-    else
-        logD(ffmpeg_module, _func_, "MemoryDispatcher is inited");
-
     ConstMemory recpath_conf_mem;
     {
         ConstMemory const opt_name = "mod_nvr/recpath_conf";
         bool recpath_conf_is_set = false;
         recpath_conf_mem = config->getString (opt_name, &recpath_conf_is_set);
         if (!recpath_conf_is_set)
-            logE_ (_func_, opt_name, " config option is not set, disabling work with archives");
+        {
+            logE_ (_func_, opt_name, " config option is not set, disabling work with archives, exit");
+            exit(1);
+        }
         else
             logD(ffmpeg_module, _func, opt_name, ": ", recpath_conf_mem);
     }
     m_recpath_conf = st_grab (new (std::nothrow) String (recpath_conf_mem));
-    this->m_recpath_config.Init(m_recpath_conf->cstr(), &m_streams);
+    bool bInitPM = PathManager::Instance().Init(m_recpath_conf->cstr(), st_quotas_file->cstr(),
+                                                removeAllFilesCallback, removeFiles, removeOldestFiles, this);
+    if(!bInitPM)
+    {
+        logE_ (_func_, "PathManager Init is failed");
+        exit(1);
+    }
 
     m_media_viewer = grab (new (std::nothrow) MediaViewer);
     m_media_viewer->init (moment, &m_streams, &m_mutex);
@@ -2178,6 +2271,42 @@ MomentFFmpegModule::init (MomentServer * const moment)
     HttpReqHandler::addHandler(std::string("mod_nvr_admin"), adminHttpRequest, this);
 
     return Result::Success;
+}
+
+Uint64 MomentFFmpegModule::removeAllFilesCallback(const std::string & path, const std::string & src)
+{
+    Uint64 fileSize = 0;
+
+    StRef<String> strRecDir = st_makeString(path.c_str());
+    Ref<Vfs> const vfs = Vfs::createDefaultLocalVfs (strRecDir->mem());
+    NvrFileIterator file_iter;
+    StRef<String> channel_name = st_makeString(src.c_str());
+    file_iter.init (vfs, channel_name->mem(), 0); // get oldest file
+    StRef<String> st_path = file_iter.getNext();
+
+    while(st_path != NULL && !st_path->isNullString())
+    {
+        StRef<String> const filenameFull = st_makeString(st_path, ".flv");
+        vfs->removeFile (filenameFull->mem());
+        vfs->removeSubdirsForFilename (filenameFull->mem());
+        st_path = file_iter.getNext();
+    }
+
+    IdxFileIterator idx_iter;
+    idx_iter.init (vfs, channel_name->mem(), 0);
+    st_path = idx_iter.getNext();
+
+    while(st_path != NULL && !st_path->isNullString())
+    {
+        // delete last file
+        vfs->removeFile (st_path->mem());
+        vfs->removeSubdirsForFilename (st_path->mem());
+        st_path = idx_iter.getNext();
+    }
+
+    vfs->removeSubdirs(channel_name->mem());
+
+    return fileSize;
 }
 
 MomentFFmpegModule::MomentFFmpegModule()
@@ -2206,7 +2335,6 @@ MomentFFmpegModule::~MomentFFmpegModule ()
         this->m_timer_updateTimes = NULL;
     }
 
-    logD(mutex, _func_, "MUTEX _locked in destructor");
   StateMutexLock l (&m_mutex);
 
     {
