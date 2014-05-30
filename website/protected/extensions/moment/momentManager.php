@@ -35,138 +35,151 @@ class momentManager {
             return false;
         } else {
             if(!empty($model->prev_url)) {
-                $this->moment->add($model->id.'_low', $model->name.'_low', $model->prev_url); 
+             if(!is_null($model->user) && !empty($model->user)) {
+                $u = parse_url($model->prev_url);
+                $usr = $model->user;
+                $ps = $model->pass;
+                $url = $u['scheme'].'://'.
+                (!is_null($usr) && !empty($usr) ? $usr.(!is_null($ps) && !empty($ps) ? ':'.$ps : '').'@' : '').
+                $u['host'].
+                (isset($u['port']) ? ':'.$u['port'] : '').
+                $u['path'].
+                (isset($u['query']) ? '?'.$u['query'] : '');
+            } else {
+                $url = $model->prev_url;
             }
-            $this->rec($model->record == 1 ? 'on' : 'off', $model->id);
+            $this->moment->add($model->id.'_low', $model->name.'_low', $url); 
         }
-        return $result;
+        $this->rec($model->record == 1 ? 'on' : 'off', $model->id);
     }
+    return $result;
+}
 
-    public function edit($model) {
-        $result = $this->moment->modify($model->id, $model->name, $model->url);
-        if($result !== true) {
-            Notify::note(Yii::t('errors', 'Change cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
-            return false;
-        } else {
-            if(!empty($model->prev_url)) {
-                $result = $this->moment->add($model->id.'_low', $model->name.'_low', $model->prev_url);
-                $result = $this->moment->modify($model->id.'_low', $model->name.'_low', $model->prev_url);
-            }
-            $this->rec($model->record == 1 ? 'on' : 'off', $model->id);
+public function edit($model) {
+    $result = $this->moment->modify($model->id, $model->name, $model->url);
+    if($result !== true) {
+        Notify::note(Yii::t('errors', 'Change cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
+        return false;
+    } else {
+        if(!empty($model->prev_url)) {
+            $result = $this->moment->add($model->id.'_low', $model->name.'_low', $model->prev_url);
+            $result = $this->moment->modify($model->id.'_low', $model->name.'_low', $model->prev_url);
         }
-        return $result;
+        $this->rec($model->record == 1 ? 'on' : 'off', $model->id);
     }
+    return $result;
+}
 
-    public function delete($model) {
-        $result = $this->moment->delete($model->id);
-        if($result !== true) {
-            Notify::note(Yii::t('errors', 'Delete cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
-            return false;
-        } else {
-            if(!empty($model->prev_url)) {
-                $this->moment->delete($model->id.'_low'); 
-            }
+public function delete($model) {
+    $result = $this->moment->delete($model->id);
+    if($result !== true) {
+        Notify::note(Yii::t('errors', 'Delete cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
+        return false;
+    } else {
+        if(!empty($model->prev_url)) {
+            $this->moment->delete($model->id.'_low'); 
         }
-        return $result;
     }
+    return $result;
+}
 
-    public function playlist($cam_id, $session_id) {
-        $result = $this->moment->playlist();
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not get playlist, problem with nvr'));
-        }
-        $result = json_decode($result, 1);
-        $response = array('sources' => array());
-        if(!isset($result['sources'])) { return json_encode($response); }
-        foreach ($result['sources'] as $value) {
-            if($value['name'] == $cam_id) {
-                $value['name'] = $session_id;
-                $response['sources'][] = $value;
-                break;
-            }
-        }
-        return json_encode($response);
+public function playlist($cam_id, $session_id) {
+    $result = $this->moment->playlist();
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not get playlist, problem with nvr'));
     }
+    $result = json_decode($result, 1);
+    $response = array('sources' => array());
+    if(!isset($result['sources'])) { return json_encode($response); }
+    foreach ($result['sources'] as $value) {
+        if($value['name'] == $cam_id) {
+            $value['name'] = $session_id;
+            $response['sources'][] = $value;
+            break;
+        }
+    }
+    return json_encode($response);
+}
 
-    public function existence($stream) {
-        $result = $this->moment->existence($stream);
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not get archive, problem with nvr'));
-        }
-        return $result;
+public function existence($stream) {
+    $result = $this->moment->existence($stream);
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not get archive, problem with nvr'));
     }
+    return $result;
+}
 
-    public function resolution($stream) {
-        $result = $this->moment->resolution($stream);
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not get resolution, problem with nvr'));
-        }
-        return $result;
+public function resolution($stream) {
+    $result = $this->moment->resolution($stream);
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not get resolution, problem with nvr'));
     }
+    return $result;
+}
 
-    public function alive($stream) {
-        $result = $this->moment->alive($stream);
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not get alive status, problem with nvr'));
-        }
-        return $result;
+public function alive($stream) {
+    $result = $this->moment->alive($stream);
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not get alive status, problem with nvr'));
     }
+    return $result;
+}
 
-    public function addQuota($id, $size) {
-        $result = $this->moment->addQuota($id, $size);
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not add quota, problem with nvr'));
-        }
-        return $result;
+public function addQuota($id, $size) {
+    $result = $this->moment->addQuota($id, $size);
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not add quota, problem with nvr'));
     }
+    return $result;
+}
 
-    public function removeQuota($id) {
-        $result = $this->moment->removeQuota($id);
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not remove quota, problem with nvr'));
-        }
-        return $result;
+public function removeQuota($id) {
+    $result = $this->moment->removeQuota($id);
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not remove quota, problem with nvr'));
     }
+    return $result;
+}
 
-    public function quotaList() {
-        $result = $this->moment->quotaList();
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not get quota list, problem with nvr'));
-        }
-        return json_decode($result, 1);
+public function quotaList() {
+    $result = $this->moment->quotaList();
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not get quota list, problem with nvr'));
     }
+    return json_decode($result, 1);
+}
 
-    public function quotaInfo($id) {
-        $result = $this->moment->quotaInfo($id);
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not quota info, problem with nvr'));
-        }
-        return $result;
+public function quotaInfo($id) {
+    $result = $this->moment->quotaInfo($id);
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not quota info, problem with nvr'));
     }
+    return $result;
+}
 
-    public function stat($type) {
-        $result = $this->moment->stat($type);
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Can not get statistics type: {type}', array('{type}' => $type)));
-        }
-        return $result;
+public function stat($type) {
+    $result = $this->moment->stat($type);
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Can not get statistics type: {type}', array('{type}' => $type)));
     }
+    return $result;
+}
 
-    public function rec($mode, $id) {
-        $result = $this->moment->rec($mode, $id);
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Record on/off fail, problem with nvr'));
-        }
-        return $result;
+public function rec($mode, $id) {
+    $result = $this->moment->rec($mode, $id);
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Record on/off fail, problem with nvr'));
     }
+    return $result;
+}
 
-    public function unixtime() {
-        $result = $this->moment->unixtime();
-        if(!$result) {
-            Notify::note(Yii::t('errors', 'Unixtime get fail, problem with nvr'));
-        }
-        return $result;
+public function unixtime() {
+    $result = $this->moment->unixtime();
+    if(!$result) {
+        Notify::note(Yii::t('errors', 'Unixtime get fail, problem with nvr'));
     }
+    return $result;
+}
 }
 
 ?>
