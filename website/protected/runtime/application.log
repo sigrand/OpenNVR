@@ -5762,3 +5762,437 @@ REQUEST_URI=/
 in /var/www/protected/views/cams/index3.php (126)
 in /var/www/protected/controllers/CamsController.php (87)
 in /var/www/index.php (13)
+2014/05/29 20:01:39 [error] [php] Array to string conversion (/home/imbizo/OpenNVR/website/protected/commands/TestCommand.php:5)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#1 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#2 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#3 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/29 20:02:03 [error] [php] Array to string conversion (/home/imbizo/OpenNVR/website/protected/commands/TestCommand.php:5)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#1 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#2 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#3 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/29 20:02:27 [error] [php] Undefined offset: 0 (/home/imbizo/OpenNVR/website/protected/commands/TestCommand.php:5)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#1 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#2 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#3 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/29 20:03:15 [error] [php] Array to string conversion (/home/imbizo/OpenNVR/website/protected/commands/TestCommand.php:5)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#1 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#2 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#3 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/29 20:25:33 [error] [php] date() expects at least 1 parameter, 0 given (/home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php:14)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#1 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#2 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#3 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#4 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/29 20:38:42 [error] [exception.CException] exception 'CException' with message 'Property "CDbCriteria.0" is not defined.' in /home/imbizo/OpenNVR/website/fw/base/CComponent.php:173
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/db/schema/CDbCriteria.php(160): CComponent->__set('0', '192.168.1.1')
+#1 /home/imbizo/OpenNVR/website/fw/db/schema/CDbCommandBuilder.php(585): CDbCriteria->__construct(Array)
+#2 /home/imbizo/OpenNVR/website/fw/db/schema/CDbCommandBuilder.php(661): CDbCommandBuilder->createCriteria(Array, Array)
+#3 /home/imbizo/OpenNVR/website/fw/db/ar/CActiveRecord.php(1518): CDbCommandBuilder->createColumnCriteria(Object(CMysqlTableSchema), Array, Array, Array, '`t`.')
+#4 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): CActiveRecord->findByAttributes(Array, Array)
+#5 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run(Array)
+#6 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run(Array)
+#7 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#8 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CApplication->run()
+#9 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once('/home/imbizo/Op...')
+#10 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once('/home/imbizo/Op...')
+#11 {main}
+---
+2014/05/29 20:42:47 [error] [exception.CException] exception 'CException' with message 'Property "CDbCriteria.ip" is not defined.' in /home/imbizo/OpenNVR/website/fw/base/CComponent.php:173
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/db/schema/CDbCriteria.php(160): CComponent->__set('ip', '192.168.1.1')
+#1 /home/imbizo/OpenNVR/website/fw/db/schema/CDbCommandBuilder.php(585): CDbCriteria->__construct(Array)
+#2 /home/imbizo/OpenNVR/website/fw/db/schema/CDbCommandBuilder.php(661): CDbCommandBuilder->createCriteria(Array, Array)
+#3 /home/imbizo/OpenNVR/website/fw/db/ar/CActiveRecord.php(1518): CDbCommandBuilder->createColumnCriteria(Object(CMysqlTableSchema), Array, Array, Array, '`t`.')
+#4 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): CActiveRecord->findByAttributes(Array, Array)
+#5 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run(Array)
+#6 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run(Array)
+#7 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#8 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CApplication->run()
+#9 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once('/home/imbizo/Op...')
+#10 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once('/home/imbizo/Op...')
+#11 {main}
+---
+2014/05/29 20:53:29 [error] [php] Undefined variable: mac (/home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php:13)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#1 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#2 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#3 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/29 20:57:52 [error] [exception.CException] exception 'CException' with message 'Property "TunCam.cam_id" is not defined.' in /home/imbizo/OpenNVR/website/fw/base/CComponent.php:130
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/db/ar/CActiveRecord.php(145): CComponent->__get('cam_id')
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(32): CActiveRecord->__get('cam_id')
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run(Array)
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run(Array)
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once('/home/imbizo/Op...')
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once('/home/imbizo/Op...')
+#8 {main}
+---
+2014/05/30 11:46:13 [error] [php] include(momentManager.php): failed to open stream: No such file or directory (/home/imbizo/OpenNVR/website/fw/YiiBase.php:427)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(26): spl_autoload_call()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#3 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#4 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#5 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#6 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 11:46:50 [error] [php] include(momentManager.php): failed to open stream: No such file or directory (/home/imbizo/OpenNVR/website/fw/YiiBase.php:427)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(26): spl_autoload_call()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#3 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#4 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#5 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#6 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 11:48:09 [error] [php] Undefined variable: momentManager (/home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php:27)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#1 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#2 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#3 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 11:57:56 [error] [php] include(momentManager.php): failed to open stream: No such file or directory (/home/imbizo/OpenNVR/website/fw/YiiBase.php:427)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(26): spl_autoload_call()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#3 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#4 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#5 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#6 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:00:19 [error] [php] include(momentManager.php): failed to open stream: No such file or directory (/home/imbizo/OpenNVR/website/fw/YiiBase.php:427)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(26): spl_autoload_call()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#3 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#4 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#5 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#6 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:01:04 [error] [php] Trying to get property of non-object (/home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php:19)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#1 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#2 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#3 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#4 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:06:52 [error] [php] Trying to get property of non-object (/home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php:19)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#1 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#2 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#3 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#4 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:07:33 [error] [php] Trying to get property of non-object (/home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php:19)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#1 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#2 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#3 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#4 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:08:18 [error] [php] Trying to get property of non-object (/home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php:19)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#1 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#2 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#3 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#4 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:08:30 [error] [php] Trying to get property of non-object (/home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php:19)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#1 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#2 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#3 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#4 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:15:12 [error] [php] include(momentManager.php): failed to open stream: No such file or directory (/home/imbizo/OpenNVR/website/fw/YiiBase.php:427)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(72): spl_autoload_call()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#3 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#4 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#5 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#6 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:16:13 [error] [php] include(momentManager.php): failed to open stream: No such file or directory (/home/imbizo/OpenNVR/website/fw/YiiBase.php:427)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(72): spl_autoload_call()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#3 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#4 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#5 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#6 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:17:12 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(61): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:18:44 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(61): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:40:52 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(61): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 12:52:42 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(65): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 13:02:26 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(66): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 13:08:24 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(65): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 13:32:45 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(65): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 13:56:05 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(65): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 15:46:00 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(65): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(75): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 15:53:21 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(38): moment->add()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(29): momentManager->add()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 15:57:59 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(65): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(77): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 15:58:49 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(65): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(77): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:08:16 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(71): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(77): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:09:12 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(32): moment->add()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): momentManager->add()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:19:07 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:237)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(65): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(77): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:22:10 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:238)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(71): moment->delete()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(77): momentManager->delete()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:22:39 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:238)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(32): moment->add()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): momentManager->add()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:24:44 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:238)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(32): moment->add()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): momentManager->add()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:32:29 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:239)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(32): moment->add()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): momentManager->add()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:33:00 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:239)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(32): moment->add()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): momentManager->add()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:50:13 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:239)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(32): moment->add()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): momentManager->add()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/05/30 16:51:46 [error] [php] Undefined offset: 1 (/home/imbizo/OpenNVR/website/protected/extensions/moment/http.php:239)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/protected/extensions/moment/momentManager.php(38): moment->add()
+#1 /home/imbizo/OpenNVR/website/protected/commands/TunCamsControlCommand.php(30): momentManager->add()
+#2 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): TunCamsControlCommand->run()
+#3 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#4 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#5 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+

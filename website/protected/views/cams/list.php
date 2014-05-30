@@ -22,8 +22,9 @@
 			<div class="panel-body" id='my_cams_tab'>
 				<?php
 				$addLink = CHtml::link(Yii::t('cams', 'Add cam'), $this->createUrl('cams/add'), array('class' => 'btn btn-success'));
+				echo $addLink."&nbsp;";
+				echo CHtml::link(Yii::t('cams', 'Add Sigrand cam'), $this->createUrl('cams/addSigrand'), array('class' => 'btn btn-success'));
 				if(!empty($myCams)) {
-					echo $addLink;
 					?>
 					<table class="table table-striped">
 						<thead>

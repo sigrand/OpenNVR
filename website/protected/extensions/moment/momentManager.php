@@ -35,7 +35,11 @@ class momentManager {
             return false;
         } else {
             if(!empty($model->prev_url)) {
-                $this->moment->add($model->id.'_low', $model->name.'_low', $model->prev_url); 
+                $result = $this->moment->add($model->id.'_low', $model->name.'_low', $model->prev_url);
+                if ($result != true) {
+                    Notify::note(Yii::t('errors', 'Add cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
+                    return false;
+                }
             }
             $this->rec($model->record == 1 ? 'on' : 'off', $model->id);
         }

@@ -25,7 +25,7 @@ class CamsController extends Controller {
 				'users'=>array('*'),
 				),
 			array('allow',
-				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime', 'map', 'list', 'archive'),
+				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime', 'map', 'list', 'archive', 'addSigrand'),
 				'users'=>array('@'),
 				// access granted only for admins and operators
 				'expression' => '(Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)',
@@ -232,6 +232,47 @@ class CamsController extends Controller {
 		}
 		$this->render('edit', array('model' => $model, 'servers' => $servers));
 	}
+
+	public function actionAddSigrand($mac=NULL) {
+		if (isset($_POST['mac'])) {
+			$model = new Cams;
+			$model->user_id = Yii::app()->user->getId();
+			$model->name = "Sigcam[".$_POST['mac']."]";
+			$model->server_id = 1;
+			$tunCam = TunCam::model()->findByAttributes(array('mac' => $_POST['mac']));
+			if ($tunCam) {
+				if ($tunCam->cams_id == '0') {
+					$model->url = "rtsp://".$tunCam->ip."/H264";
+					$model->prev_url = "rtsp://".$tunCam->ip."/H264_LOW";
+					if($model->validate()) {
+						if ($model->save()) {
+							$momentManager = new momentManager($model->server_id);
+							if($momentManager->add($model)) {
+								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cam successfully added')));
+								$tunCam->cams_id = $model->id;
+								$tunCam->save();
+								$this->redirect(array('manage'));
+							} else {
+								Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam not added. Problem with nvr')));
+								$model->delete();
+							}
+						} else {
+							Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Can not save model!')));
+						}
+					} else {
+						Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam not added. Validate or save model problem')));
+					}
+				} else {
+					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam with this MAC already added $tunCam->cams_id=['.$tunCam->cams_id.']')));
+				}
+			} else {
+					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Where is no record in tun_cam with this MAC')));
+			}
+			
+		}
+		$this->render('addSigrandCam');
+	}
+
 
 	public function actionEdit($id) { // TODO add check owner
 		$model = Cams::model()->findByPK(Cams::model()->getRealId($id));
