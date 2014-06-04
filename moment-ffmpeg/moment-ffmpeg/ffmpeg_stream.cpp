@@ -42,7 +42,6 @@ static LogGroup libMary_logGroup_timer    ("mod_ffmpeg.timer",    LogLevel::E);
 static LogGroup libMary_logGroup_ffmpeg   ("mod_ffmpeg.ffmpeg",   LogLevel::E);
 static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::E); // E is the default
 
-#define MAX_AGE 120 // in minutes
 #define FILE_DURATION 3600 // in seconds
 #define PTS_THRESHOLD_SEC 5 // in seconds
 
@@ -66,9 +65,6 @@ static LogGroup libMary_logGroup_frames   ("mod_ffmpeg.frames",   LogLevel::E); 
 
 extern "C"
 {
-    extern AVOutputFormat ff_segment2_muxer;
-    extern AVOutputFormat ff_stream_segment2_muxer;
-
     int MakeFullPath(const char * channel_name, int const file_duration_sec, char * fullPath, int iBufSize)
     {
         int i, indExtension = -1;
@@ -144,19 +140,6 @@ extern "C"
 
         return 0;
     }
-
-
-    void CustomAVLogCallback(void * /*ptr*/, int /*level*/, const char * outFmt, va_list vl)
-    {
-        if(outFmt)
-        {
-            // TODO: need to use 'level'
-            char chLogBuffer[2048] = {};
-            vsnprintf(chLogBuffer, sizeof(chLogBuffer), outFmt, vl);
-            //printf(chLogBuffer);
-            logD(ffmpeg, _func_, "ffmpeg LOG: ", chLogBuffer);
-        }
-    }
 }   // extern "C" ]
 
 static Time ff_blocking_timeout = 30000000; // in microsec
@@ -174,85 +157,10 @@ static int interrupt_cb(void* arg)
     return 0;
 }
 
-#ifndef PLATFORM_WIN32
-static int ff_lockmgr(void **mutex, enum AVLockOp op)
-{
-   pthread_mutex_t** pmutex = (pthread_mutex_t**) mutex;
-   switch (op) {
-   case AV_LOCK_CREATE:
-      *pmutex = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
-       pthread_mutex_init(*pmutex, NULL);
-       break;
-   case AV_LOCK_OBTAIN:
-       pthread_mutex_lock(*pmutex);
-       break;
-   case AV_LOCK_RELEASE:
-       pthread_mutex_unlock(*pmutex);
-       break;
-   case AV_LOCK_DESTROY:
-       pthread_mutex_destroy(*pmutex);
-       free(*pmutex);
-       break;
-   }
-   return 0;
-}
-#else
-static int ff_lockmgr(void **mutex, enum AVLockOp op)
-{
-    CRITICAL_SECTION **critSec = (CRITICAL_SECTION **)mutex;
-    switch (op) {
-    case AV_LOCK_CREATE:
-        *critSec = new CRITICAL_SECTION();
-        InitializeCriticalSection(*critSec);
-        break;
-    case AV_LOCK_OBTAIN:
-        EnterCriticalSection(*critSec);
-        break;
-    case AV_LOCK_RELEASE:
-        LeaveCriticalSection(*critSec);
-        break;
-    case AV_LOCK_DESTROY:
-        DeleteCriticalSection(*critSec);
-        delete *critSec;
-        break;
-    }
-    return 0;
-}
-#endif
-
-
-
 StateMutex ffmpegStreamData::g_mutexFFmpeg;
-
-static void RegisterFFMpeg(void)
-{
-    logD(stream, _func_, "RegisterFFMpeg");
-
-    static Uint32 uiInitialized = 0;
-
-    if(uiInitialized != 0)
-        return;
-
-    uiInitialized = 1;
-
-    av_register_output_format(&ff_segment2_muxer);
-    av_register_output_format(&ff_stream_segment2_muxer);
-    av_log_set_callback(CustomAVLogCallback);
-
-    // global ffmpeg initialization
-    av_register_all();
-    avformat_network_init();
-    av_lockmgr_register(ff_lockmgr);
-
-    logD(stream, _func_, "RegisterFFMpeg succeed");
-}
-
 
 ffmpegStreamData::ffmpegStreamData(void)
 {
-    // Register all formats and codecs
-    RegisterFFMpeg();
-
     format_ctx = NULL;
     m_absf_ctx = NULL;
 
@@ -514,7 +422,6 @@ ffmpegStreamData::InitRes ffmpegStreamData::Init(const char * uri, const char * 
 
         // reading configs
         ConstMemory confd_dir;
-        Uint64 max_age_minutes = MAX_AGE;
         m_file_duration_sec = FILE_DURATION;
 
         // writing on/off
@@ -524,20 +431,6 @@ ffmpegStreamData::InitRes ffmpegStreamData::Init(const char * uri, const char * 
             std::string strRecEnable = std::string(str->cstr());
             if(strRecEnable.compare("y") == 0 || strRecEnable.compare("yes") == 0)
                 m_bRecordingEnable = true;
-        }
-
-        // get cycle time
-        {
-            ConstMemory const opt_name = "mod_nvr/max_age";
-            MConfig::GetResult const res =
-                    config->getUint64_default (opt_name, &max_age_minutes, max_age_minutes);
-            if (!res)
-            {
-                logE_ (_func, "Invalid value for config option ", opt_name, ": ", config->getString (opt_name));
-                m_bRecordingEnable = false;
-            }
-            else
-                logD (stream, _func_, opt_name, ": ", max_age_minutes);
         }
 
         // get duration for each recorded file
@@ -574,9 +467,6 @@ ffmpegStreamData::InitRes ffmpegStreamData::Init(const char * uri, const char * 
         if(m_bRecordingEnable)
         {
             m_channelName = st_makeString(channel_name);
-            m_nvr_cleaner = grab (new (std::nothrow) NvrCleaner);
-            m_nvr_cleaner->init (timers, ConstMemory(channel_name, strlen(channel_name)),
-                                 max_age_minutes * 60, 5);
 
             bool bDisableRecord = false;
             StRef<String> st_confd_dir = st_makeString(confd_dir);

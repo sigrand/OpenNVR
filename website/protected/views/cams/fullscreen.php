@@ -231,7 +231,7 @@ function updatePlaylist() {
     $.ajax({
         cache: false,
         type: "GET",
-        url: "<?php echo $this->createUrl('cams/playlist', array('id' => $cam->server_id, 'cam_id' => $cam->getSessionId($low))); ?>",
+        url: "<?php echo $this->createUrl('cams/playlist', array('id' => $cam->owner->server_id, 'cam_id' => $cam->getSessionId($low))); ?>",
         contentType: "application/json",
         dataType: "json",
         data: null,
@@ -263,7 +263,7 @@ function updatePlaylist() {
                         $.ajax({
                             cache: false,
                             type: "GET",
-                            url: "<?php echo $this->createUrl('cams/existence', array('id' => $cam->server_id)); ?>/" + '<?php echo $cam->getRealId($cam->getSessionId($low)); ?>',
+                            url: "<?php echo $this->createUrl('cams/existence', array('id' => $cam->owner->server_id)); ?>/" + '<?php echo $cam->getRealId($cam->getSessionId($low)); ?>',
                             contentType: "application/json",
                             dataType: "json",
                             data: null,
@@ -338,7 +338,7 @@ function updatePlaylist() {
                                                         doResize();
 
 
-                                                        $.get("<?php echo $this->createUrl('cams/unixtime', array('id' => $cam->server_id)); ?>",
+                                                        $.get("<?php echo $this->createUrl('cams/unixtime', array('id' => $cam->owner->server_id)); ?>",
                                                             {},
                                                             function (dataTime) {
                                                                 var unixtime = eval('(' + dataTime + ')');

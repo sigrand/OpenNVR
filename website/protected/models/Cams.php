@@ -5,7 +5,6 @@
  *
  * The followings are the available columns in table 'cams':
  * @property integer $id
- * @property integer $server_id
  * @property integer $user_id
  * @property string $name
  * @property string $desc
@@ -32,8 +31,8 @@ class Cams extends CActiveRecord {
 
 	public function rules()	{
 		return array(
-			array('server_id, user_id, name, url', 'required', 'message' => Yii::t('errors', 'cannot be blank')),
-			array('server_id, user_id, show, is_public, record', 'numerical', 'integerOnly'=>true),
+			array('user_id, name, url', 'required', 'message' => Yii::t('errors', 'cannot be blank')),
+			array('user_id, show, is_public, record', 'numerical', 'integerOnly'=>true),
 			array('url, prev_url', 'length', 'max'=>2000),
 			array('time_offset', 'length', 'max'=>4),
 			array('coordinates', 'match', 'pattern'=>'/^-?[0-9]{1,3}.[0-9]+, -?[0-9]{1,3}.[0-9]+$/u', 'message' => Yii::t('cams', 'Coordinates must be: "xxx.xxx, yyy.yyy"')),
@@ -50,7 +49,7 @@ class Cams extends CActiveRecord {
 				self::BELONGS_TO,
 				'Users',
 				'user_id',
-				'select' => 'nick'
+				'select' => 'id, nick, server_id'
 				),
 			);
 	}
@@ -59,7 +58,6 @@ class Cams extends CActiveRecord {
 		return array(
 			'id' => 'ID',
 			'user_id' => 'User',
-			'server_id' => Yii::t('cams', 'Server'),
 			'name' => Yii::t('cams', 'Name'),
 			'desc' => Yii::t('cams', 'Description'),
 			'url' => 'URL',

@@ -68,7 +68,7 @@ private /*functions for service of WriteVideoMessage*/:
 	Result PrepareVideoMessage(VideoStream::VideoMessage * mt_nonnull msg, Uint8 *& pBuffer, size_t & uiBufferSize);
 	bool MovePagesToBuffer(const PagePool::PageListHead & pageList, Uint8 *& pBuffer, size_t & uiBufferSize, std::vector<Uint8> & buffer);
 
-	bool ReallocBuffer(std::vector<Uint8> & buffer, size_t newSize, size_t addAllocSize = 0);
+	static bool ReallocBuffer(Uint64 id, std::vector<Uint8> & buffer, size_t newSize, size_t addAllocSize = 0, bool align = true);
 	inline Int64 PtsFromMsg(VideoStream::VideoMessage * mt_nonnull msg);
 
 private /*functions for service of ffmpeg/write part*/:
@@ -86,10 +86,11 @@ private /*muxer memory class*/:
 		size_t				m_uiSegmentSize;	// if current segment is finished so m_uiSegmentSize contains the size of it else -1.
 		Uint64				m_uiiCurrentSegmentId;
 		size_t				m_uiMaxSegmentSize;
+		const Uint64		m_Id;	// it is parent Id only for logging
 
 	public:
 
-		CMuxedData(void);
+		CMuxedData(Uint64 parentId);
 		~CMuxedData(void);
 
 		bool Init(Uint64 firstSegmentId, size_t uiMaxSegmentSize);
@@ -117,6 +118,7 @@ private /*variables*/:
 	//std::vector<Uint8>			m_FrameMemory;	// it is used for bitstream filter and to avoid frequent reallocations.
 	size_t						m_uiMaxSegmentSizeInBytes;
 	CMuxedData					m_MuxerData;
+	std::vector<Uint8>			m_AVCHeaderData;
 
 private /*helper classes*/:
 

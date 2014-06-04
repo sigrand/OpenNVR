@@ -226,11 +226,11 @@ var markers_cluster = new L.MarkerClusterGroup();
 		<?php
 			$servers = array();
 			foreach ($myCams as $cam) {
-				if(isset($servers[$cam->server_id])) {
-					$server = $servers[$cam->server_id];
+				if(isset($servers[$cam->owner->server_id])) {
+					$server = $servers[$cam->owner->server_id];
 				} else {
-					$servers[$cam->server_id] = Servers::model()->findByPK($cam->server_id);
-					$server = $servers[$cam->server_id];
+					$servers[$cam->owner->server_id] = Servers::model()->findByPK($cam->owner->server_id);
+					$server = $servers[$cam->owner->server_id];
 				}
 				if (!$cam->show) continue;
 		?>

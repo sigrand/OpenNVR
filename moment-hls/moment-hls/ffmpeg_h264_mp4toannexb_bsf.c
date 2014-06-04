@@ -215,7 +215,7 @@ void h264_mp4toannexb_filter_close(AVBitStreamFilterContext *bsfc)
 {
 	H264BSFContext *ctx = bsfc->priv_data;
 
-	av_log(ctx, AV_LOG_DEBUG, "h264_mp4toannexb_filter_close, free(%p) buffer with size = %d\n", ctx->mem_buffer, ctx->mem_buffer_size);
+	av_log(NULL, AV_LOG_DEBUG, "h264_mp4toannexb_filter_close, start, free(%p) buffer with size = %d\n", ctx->mem_buffer, ctx->mem_buffer_size);
 
 	if(ctx->mem_buffer)
 	{
@@ -224,6 +224,7 @@ void h264_mp4toannexb_filter_close(AVBitStreamFilterContext *bsfc)
 	}
 
 	ctx->mem_buffer_size = 0;
+	av_log(NULL, AV_LOG_DEBUG, "h264_mp4toannexb_filter_close, end\n");
 }
 
 AVBitStreamFilter own_h264_mp4toannexb_bsf = {

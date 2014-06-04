@@ -5,6 +5,8 @@
  *
  * The followings are the available columns in table 'users':
  * @property integer $id
+ * @property integer $server_id
+ * @property integer $quota
  * @property string $nick
  * @property string $email
  * @property string $pass
@@ -15,16 +17,6 @@
  */
 class Users extends CActiveRecord
 {
-	/**
-	 * Returns the static model of the specified AR class.
-	 * @param string $className active record class name.
-	 * @return Users the static model class
-	 */
-	public static function model($className=__CLASS__)
-	{
-		return parent::model($className);
-	}
-
 	/**
 	 * @return string the associated database table name
 	 */
@@ -45,15 +37,16 @@ class Users extends CActiveRecord
 		// NOTE: you should only define rules for those attributes that
 		// will receive user inputs.
 		return array(
-			array('status, options', 'numerical', 'integerOnly'=>true),
+			array('nick, pass, salt, status', 'required'),
+			array('server_id, quota, status, options', 'numerical', 'integerOnly'=>true),
 			array('nick', 'length', 'max'=>150),
 			array('email', 'length', 'max'=>250),
 			array('pass', 'length', 'max'=>512),
 			array('salt', 'length', 'max'=>32),
 			array('time_offset', 'length', 'max'=>4),
 			// The following rule is used by search().
-			// Please remove those attributes that should not be searched.
-			array('id, nick, email, pass, salt, time_offset, status, options', 'safe', 'on'=>'search'),
+			// @todo Please remove those attributes that should not be searched.
+			array('id, server_id, quota, nick, email, pass, salt, time_offset, status, options', 'safe', 'on'=>'search'),
 		);
 	}
 
@@ -75,6 +68,8 @@ class Users extends CActiveRecord
 	{
 		return array(
 			'id' => 'ID',
+			'server_id' => 'Server',
+			'quota' => 'Quota',
 			'nick' => 'Nick',
 			'email' => 'Email',
 			'pass' => 'Pass',
@@ -87,16 +82,24 @@ class Users extends CActiveRecord
 
 	/**
 	 * Retrieves a list of models based on the current search/filter conditions.
-	 * @return CActiveDataProvider the data provider that can return the models based on the search/filter conditions.
+	 *
+	 * Typical usecase:
+	 * - Initialize the model fields with values from filter form.
+	 * - Execute this method to get CActiveDataProvider instance which will filter
+	 * models according to data in model fields.
+	 * - Pass data provider to CGridView, CListView or any similar widget.
+	 *
+	 * @return CActiveDataProvider the data provider that can return the models
+	 * based on the search/filter conditions.
 	 */
 	public function search()
 	{
-		// Warning: Please modify the following code to remove attributes that
-		// should not be searched.
+		// @todo Please modify the following code to remove attributes that should not be searched.
 
 		$criteria=new CDbCriteria;
 
 		$criteria->compare('id',$this->id);
+		$criteria->compare('server_id',$this->server_id);
 		$criteria->compare('nick',$this->nick,true);
 		$criteria->compare('email',$this->email,true);
 		$criteria->compare('pass',$this->pass,true);
@@ -108,5 +111,16 @@ class Users extends CActiveRecord
 		return new CActiveDataProvider($this, array(
 			'criteria'=>$criteria,
 		));
+	}
+
+	/**
+	 * Returns the static model of the specified AR class.
+	 * Please note that you should have this exact method in all your CActiveRecord descendants!
+	 * @param string $className active record class name.
+	 * @return Users the static model class
+	 */
+	public static function model($className=__CLASS__)
+	{
+		return parent::model($className);
 	}
 }

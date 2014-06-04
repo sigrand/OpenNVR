@@ -400,8 +400,7 @@ class AdminController extends Controller {
 	}
 
 	private function userAction($actions, $user) {
-		//Yii::import('ext.moment.index', 1);
-		//$momentManager = new momentManager($id);
+		
 		$this->userActions = array(
 			'ban' => array(4, Yii::t('admin', 'banned')),
 			'unban' => array(1, Yii::t('admin', 'unbanned')),
@@ -409,16 +408,20 @@ class AdminController extends Controller {
 			'active' => array(1, Yii::t('admin', 'activated')),
 			'dismiss' => array(1, Yii::t('admin', 'down')),
 			);
-		foreach ($this->userActions as $key => $value) {
+		foreach($this->userActions as $key => $value) {
 			if(isset($actions[$key])) {
 				if($key == 'levelup' && Yii::app()->user->permissions == 3) {
 					$user->status++;
 					if($user->status >= 2) {
-						//$momentManager->addQuota($user->id, Settings::getValue('quota_size'));
+						Yii::import('ext.moment.index', 1);
+						$momentManager = new momentManager($user->server_id);
+						$momentManager->addQuota($user->id, Settings::getValue('quota_size'));
 					}
 				} elseif($key == 'dismiss' && Yii::app()->user->permissions == 3) {
 					if($user->status >= 2 && $user->status-1 <= 2) {
-						//$momentManager->removeQuota($user->id, Settings::getValue('quota_size'));
+						Yii::import('ext.moment.index', 1);
+						$momentManager = new momentManager($user->server_id);
+						$momentManager->removeQuota($user->id, Settings::getValue('quota_size'));
 					}
 					$user->status--;
 				} else {
@@ -452,7 +455,32 @@ class AdminController extends Controller {
 				Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'User not added')));
 			}
 		}
-		$this->render('users/edit', array('model' => $model));
+		$servers = array('0' => 'none');
+		$server = Servers::model()->findAll(array('select' => 'id, ip, comment'));
+		foreach($server as $s) {
+			$servers[$s->id] = $s->ip.($s->comment ? ' [ '.$s->comment.' ]' : '');
+		}
+		$this->render('users/edit', array('model' => $model, 'servers' => $servers));
+	}
+	
+	public function actionEditUser($id) {
+		$model = new UserForm;
+		$model->load($id);
+		if(isset($_POST['UserForm'])) {
+			$model->attributes = $_POST['UserForm'];
+			if($model->validate() && $model->save()) {
+				Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'User edited')));
+				$this->redirect(array('users'));
+			} else {
+				Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'User not edited')));
+			}
+		}
+		$servers = array('0' => 'none');
+		$server = Servers::model()->findAll(array('select' => 'id, ip, comment'));
+		foreach($server as $s) {
+			$servers[$s->id] = $s->ip.($s->comment ? ' [ '.$s->comment.' ]' : '');
+		}
+		$this->render('users/edit', array('model' => $model, 'servers' => $servers));
 	}
 
 }

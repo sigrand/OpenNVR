@@ -15,11 +15,11 @@ extern "C"
 }
 
 
-namespace MomentHls
+namespace MomentFFmpeg
 {
 
-static LogGroup libMary_logGroup_hls_pipe   ("mod_hls.pprotocol",   LogLevel::E);
-std::string g_ProtocolName = "pipelineprotocol";
+static LogGroup libMary_logGroup_ffmpeg_pipe   ("mod_ffmpeg.dprotocol",   LogLevel::E);
+std::string g_ProtocolName = "downloadprotocol";
 
 std::string CPipelineProtocol::GetProtocolName(void)
 {
@@ -28,29 +28,29 @@ std::string CPipelineProtocol::GetProtocolName(void)
 
 CPipelineProtocol::CPipelineProtocol()
 {
-	logD(hls_pipe, _func_);
+    logD(ffmpeg_pipe, _func_);
 }
 
 CPipelineProtocol::~CPipelineProtocol()
 {
-	logD(hls_pipe, _func_, "id = ", m_Info.id);
+    logD(ffmpeg_pipe, _func_);
 	Deinit();
 }
 
 void CPipelineProtocol::Deinit()
 {
-	//logD(hls_pipe, _func_);
-	m_Info = CTsMuxer::TsSegmentInfo();
+    logD(ffmpeg_pipe, _func_);
+    m_Id = 0;
 }
 
 bool CPipelineProtocol::Init(URLContext * pContext, const char * pFileName, int flags)
 {
-	logD(hls_pipe, _func_);
-	if(!CTsMuxer::GetTsSegmentInfo(pFileName, m_Info))
-	{
-		logE(hls_pipe, _func_, "GetTsSegmentInfo failed");
-		return false;
-	}
+    logD(ffmpeg_pipe, _func_);
+    if(!VideoPartMaker::GetVpmId(pFileName, m_Id))
+    {
+        logE(ffmpeg_pipe, _func_, "GetVpmId failed");
+        return false;
+    }
 
 	pContext->is_streamed = 1;
 
@@ -59,7 +59,9 @@ bool CPipelineProtocol::Init(URLContext * pContext, const char * pFileName, int 
 
 bool CPipelineProtocol::Write( const unsigned char *buf, int size )
 {
-	return CTsMuxer::WriteData(m_Info, buf, size);
+    logD(ffmpeg_pipe, _func_);
+
+    return VideoPartMaker::SendBuffer(m_Id, buf, size);
 }
 
 /************************************************************************/
@@ -68,12 +70,12 @@ bool CPipelineProtocol::Write( const unsigned char *buf, int size )
 
 static int PipeOpen(URLContext *h, const char *filename, int flags)
 {
-	logD(hls_pipe, _func_, "filename = ", filename);
+    logD(ffmpeg_pipe, _func_, "filename = ", filename);
 	CPipelineProtocol * pPipeProtocol = new (std::nothrow) CPipelineProtocol();
 
 	if(!pPipeProtocol)
 	{
-		logE(hls_pipe, _func_, "out of memory");
+        logE(ffmpeg_pipe, _func_, "out of memory");
 		return AVERROR(ENOMEM);
 	}
 
@@ -83,7 +85,7 @@ static int PipeOpen(URLContext *h, const char *filename, int flags)
 	}
 	else
 	{
-		logE(hls_pipe, _func_, "Protocol->Init failed");
+        logE(ffmpeg_pipe, _func_, "Protocol->Init failed");
 		delete pPipeProtocol;
 		return AVERROR(errno);
 	}
@@ -98,7 +100,7 @@ static int PipeWrite(URLContext *h, const unsigned char *buf, int size)
 
 	if(!pPipeProtocol)
 	{
-		logE(hls_pipe, _func_, "!pPipeProtocol");
+        logE(ffmpeg_pipe, _func_, "!pPipeProtocol");
 		return AVERROR(errno);
 	}
 
@@ -107,12 +109,12 @@ static int PipeWrite(URLContext *h, const unsigned char *buf, int size)
 
 static int PipeClose(URLContext *h)
 {
-	logD(hls_pipe, _func_);
+    logD(ffmpeg_pipe, _func_);
 	CPipelineProtocol * pPipeProtocol = reinterpret_cast<CPipelineProtocol *>(h->priv_data);
 
 	if(!pPipeProtocol)
 	{
-		logE(hls_pipe, _func_, "!pPipeProtocol");
+        logE(ffmpeg_pipe, _func_, "!pPipeProtocol");
 		return AVERROR(errno);
 	}
 
@@ -148,5 +150,5 @@ URLProtocol ff_buffer_protocol =
 
 }
 
-}   // namespace MomentHls
+}   // namespace MomentFFmpeg
 

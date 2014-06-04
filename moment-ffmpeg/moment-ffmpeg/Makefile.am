@@ -55,6 +55,10 @@ libmoment_ffmpeg_1_0_la_SOURCES =	\
         video_part_maker.h              \
         ffmpeg_common.h                 \
         iostat.h                        \
+        ffmpeg_pipeline_protocol.cpp    \
+        ffmpeg_pipeline_protocol.h      \
+        ffmpeg_support.cpp              \
+        ffmpeg_support.h                \
         inc.h
 
 moment_ffmpeg_win_sources =                                         \

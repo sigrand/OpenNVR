@@ -163,7 +163,7 @@ class CamsController extends Controller {
 			}
 		}
 		$this->showStatusbar = $this->showArchive = !$preview && ((!$cam->is_public || ($shared && (!$shared->is_public || $shared->is_approved))) || $uid == $cam->user_id) ? 1 : 0;
-		$server = Servers::model()->findByPK($cam->server_id);
+		$server = Servers::model()->findByPK($cam->owner->server_id);
 		$low = !$full && isset($cam->prev_url) && !empty($cam->prev_url);
 		$this->render('fullscreen',
 			array(
@@ -197,8 +197,8 @@ class CamsController extends Controller {
 			}
 		}
 		$this->showStatusbar = $this->showArchive = ((!$cam->is_public || ($shared && (!$shared->is_public || $shared->is_approved))) || $uid == $cam->user_id) ? 1 : 0;
-		$server = Servers::model()->findByPK($cam->server_id);
-		$momentManager = new momentManager($cam->server_id);
+		$server = Servers::model()->findByPK($cam->owner->server_id);
+		$momentManager = new momentManager($cam->owner->server_id);
 		$this->render('archive',
 			array(
 				'cam' => $cam,
@@ -216,7 +216,7 @@ class CamsController extends Controller {
 			$model->attributes = $_POST['Cams'];
 			$model->user_id = Yii::app()->user->getId();
 			if($model->validate() && $model->save()) {
-				$momentManager = new momentManager($model->server_id);
+				$momentManager = new momentManager($model->owner->server_id);
 				if($momentManager->add($model)) {
 					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cam successfully added')));
 				} else {
@@ -244,7 +244,7 @@ class CamsController extends Controller {
 			$model->id = Cams::model()->getRealId($id);
 			$model->user_id = Yii::app()->user->getId();
 			if($model->validate()) {
-				$momentManager = new momentManager($model->server_id);
+				$momentManager = new momentManager($model->owner->server_id);
 				if($momentManager->edit($model) && $model->save()) {
 					Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cam successfully changed')));
 				} else {
@@ -253,21 +253,16 @@ class CamsController extends Controller {
 				$this->redirect(array('edit', 'id' => $model->id));
 			}
 		}
-		$servers = array();
-		$server = Servers::model()->findAll(array('select' => 'id, ip, comment'));
-		foreach($server as $s) {
-			$servers[$s->id] = $s->ip.($s->comment ? ' [ '.$s->comment.' ]' : '');
-		}
-		$this->render('edit', array('model' => $model, 'servers' => $servers));
+		$this->render('edit', array('model' => $model));
 	}
 
 	public function actionDelete($id, $type = 'cam') { // TODO add check owner
 		if($type == 'share') {
 			$model = Shared::model()->findByPK($id);
-			$momentManager = new momentManager($model->cam->server_id);
+			$momentManager = new momentManager($model->cam->owner->server_id);
 		} else {
 			$model = Cams::model()->findByPK(Cams::model()->getRealId($id));
-			$momentManager = new momentManager($model->server_id);
+			$momentManager = new momentManager($model->owner->server_id);
 		}
 		if(!$model) {
 			$this->redirect(array('manage'));
@@ -366,7 +361,7 @@ class CamsController extends Controller {
 								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cams successfully deleted')));
 							}
 						} else {
-							$momentManager = new momentManager($cam->server_id);
+							$momentManager = new momentManager($cam->owner->server_id);
 							if($cam->delete()) {
 								$momentManager->delete($cam);
 								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cams successfully deleted')));
@@ -374,7 +369,7 @@ class CamsController extends Controller {
 						}
 					} elseif(isset($_POST['record'])) {
 						$cam->record = $cam->record ? 0 : 1;
-						$momentManager = new momentManager($cam->server_id);
+						$momentManager = new momentManager($cam->owner->server_id);
 						$momentManager->rec($cam->record == 1 ? 'on' : 'off', $cam->id);
 						if($cam->save()) {
 							Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cams settings changed')));

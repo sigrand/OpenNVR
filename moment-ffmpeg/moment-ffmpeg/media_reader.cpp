@@ -51,20 +51,6 @@ static LogGroup libMary_logGroup_frames ("mod_ffmpeg.media_reader_frames", LogLe
 
 StateMutex FileReader::m_mutexFFmpeg;
 
-static void RegisterFFMpeg(void)
-{
-    static Uint32 uiInitialized = 0;
-
-    if(uiInitialized != 0)
-        return;
-
-    uiInitialized = 1;
-
-    // global ffmpeg initialization
-    av_register_all();
-    avformat_network_init();
-}
-
 int FileReader::WriteB8ToBuffer(Int32 b, MemoryEx & memory)
 {
     if(memory.size() >= memory.len())
@@ -477,8 +463,6 @@ void FileReader::DeInit()
 
 FileReader::FileReader()
 {
-    RegisterFFMpeg();
-
     format_ctx = NULL;
 
     m_initTimeOfRecord = 0;

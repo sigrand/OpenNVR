@@ -215,9 +215,10 @@ private:
     std::string GetAllSourcesInfo ();
     std::string GetSourceInfo (const std::string & source_name);
 
-    StRef<String> doGetFile (ConstMemory  stream_name,
+    bool doGetFile (ConstMemory  stream_name,
                     Time         start_unixtime_sec,
-                    Time         end_unixtime_sec);
+                    Time         end_unixtime_sec,
+                    HTTPServerResponse * resp);
 
     static Result httpGetChannelsStat (HttpRequest  * mt_nonnull req,
 				       Sender       * mt_nonnull conn_sender,

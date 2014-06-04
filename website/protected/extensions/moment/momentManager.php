@@ -29,7 +29,7 @@ class momentManager {
         } else {
             $url = $model->url;
         }
-        $result = $this->moment->add($model->id, $model->name, $url);
+        $result = $this->moment->add($model->id, $model->name, $url, $model->owner->id);
         if($result !== true) {
             Notify::note(Yii::t('errors', 'Add cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
             return false;
@@ -48,7 +48,7 @@ class momentManager {
             } else {
                 $url = $model->prev_url;
             }
-            $this->moment->add($model->id.'_low', $model->name.'_low', $url); 
+            $this->moment->add($model->id.'_low', $model->name.'_low', $url, $model->owner->id); 
         }
         $this->rec($model->record == 1 ? 'on' : 'off', $model->id);
     }
@@ -56,14 +56,14 @@ class momentManager {
 }
 
 public function edit($model) {
-    $result = $this->moment->modify($model->id, $model->name, $model->url);
+    $result = $this->moment->modify($model->id, $model->name, $model->url, $model->owner->id);
     if($result !== true) {
         Notify::note(Yii::t('errors', 'Change cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
         return false;
     } else {
         if(!empty($model->prev_url)) {
-            $result = $this->moment->add($model->id.'_low', $model->name.'_low', $model->prev_url);
-            $result = $this->moment->modify($model->id.'_low', $model->name.'_low', $model->prev_url);
+            $result = $this->moment->add($model->id.'_low', $model->name.'_low', $model->prev_url, $model->owner->id);
+            $result = $this->moment->modify($model->id.'_low', $model->name.'_low', $model->prev_url, $model->owner->id);
         }
         $this->rec($model->record == 1 ? 'on' : 'off', $model->id);
     }

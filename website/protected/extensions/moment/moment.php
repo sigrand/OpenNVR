@@ -41,15 +41,13 @@ class moment {
         $this->http->setPort($this->options['server_port']);
     }
 
-    public function add($id, $name, $url) {
-        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&uri=".base64_encode($url)."&quota=1");
-        //$result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&uri=".base64_encode($url)."&quota=".$qid);
+    public function add($id, $name, $url, $qid) {
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&uri=".base64_encode($url)."&quota=".$qid);
         return trim($result) == 'OK' ? true : $result;
     }
 
-    public function modify($id, $name, $url) {
-        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&update&uri=".base64_encode($url)."&quota=1");
-        //$result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&update&uri=".base64_encode($url)."&quota=".$qid);
+    public function modify($id, $name, $url, $qid) {
+        $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/admin/add_channel?conf_file=$id&title=".base64_encode($name)."&update&uri=".base64_encode($url)."&quota=".$qid);
         return trim($result) == 'OK' ? true : $result;
     }
 

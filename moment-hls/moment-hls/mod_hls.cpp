@@ -76,10 +76,10 @@
 using namespace M;
 using namespace Moment;
 
-static LogGroup libMary_logGroup_hls        ("mod_hls",        LogLevel::D);
-static LogGroup libMary_logGroup_hls_seg    ("mod_hls.seg",    LogLevel::D);
-static LogGroup libMary_logGroup_hls_msg    ("mod_hls.msg",    LogLevel::D);
-static LogGroup libMary_logGroup_hls_timers ("mod_hls.timers", LogLevel::D);
+static LogGroup libMary_logGroup_hls        ("mod_hls",        LogLevel::E);
+static LogGroup libMary_logGroup_hls_seg    ("mod_hls.seg",    LogLevel::E);
+static LogGroup libMary_logGroup_hls_msg    ("mod_hls.msg",    LogLevel::E);
+static LogGroup libMary_logGroup_hls_timers ("mod_hls.timers", LogLevel::E);
 
 static ConstMemory const m3u8_mime_type   = "application/vnd.apple.mpegurl";
 static ConstMemory const mpegts_mime_type = "video/mp2t";
@@ -952,7 +952,7 @@ HlsServer::videoStreamAdded (VideoStream * const mt_nonnull video_stream,
 
 		if(!bNameValid)
 		{
-			logA (hls, _func, "stream with name: [", stream_name, "] is not a 'low' stream");
+			logA (hls, _func, "stream with name: [", stream_name, "] is not a 'low' stream - SKIPPED");
 			return;
 		}
 	}
@@ -1984,8 +1984,42 @@ static void momentHlsUnload ()
 
 namespace M {
 
+#ifndef PLATFORM_WIN32
+
+static void handler(int sig)
+{
+	logE(hls_seg, _func, "myhandler sig = ", sig);
+	char * buf = rawCollectBacktrace();
+
+	if(buf)
+	{
+		logE(hls_seg, _func, "start buf\n", buf);
+		delete buf;
+	}
+	else
+	{
+		logE(hls_seg, _func, "buf is NULL");
+	}
+
+	logE(hls_seg, _func, "=====================");
+}
+#endif
+
 void libMary_moduleInit ()
 {
+#ifndef PLATFORM_WIN32
+	// install signal handlers
+	signal(SIGSEGV, handler);   // term
+	signal(SIGKILL, handler);   // term
+	signal(SIGSTOP, handler);   // stop
+	signal(SIGINT,  handler);   // term
+	signal(SIGTERM, handler);   // term
+	signal(SIGILL, handler);    // core
+	signal(SIGFPE, handler);    // core
+	signal(SIGABRT, handler);   // core
+	signal(SIGIO, handler);     // term
+	signal(SIGSYS, handler);    // core
+#endif
     MomentHls::momentHlsInit ();
 }
 

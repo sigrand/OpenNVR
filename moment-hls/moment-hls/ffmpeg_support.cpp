@@ -24,7 +24,7 @@ namespace MomentHls
 
 using namespace M;
 	
-static LogGroup libMary_logGroup_hls_ffsup   ("mod_hls.ffsup",   LogLevel::D);
+static LogGroup libMary_logGroup_hls_ffsup   ("mod_hls.ffsup",   LogLevel::E);
 
 #define ENABLE_FFMPEG_LOG
 

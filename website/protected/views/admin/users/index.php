@@ -27,29 +27,41 @@
 			</div>
 			<div class="panel-body" id="admins_tab">
 				<?php
+				$servers = array();
+				echo CHtml::link(Yii::t('admin', 'Add user'), $this->createUrl('admin/addUser'), array('class' => 'btn btn-success'));
 				if(!empty($admins)) {
 					?>
 					<table class="table table-striped">
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllA", array ("class" => "checkAllA")); ?></th>
 							<th>#</th>
+							<th><?php echo Yii::t('admin', 'Server'); ?></th>
 							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
 							<th><?php echo Yii::t('admin', 'Email'); ?></th>
+							<?php echo Yii::app()->user->permissions == 3 ? '<th>'.Yii::t('admin', 'Actions').'</th>' : ''; ?>
 						</thead>
 						<tbody>
 							<?php
 							echo CHtml::beginForm($this->createUrl('admin/users'), "post");
 							foreach ($admins as $key => $user) {
+								if(isset($servers[$user->server_id])) {
+									$server = $servers[$user->server_id];
+								} else {
+									$servers[$user->server_id] = Servers::model()->findByPK($user->server_id);
+									$server = $servers[$user->server_id];
+								}
 								echo '<tr>
 								<td>'.CHtml::activeCheckBox($form, 'auser_'.$user->id).'</td>
 								<td>'.($key+1).'</td>
+								<td>'.CHtml::encode(isset($server->ip) ? $server->ip : 'none').'</td>
 								<td>'.CHtml::encode($user->nick).'</td>
 								<td>'.CHtml::encode($user->email).'</td>
-								</tr>';
+								'.(Yii::app()->user->permissions == 3 ? '<td>'.CHtml::link('Edit user', $this->createUrl('admin/editUser', array('id' => $user->id)), array('class' => 'btn btn-danger')).'</td>' : '').
+								'</tr>';
 							}
 							?>
 							<tr>
-								<td colspan="2"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
+								<td colspan="<?php echo Yii::app()->user->permissions == 3 ? '4' : '3'; ?>"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('admin', 'LevelDown'), array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
 								<td><?php echo CHtml::submitButton(Yii::t('admin', 'Ban'), array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>
 							</tr>
@@ -64,29 +76,40 @@
 			</div>
 			<div class="panel-body" id="operators_tab" style="display:none">
 				<?php
+				echo CHtml::link(Yii::t('admin', 'Add user'), $this->createUrl('admin/addUser'), array('class' => 'btn btn-success'));
 				if(!empty($operators)) {
 					?>
 					<table class="table table-striped">
 						<thead>
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllO", array ("class" => "checkAllO")); ?></th>
 							<th>#</th>
+							<th><?php echo Yii::t('admin', 'Server'); ?></th>
 							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
 							<th><?php echo Yii::t('admin', 'Email'); ?></th>
+							<?php echo Yii::app()->user->permissions == 3 ? '<th>'.Yii::t('admin', 'Actions').'</th>' : ''; ?>
 						</thead>
 						<tbody>
 							<?php
 							echo CHtml::beginForm($this->createUrl('admin/users'), "post");
 							foreach ($operators as $key => $user) {
+								if(isset($servers[$user->server_id])) {
+									$server = $servers[$user->server_id];
+								} else {
+									$servers[$user->server_id] = Servers::model()->findByPK($user->server_id);
+									$server = $servers[$user->server_id];
+								}
 								echo '<tr>
 								<td>'.CHtml::activeCheckBox($form, 'ouser_'.$user->id).'</td>
 								<td>'.($key+1).'</td>
+								<td>'.CHtml::encode(isset($server->ip) ? $server->ip : 'none').'</td>
 								<td>'.CHtml::encode($user->nick).'</td>
 								<td>'.CHtml::encode($user->email).'</td>
-								</tr>';
+								'.(Yii::app()->user->permissions == 3 ? '<td>'.CHtml::link('Edit user', $this->createUrl('admin/editUser', array('id' => $user->id)), array('class' => 'btn btn-danger')).'</td>' : '').
+								'</tr>';
 							}
 							?>
 							<tr>
-								<td colspan="1"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
+								<td colspan="<?php echo Yii::app()->user->permissions == 3 ? '3' : '2'; ?>"><?php echo Yii::t('cams', 'Mass actions: '); ?></td>
 								<td><?php echo CHtml::submitButton('LevelUp', array('name' => 'levelup', 'class' => 'btn btn-success')); ?></td>
 								<td><?php echo CHtml::submitButton('LevelDown', array('name' => 'dismiss', 'class' => 'btn btn-primary')); ?></td>
 								<td><?php echo CHtml::submitButton('Ban', array('name' => 'ban', 'class' => 'btn btn-danger')); ?></td>

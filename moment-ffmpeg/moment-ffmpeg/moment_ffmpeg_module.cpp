@@ -30,6 +30,7 @@
 #include <moment-ffmpeg/moment_ffmpeg_module.h>
 #include <moment-ffmpeg/video_part_maker.h>
 #include <moment-ffmpeg/naming_scheme.h>
+#include <moment-ffmpeg/ffmpeg_support.h>
 #include <moment/path_manager.h>
 
 #ifdef __linux__
@@ -1595,20 +1596,7 @@ MomentFFmpegModule::httpRequest (HTTPServerRequest &req, HTTPServerResponse &res
             goto _return;
         }
 
-        StRef<String> const pathToFile = self->doGetFile (channel_name, start_unixtime_sec, end_unixtime_sec);
-
-        if(pathToFile != NULL) // is it correct?
-        {
-            resp.sendFile(pathToFile->cstr(), "application/octet-stream");
-        }
-        else
-        {
-            logE_(_func_, "pathToFile is NULL");
-            resp.setStatus(HTTPResponse::HTTP_INTERNAL_SERVER_ERROR);
-            std::ostream& out = resp.send();
-            out << "500 Internal Server Error: download file is failed";
-            out.flush();
-        }
+        bool bRes = self->doGetFile (channel_name, start_unixtime_sec, end_unixtime_sec, &resp);
     }
     else if (segments.size() == 2 && segments[1].compare("existence") == 0)
     {	
@@ -1681,16 +1669,16 @@ _return:
     return true;
 }
 
-StRef<String>
+bool
 MomentFFmpegModule::doGetFile (ConstMemory   const channel_name,
                             Time          const start_unixtime_sec,
-                            Time          const end_unixtime_sec)
+                            Time          const end_unixtime_sec,
+                            HTTPServerResponse * resp)
 {
     logD(ffmpeg_module, _func, "channel: ", channel_name, ", "
            "start: ", start_unixtime_sec, ", "
            "end: ", end_unixtime_sec);
 
-    std::string filePathRes;
     VideoPartMaker vpm;
     StRef<String> str_ch_name = st_makeString(channel_name);
     std::string ch_name = str_ch_name->cstr();
@@ -1709,17 +1697,20 @@ MomentFFmpegModule::doGetFile (ConstMemory   const channel_name,
     m_mutex.unlock();
 
     ChannelChecker::ChannelFileDiskTimes chlFileDiskTimes = channelChecker->GetChannelFileDiskTimes();
-    bool bRes = vpm.Init(&chlFileDiskTimes, ch_name, start_unixtime_sec, end_unixtime_sec, filePathRes);
+    bool bRes = vpm.Init(&chlFileDiskTimes, ch_name, start_unixtime_sec, end_unixtime_sec, resp);
     if(!bRes)
     {
         logE_(_func_, "fail to create file");
-        return NULL;
+        return false;
     }
-    vpm.Process();
+    bRes = vpm.Process();
+    logE_(_func_, "processing is done");
+    if(!bRes)
+        logE_(_func_, "flv is failed");
+    else
+        logD(ffmpeg_module, _func_, "flv is done");
 
-    logD(ffmpeg_module, _func_, "mp4 is done: [", filePathRes.c_str(), "]");
-
-    return st_makeString(filePathRes.c_str());
+    return bRes;
 }
 
 Ref<MediaSource>
@@ -2176,6 +2167,9 @@ MomentFFmpegModule::init (MomentServer * const moment)
     this->m_pMoment = moment;
     this->m_pTimers = moment->getServerApp()->getServerContext()->getMainThreadContext()->getTimers();
     this->m_pPage_pool = moment->getPagePool();
+
+    // Register all formats and codecs
+    ffmpegHelper::RegisterFFMpeg();
 
   // Opening video streams.
 

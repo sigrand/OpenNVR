@@ -45,10 +45,10 @@ else
 			$cam = Cams::model()->findByPK($id);
 			$stream = $cam->getSessionId();
 			$stream_low = $cam->getSessionId(true);
-			if(isset($servers[$cam->server_id])) {
-			$server = $servers[$cam->server_id];
+			if(isset($servers[$cam->owner->server_id])) {
+			$server = $servers[$cam->owner->server_id];
 			} else {
-			$server = $servers[$cam->server_id] = Servers::model()->findByPK($cam->server_id);
+			$server = $servers[$cam->owner->server_id] = Servers::model()->findByPK($cam->owner->server_id);
 			}
 			$players .= 'document["MyPlayer'.$i.'"].setSource("rtmp://'.$server->ip.':'.$server->l_port.'/live/", "'.$stream_low.'", "'.$stream.'");'."\n";
 

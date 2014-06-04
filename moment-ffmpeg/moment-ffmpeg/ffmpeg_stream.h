@@ -43,7 +43,10 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 //#include <libavformat/avc.h>
+#include <libavformat/url.h>
 #include <libswscale/swscale.h>
+
+extern URLProtocol ff_buffer_protocol;
 }
 
 

@@ -14,7 +14,6 @@ USE `cams`;
 DROP TABLE IF EXISTS `cams`;
 CREATE TABLE IF NOT EXISTS `cams` (
   `id` int(10) NOT NULL AUTO_INCREMENT,
-  `server_id` int(10) NOT NULL,
   `user_id` int(10) NOT NULL,
   `name` tinytext NOT NULL,
   `desc` text,
@@ -25,11 +24,11 @@ CREATE TABLE IF NOT EXISTS `cams` (
   `time_offset` varchar(4) NOT NULL DEFAULT '+0',
   `record` tinyint(1) NOT NULL DEFAULT '0',
   `coordinates` varchar(100) DEFAULT NULL,
-  `view_area` text DEFAULT NULL,
+  `view_area` text,
   `user` varchar(50) DEFAULT NULL,
   `pass` varchar(50) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 -- Дамп структуры для таблица cams.notifications
 DROP TABLE IF EXISTS `notifications`;
@@ -192,7 +191,8 @@ INSERT INTO `settings` (`id`, `option`, `value`) VALUES
   (6, 'SQLversion', '0.1'),
   (7, 'repo', 'http://qps.ru/mR3pY'),
   (8, 'mail_confirm', '1');
-
+  (9, 'default_quota', '2048000');
+  
 -- Дамп структуры для таблица cams.shared
 DROP TABLE IF EXISTS `shared`;
 CREATE TABLE IF NOT EXISTS `shared` (
@@ -210,15 +210,17 @@ CREATE TABLE IF NOT EXISTS `shared` (
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(7) NOT NULL AUTO_INCREMENT,
-  `nick` varchar(150) DEFAULT NULL,
+  `server_id` int(7) NOT NULL DEFAULT '0',
+  `quota` int(10) NOT NULL DEFAULT '0',
+  `nick` varchar(150) NOT NULL,
   `email` varchar(250) DEFAULT NULL,
-  `pass` varchar(512) DEFAULT NULL,
-  `salt` varchar(32) DEFAULT NULL,
-  `time_offset` varchar(4) DEFAULT '+0',
-  `status` tinyint(4) DEFAULT NULL,
-  `options` tinyint(4) DEFAULT '0',
+  `pass` varchar(512) NOT NULL,
+  `salt` varchar(32) NOT NULL,
+  `time_offset` varchar(4) NOT NULL DEFAULT '+0',
+  `status` tinyint(4) NOT NULL,
+  `options` tinyint(4) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT=' ';
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT=' ';
 
 INSERT INTO `users` (`id`, `nick`, `email`, `pass`, `salt`, `time_offset`, `status`, `options`) VALUES
   (1, 'admin', 'admin@admin.admin', '$1$7r4.Cn0.$5WTgA7.eMNRcTwWEMulPg.', 'fb3b88dde2e758ecaab215fa25bf3077', '+0', 3, 0);

@@ -80,15 +80,6 @@
 					</div>
 				</div>
 				<div class="form-group">
-					<?php echo $form->labelEx($model, 'server_id', array('class' => 'col-sm-4 control-label')); ?>
-					<div class="col-sm-8">
-						<?php echo $form->dropDownList($model, 'server_id', $servers, array('class' => 'form-control')); ?>
-					</div>
-					<div class="col-sm-offset-4 col-sm-8">
-						<?php echo $form->error($model, 'server_id'); ?>
-					</div>
-				</div>
-				<div class="form-group">
 					<div class="col-sm-offset-2 col-sm-10">
 						<div class="checkbox">
 							<label>

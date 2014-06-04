@@ -103,15 +103,6 @@
 						<div class="col-sm-offset-4 col-sm-8">
 							<?php echo $form->error($model, 'time_offset'); ?>
 						</div>
-					</div>		
-					<div class="form-group">
-						<?php echo $form->labelEx($model, 'server_id', array('class' => 'col-sm-4 control-label')); ?>
-						<div class="col-sm-8">
-							<?php echo $form->dropDownList($model, 'server_id', $servers, array('class' => 'form-control')); ?>
-						</div>
-						<div class="col-sm-offset-4 col-sm-8">
-							<?php echo $form->error($model, 'server_id'); ?>
-						</div>
 					</div>
 					<div class="form-group">
 						<?php echo $form->labelEx($model, 'coordinates', array('class' => 'col-sm-4 control-label')); ?>
@@ -185,8 +176,8 @@
 	</div>
 </div>
 <?php
-if($model->server_id) {
-	$server = Servers::model()->findByPK($model->server_id);
+if(isset($model->owner->server_id)) {
+	$server = Servers::model()->findByPK($model->owner->server_id);
 }
 if(Yii::app()->user->hasFlash('notify')) {
 	$notify = Yii::app()->user->getFlash('notify');
