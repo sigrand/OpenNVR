@@ -29,6 +29,7 @@
 							<th><?php echo Yii::t('screens', 'User'); ?></th>
 							<?php } ?>
 							<th><?php echo Yii::t('screens', 'Name'); ?></th>
+							<th><?php echo Yii::t('screens', 'Archive'); ?></th>
 							<th><?php echo Yii::t('screens', 'Edit'); ?></th>
 							<th><?php echo Yii::t('screens', 'Delete'); ?></th>
 						</thead>
@@ -42,6 +43,7 @@
 									echo '<td>'.$screen->owner->nick.'</td>';
 								}
 								echo '<td>'.CHtml::link(CHtml::encode($screen->name), $this->createUrl('screens/view/', array('id' => $screen->id, 'fullscreen' => 'true')), array('target' => '_blank')).'</td>
+								<td>'.CHtml::link(Yii::t('screens', 'Watch'), $this->createUrl('screens/archive/fullscreen/true', array('id' => $screen->id)), array('class' => 'btn btn-success')).'</td>
 								<td>'.CHtml::link(Yii::t('screens', 'Edit'), $this->createUrl('screens/update', array('id' => $screen->id)), array('class' => 'btn btn-primary')).'</td>
 								<td>'.CHtml::link(Yii::t('screens', 'Delete'), $this->createUrl('screens/delete', array('id' => $screen->id)), array('class' => 'btn btn-danger')).'</td>
 								</tr>';
