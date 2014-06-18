@@ -9,11 +9,23 @@
 <div class="col-sm-12">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><?php echo $model->isNewRecord ? Yii::t('cams', 'Fields marked with an * are required') : Yii::t('cams', 'Edit'); ?></h3>
+			<h3 class="panel-title"><?php
+				if (isset($bunch) && $bunch) {
+					echo Yii::t('cams', 'Fields marked with an * are required')." ";
+					echo Yii::t('cams', '(type %d where you need number from start to end)');
+				} else {
+					echo $model->isNewRecord ? Yii::t('cams', 'Fields marked with an * are required') : Yii::t('cams', 'Edit');
+				} ?></h3>
 		</div>
 		<div class="panel-body">
-			<?php $form = $this->beginWidget('CActiveForm', array(
-				'action' => $model->isNewRecord ? $this->createUrl('cams/add') : $this->createUrl('cams/edit', array('id' => $model->getSessionId())),
+			<?php
+				if (isset($bunch) && $bunch) {
+					$url = 'cams/addbunchofcam';
+				} else {
+					$url = 'cams/add';
+				}
+				$form = $this->beginWidget('CActiveForm', array(
+				'action' => $model->isNewRecord ? $this->createUrl($url) : $this->createUrl('cams/edit', array('id' => $model->getSessionId())),
 				'id' => 'cams-form',
 				'enableClientValidation' => true,
 				'clientOptions' => array('validateOnSubmit' => true),
@@ -54,6 +66,21 @@
 					</div>
 				</div>
 				<div class="col-sm-8">
+
+		<?php if (isset($bunch) && $bunch) { ?>
+					<div class="form-group">
+						<div class="col-sm-4 control-label"><b><?php echo Yii::t('cams', 'Start number *'); ?></b></div>
+						<div class="col-sm-8">
+							<?php echo CHtml::textField('start', '', array('class' => 'form-control', 'numerical', 'integerOnly'=>true)); ?>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-4 control-label"><b><?php echo Yii::t('cams', 'End number *'); ?></b></div>
+						<div class="col-sm-8">
+							<?php echo CHtml::textField('end', '', array('class' => 'form-control', 'numerical', 'integerOnly'=>true)); ?>
+						</div>
+					</div>
+		<?php } ?>
 
 					<div class="form-group">
 						<?php echo $form->labelEx($model, 'name', array('class' => 'col-sm-4 control-label')); ?>

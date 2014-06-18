@@ -24,6 +24,8 @@
 				$addLink = CHtml::link(Yii::t('cams', 'Add cam'), $this->createUrl('cams/add'), array('class' => 'btn btn-success'));
 				echo $addLink."&nbsp;";
 				echo CHtml::link(Yii::t('cams', 'Add Sigrand cam'), $this->createUrl('cams/addSigrand'), array('class' => 'btn btn-success'));
+				echo "&nbsp;";
+				echo CHtml::link(Yii::t('cams', 'Add bunch of cam'), $this->createUrl('cams/addBunchOfCam'), array('class' => 'btn btn-success'));
 				if(!empty($myCams)) {
 					?>
 					<table class="table table-striped">

@@ -25,7 +25,7 @@ class CamsController extends Controller {
 				'users'=>array('*'),
 				),
 			array('allow',
-				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime', 'map', 'list', 'archive', 'addSigrand'),
+				'actions'=>array('add', 'edit', 'manage', 'delete', 'share', 'fullscreen', 'existence', 'unixtime', 'map', 'list', 'archive', 'addSigrand', 'addBunchOfCam'),
 				'users'=>array('@'),
 				// access granted only for admins and operators
 				'expression' => '(Yii::app()->user->permissions == 2) || (Yii::app()->user->permissions == 3)',
@@ -271,6 +271,63 @@ class CamsController extends Controller {
 			
 		}
 		$this->render('addSigrandCam');
+	}
+
+	public function actionAddBunchOfCam() {
+		$model = new Cams;
+		if(isset($_POST['Cams'])) {
+			$start = (int)$_POST['start'];
+			$end = (int)$_POST['end'];
+			if (!(is_int($start) && ($start >= 0) && ($start <= 255) &&
+				is_int($end) && ($end >= 0) && ($end <= 255) && ($start < $end))) {
+				Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Start and end numbers must be from 0 to 255. And end number must be greater than start number!')));
+				goto end;
+			}
+			if (strpos($_POST['Cams']['name'], '%d') == FALSE) {
+				Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Name don\'t have %d substing!')));
+				goto end;
+			}
+			if (strpos($_POST['Cams']['url'], '%d') == FALSE) {
+				Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'URL don\'t have %d substing!')));
+				goto end;
+			}
+			$momentManager = new momentManager($_POST['Cams']['server_id']);
+			for ($i = $start; $i <= $end; $i++) {
+				$m = new Cams;
+				$m->user_id = Yii::app()->user->getId();
+				$m->name = str_replace("%d", $i, $_POST['Cams']['name']);
+				$m->desc = $_POST['Cams']['desc'];
+				$m->url = str_replace("%d", $i, $_POST['Cams']['url']);
+				$m->prev_url = str_replace("%d", $i, $_POST['Cams']['prev_url']);
+				$m->time_offset = $_POST['Cams']['time_offset'];
+				$m->server_id = $_POST['Cams']['server_id'];
+				$m->coordinates = $_POST['Cams']['coordinates'];
+				$m->view_area = $_POST['Cams']['view_area'];
+				$m->user = $_POST['Cams']['user'];
+				$m->pass = $_POST['Cams']['pass'];
+				$m->show = $_POST['Cams']['show'];
+				$m->record = $_POST['Cams']['record'];
+				if ($m->validate() && $m->save()) {
+					if($momentManager->add($m)) {
+						Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cams successfully added')));
+					} else {
+						Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam not added. Problem with nvr')));
+						$model->delete();
+					}
+				} else {
+					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Error while adding cam!!!')));
+					goto end;
+				}
+			}
+			$this->redirect(array('manage'));
+		}
+end:
+		$servers = array();
+		$server = Servers::model()->findAll(array('select' => 'id, ip, comment'));
+		foreach($server as $s) {
+			$servers[$s->id] = $s->ip.($s->comment ? ' [ '.$s->comment.' ]' : '');
+		}
+		$this->render('edit', array('model' => $model, 'servers' => $servers, 'bunch' => true));
 	}
 
 
