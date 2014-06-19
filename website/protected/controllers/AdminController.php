@@ -25,6 +25,49 @@ class AdminController extends Controller {
 			);
 	}
 
+	public function actionDevTools() {
+		Yii::import('ext.Updater.index', 1);
+		$updates = backupHelper::getBackupsList('update');
+		$f = function($e) {
+			$e['size'] = $this->convertSize($e['size']);
+			return $e;
+		};
+		$updates = array_reverse(array_map($f, $updates));
+		$this->render('devtools', array('updates' => $updates));
+	}
+
+	public function actionUpdateAdd() {
+		Yii::import('ext.Updater.index', 1);
+		$status = backupHelper::makeBackup('fullUpdate');
+		if($status == 1)  {
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! update created')));
+		} elseif($status == 2) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update not created. Dir is not writeable: '.BKP)));
+		} elseif($status == 0) {
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update not created')));
+		}
+		$this->redirect($this->createUrl('admin/devtools'));
+	}
+
+	public function actionUpdateDelete($id) {
+		Yii::import('ext.Updater.index', 1);
+		if(backupHelper::backupDelete($id)) {
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! Update deleted')));		
+			$this->redirect($this->createUrl('admin/devtools'));
+			Yii::app()->end();
+		}
+		Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update not deleted')));
+		$this->redirect($this->createUrl('admin/devtools'));
+	}
+
+	public function actionUpdateDownload($id) {
+		Yii::import('ext.Updater.index', 1);
+		$update = backupHelper::getBackup($id, 'update');
+		if(!empty($update)) {
+			Yii::app()->getRequest()->sendFile($update['file'], file_get_contents(BKP.$update['file']));
+		}
+	}
+
 	public function actionBackupManager() {
 		Yii::import('ext.Updater.index', 1);
 		$backups = backupHelper::getBackupsList();

@@ -179,9 +179,7 @@ if (isDomainAvailible('http://api-maps.yandex.ru') && isDomainAvailible('http://
 				document["MyPlayer"].setSource('rtmp://' + server_ip + ':' + server_port + '/live/', cams_hashes[cam_id].low, cams_hashes[cam_id].high);
 				document.getElementById("open_link").href="<?php echo $this->createUrl('cams/archive', array('full' => 1, 'id' => '')); ?>/"+cams_hashes[cam_id].high;
 			} else {
-				$(document["MyPlayer"]).remove();
-				$(document["MyPlayer"]).html('<video controls style="width:100%;" src="http://' + server_ip + ':' + server_web_port + '/hls/' + cam_id + '_low.m3u8"></video>');
-				document.getElementById("open_link").href="<?php echo $this->createUrl('cams/archive', array('full' => 1, 'id' => '')); ?>/"+cams_hashes[cam_id].high;
+				window.location.href='<?php echo $this->createAbsoluteUrl('cams/hls'); ?>/?url=http://' + server_ip + ':' + server_web_port + '/hls/' + cam_id + '_low.m3u8';
 			}
 			cam_id = "";
 		} else {
@@ -256,6 +254,10 @@ var markers_cluster = new L.MarkerClusterGroup();
 					server_ip = '<?php echo $server->ip; ?>';
 					server_port = '<?php echo $server->l_port; ?>';
 					server_web_port = '<?php echo $server->s_port; ?>';
+					if(hls) {
+					window.open('<?php echo $this->createAbsoluteUrl('cams/hls'); ?>/?url=http://' + server_ip + ':' + server_web_port + '/hls/' + cam_id + '_low.m3u8', '_blank');
+					//window.location.href='<?php echo $this->createAbsoluteUrl('cams/hls'); ?>/?url=http://' + server_ip + ':' + server_web_port + '/hls/' + cam_id + '_low.m3u8';
+					}
 				});
 		<?php
 				}
@@ -289,7 +291,9 @@ var markers_cluster = new L.MarkerClusterGroup();
 
 				if (osm && yndx && osm) map.addControl(new L.Control.Layers({'OSM':osm, "Yandex":yndx, "Google":googleLayer}));
 				$.each(markers, function(key, val) {
+				if(!hls) {
 					val.bindPopup(document.getElementById("MyPlayer_div"), {maxWidth:'640px', maxHeight:'360px'});
+					}
 					view_areas[key].addTo(map);
 				});
 				map.addLayer(markers_cluster);

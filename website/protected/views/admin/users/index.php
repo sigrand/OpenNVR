@@ -36,6 +36,7 @@
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllA", array ("class" => "checkAllA")); ?></th>
 							<th>#</th>
 							<th><?php echo Yii::t('admin', 'Server'); ?></th>
+							<th><?php echo Yii::t('admin', 'Quota'); ?></th>
 							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
 							<th><?php echo Yii::t('admin', 'Email'); ?></th>
 							<?php echo Yii::app()->user->permissions == 3 ? '<th>'.Yii::t('admin', 'Actions').'</th>' : ''; ?>
@@ -54,6 +55,7 @@
 								<td>'.CHtml::activeCheckBox($form, 'auser_'.$user->id).'</td>
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode(isset($server->ip) ? $server->ip : 'none').'</td>
+								<td>'.CHtml::encode(isset($user->quota) ? $user->quota : 'none').'</td>
 								<td>'.CHtml::encode($user->nick).'</td>
 								<td>'.CHtml::encode($user->email).'</td>
 								'.(Yii::app()->user->permissions == 3 ? '<td>'.CHtml::link('Edit user', $this->createUrl('admin/editUser', array('id' => $user->id)), array('class' => 'btn btn-danger')).'</td>' : '').
@@ -84,6 +86,7 @@
 							<th><?php echo CHtml::activeCheckBox($form, "checkAllO", array ("class" => "checkAllO")); ?></th>
 							<th>#</th>
 							<th><?php echo Yii::t('admin', 'Server'); ?></th>
+							<th><?php echo Yii::t('admin', 'Quota'); ?></th>
 							<th><?php echo Yii::t('admin', 'Nick'); ?></th>
 							<th><?php echo Yii::t('admin', 'Email'); ?></th>
 							<?php echo Yii::app()->user->permissions == 3 ? '<th>'.Yii::t('admin', 'Actions').'</th>' : ''; ?>
@@ -102,6 +105,7 @@
 								<td>'.CHtml::activeCheckBox($form, 'ouser_'.$user->id).'</td>
 								<td>'.($key+1).'</td>
 								<td>'.CHtml::encode(isset($server->ip) ? $server->ip : 'none').'</td>
+								<td>'.CHtml::encode(isset($user->quota) ? $user->quota : 'none').'</td>
 								<td>'.CHtml::encode($user->nick).'</td>
 								<td>'.CHtml::encode($user->email).'</td>
 								'.(Yii::app()->user->permissions == 3 ? '<td>'.CHtml::link('Edit user', $this->createUrl('admin/editUser', array('id' => $user->id)), array('class' => 'btn btn-danger')).'</td>' : '').

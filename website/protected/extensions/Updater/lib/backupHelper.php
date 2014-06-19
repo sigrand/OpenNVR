@@ -13,14 +13,18 @@ class backupHelper {
 		'protected/extensions/Updater/tmp',
 		);
 
-	public static function getBackupsList() {
+	public static function getBackupsList($type = '') {
 		$list = array();
 		if(file_exists(BKP.'list.json')) {
 			$list = file_get_contents(BKP.'list.json');
 			$list = !empty($list) ? json_decode($list, 1) : array();
 		}
-		return $list;
-	}	
+		return $type == 'update' ? array_filter($list, array(self, 'onlyUpdates')) : $list;
+	}
+
+	private function onlyUpdates($e) {
+		return isset($e['type']) && $e['type'] == 'diffUpdate' || $e['type'] == 'fullUpdate';
+	}
 
 	public static function backupDelete($id) {
 		$backups = self::getBackupsList();
@@ -34,14 +38,14 @@ class backupHelper {
 		}
 	}
 
-	public static function makeBackup() {
+	public static function makeBackup($type = 'backup') {
 		if(!is_writeable(BKP)) { return 2; }
 		$id = uniqid();
 		$time = time();
 		$version = Settings::model()->findByAttributes(array('option' => 'version'))->value;
-		$file = BKP.'backup_'.$id.'_'.str_replace('.', '_', $version).'_'.$time.'.zip';
+		$file = BKP.$type.'_'.$id.'_'.str_replace('.', '_', $version).'_'.$time.'.zip';
 		$base = Yii::getPathOfAlias('webroot').'/';
-		$sql = self::SQLbackup();
+		$sql = self::SQLbackup($type);
 		$zip = new ZipArchive;
 		if($zip->open($file, ZipArchive::CREATE) === TRUE) {
 			if($sql) {
@@ -49,7 +53,7 @@ class backupHelper {
 			}
 			$zip = self::addDirectoryToZip($zip, $base, $base);
 			$zip->close();
-			self::updateBackupsList(array('id' => $id, 'time' => $time, 'version' => $version, 'file' => str_replace(BKP, '', $file), 'size' => filesize($file)));
+			self::updateBackupsList(array('id' => $id, 'time' => $time, 'version' => $version, 'file' => str_replace(BKP, '', $file), 'size' => filesize($file), 'type' => $type));
 			unlink($sql);
 			return 1;
 		} else {
@@ -100,7 +104,7 @@ class backupHelper {
 		return file_put_contents(BKP.'list.json', json_encode($list));
 	}
 
-	public static function SQLbackup() {
+	public static function SQLbackup($type = 'backup') {
 		$db = Yii::app()->db->createCommand('SELECT DATABASE()')->queryScalar();
 		$tables = Yii::app()->db->createCommand('SHOW TABLES')->queryColumn();
 		$version = Settings::model()->findByAttributes(array('option' => 'SQLversion'));
@@ -114,7 +118,7 @@ class backupHelper {
 				fwrite($backup_file, "\nDROP TABLE IF EXISTS `{$table}`;\n{$rows['Create Table']};\n");
 				$rows = Yii::app()->db->createCommand('SELECT * FROM `'.$table.'`')->queryAll();
 				$c = count($rows)-1;
-				if($c >= 0) {
+				if($c >= 0 && $type == 'backup') {
 					fwrite($backup_file, "\nINSERT INTO `{$table}` VALUES ");
 					foreach($rows as $k => $row) {
 						fwrite($backup_file, '('.join(',', array_map($f, $row)).($k == $c ? ')' : '),'));

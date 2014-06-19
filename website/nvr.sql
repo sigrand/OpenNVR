@@ -190,8 +190,9 @@ INSERT INTO `settings` (`id`, `option`, `value`) VALUES
   (5, 'register', 'register@camshot.ru'),
   (6, 'SQLversion', '0.1'),
   (7, 'repo', 'http://qps.ru/mR3pY'),
-  (8, 'mail_confirm', '1');
-  (9, 'default_quota', '2048000');
+  (8, 'mail_confirm', '1'),
+  (9, 'default_quota', '2048000'),
+  (10, 'multi_ip', '0');
   
 -- Дамп структуры для таблица cams.shared
 DROP TABLE IF EXISTS `shared`;

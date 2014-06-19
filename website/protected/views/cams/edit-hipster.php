@@ -5,6 +5,10 @@
 <script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/leaflet.draw.js"></script>
 <link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/leaflet.draw.css" />
+<link href="<?php echo Yii::app()->request->baseUrl; ?>/player/css/dark-hive/jquery-ui-1.10.4.custom.css" rel="stylesheet">
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/jquery-1.10.2.js"></script>
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/player/js/jquery-ui-1.10.4.custom.js"></script>
+
 
 <div class="col-sm-12">
 	<div class="panel panel-default">
@@ -136,6 +140,33 @@
 							<?php echo $form->error($model, 'pass'); ?>
 						</div>
 					</div>
+					<?php if(isset($_GET['sq'])) { ?>
+					<div class="form-group">
+						<div class="col-sm-offset-2 col-sm-2 control-label"><b><?php echo Yii::t('cams', 'Quota'); ?>:</b></div>
+						<div class="col-sm-8">
+							<div class="progress">
+								<div class="progress-bar progress-bar-success" style="width: 35%" title="cam 1 [35% (100 Mb)]">
+									cam 1 [35% (100 Mb)]
+								</div>
+								<div class="progress-bar progress-bar-primary" style="width: 20%" title="cam 2 [20% (100 Mb)]">
+									cam 2 [20% (100 Mb)]
+								</div>
+								<div class="progress-bar progress-bar-success" style="width: 10%" title="cam 3 [10% (100 Mb)]">
+									cam 3 [10% (100 Mb)]
+								</div>	
+								<div class="progress-bar progress-bar-info" style="width: 35%" title="35% (100 Mb) available">
+									35% (100 Mb) available
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-offset-2 col-sm-2 control-label"><b><?php echo Yii::t('cams', 'SubQuota'); ?>:</b></div>
+						<div class="col-sm-8">
+							<div id="slider-range"></div>
+						</div>
+					</div>
+					<?php } ?>
 				</div>
 			</div>
 			<div class="col-sm-12">
@@ -307,4 +338,12 @@ if(Yii::app()->user->hasFlash('notify')) {
 			document.getElementById("Cams_coordinates").value = e.latlng.lat+", "+e.latlng.lng;
 		}
 	});
+$(function() {
+	$('#slider-range').slider({
+		range: false,
+		min: 0,
+		max: 35,
+		values: [ 0 ],
+	});
+});
 </script>

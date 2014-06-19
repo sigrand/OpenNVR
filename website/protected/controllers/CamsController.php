@@ -22,7 +22,7 @@ class CamsController extends Controller {
 	public function accessRules() {
 		return array(
 			array('allow',
-				'actions'=>array('index', 'fullscreen', 'playlist', 'check', 'map', 'list', 'archive'),
+				'actions'=>array('index', 'fullscreen', 'playlist', 'check', 'map', 'list', 'archive', 'hls'),
 				'users'=>array('*'),
 				),
 			array('allow',
@@ -37,6 +37,14 @@ class CamsController extends Controller {
 			);
 	}
 
+	public function actionHls($url) { // TODO: safe url
+		$this->layout = 'emptycolumn';
+		$this->render('empty',
+			array(
+				'content' => '<video style="width:100%;" src="'.$url.'" type="application/x-mpegURL" controls autoplay></video>'
+				)
+			);
+	}
 	public function actionUnixtime($id) {
 		$this->layout = 'emptycolumn';
 		$momentManager = new momentManager($id);
@@ -170,7 +178,7 @@ class CamsController extends Controller {
 				'cam' => $cam,
 				'session_id' => $cam->getSessionId($low),
 				'low' => $low,
-				'down' => $server->protocol.'://'.$server->ip.':'.$server->w_port.'/mod_nvr/file?stream='
+				'down' => $server->protocol.'://'.$server->ip.':'.$server->w_port.'/mod_nvr/file.flv?stream='
 				));
 	}
 
@@ -205,7 +213,7 @@ class CamsController extends Controller {
 				'full' => !$full,
 				'unixtime' => $momentManager->unixtime(),
 				'uri' => 'rtmp://'.$server->ip.':'.$server->l_port,
-				'down' => $server->protocol.'://'.$server->ip.':'.$server->w_port.'/mod_nvr/file?stream=',
+				'down' => $server->protocol.'://'.$server->ip.':'.$server->w_port.'/mod_nvr/file.flv?stream=',
 				'recorded_intervals' => $momentManager->existence($cam->id)
 				));
 	}
