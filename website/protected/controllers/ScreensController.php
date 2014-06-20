@@ -31,7 +31,7 @@ class ScreensController extends Controller
 				'users'=>array('*'),
 			),
 			array('allow', // allow authenticated user to perform 'create' and 'update' actions
-				'actions'=>array('index','view','create','update','manage','delete'),
+				'actions'=>array('index','view','create','update','manage','delete','archive'),
 				'users'=>array('@'),
 			),
 			array('deny',  // deny all users
@@ -58,6 +58,23 @@ class ScreensController extends Controller
 			));
 		}
 	}
+
+	public function actionArchive($id, $fullscreen=false, $full=0) {
+
+		if ($fullscreen == "true") {
+			$this->layout = 'emptycolumn';
+		}
+		$model=$this->loadModel($id);
+		if ($model) {
+			$this->pageTitle = $model->name;
+			$this->render('archive',array(
+				'model'=>$model,
+				'fullscreen'=>$fullscreen,
+			));
+		}
+		return true;
+	}
+
 
 	private function getAvailableCams() {
 		$myCams = Cams::getAvailableCams();
@@ -235,9 +252,11 @@ class ScreensController extends Controller
 			}
 		}
 
+		$myCams = $this->getAvailableCams();
+		$myCams[''] = 'none';
 		$this->render('create',array(
 			'model'=>$model,
-			'myCams' => $this->getAvailableCams(),
+			'myCams' => $myCams,
 			'type' => $type
 		));
 	}
@@ -255,9 +274,11 @@ class ScreensController extends Controller
 				$this->redirect(array('manage'));
 		}
 
+		$myCams = $this->getAvailableCams();
+		$myCams[''] = Yii::t('screens', 'none');
 		$this->render('update',array(
 			'model'=>$model,
-			'myCams' => $this->getAvailableCams()
+			'myCams' => $myCams
 		));
 
 		}

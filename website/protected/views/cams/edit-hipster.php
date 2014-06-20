@@ -1,8 +1,8 @@
 <?php
 /* @var $this CamsController */
 ?>
-<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.css" />
-<script src="http://cdn.leafletjs.com/leaflet-0.7.2/leaflet.js"></script>
+<link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/leaflet.css" />
+<script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/leaflet.js"></script>
 <script src="<?php echo Yii::app()->request->baseUrl; ?>/js/leaflet/leaflet.draw.js"></script>
 <link rel="stylesheet" href="<?php echo Yii::app()->request->baseUrl; ?>/css/leaflet.draw.css" />
 <link href="<?php echo Yii::app()->request->baseUrl; ?>/player/css/dark-hive/jquery-ui-1.10.4.custom.css" rel="stylesheet">
@@ -13,11 +13,23 @@
 <div class="col-sm-12">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><?php echo $model->isNewRecord ? Yii::t('cams', 'Fields marked with an * are required') : Yii::t('cams', 'Edit'); ?></h3>
+			<h3 class="panel-title"><?php
+				if (isset($bunch) && $bunch) {
+					echo Yii::t('cams', 'Fields marked with an * are required')." ";
+					echo Yii::t('cams', '(type %d where you need number from start to end)');
+				} else {
+					echo $model->isNewRecord ? Yii::t('cams', 'Fields marked with an * are required') : Yii::t('cams', 'Edit');
+				} ?></h3>
 		</div>
 		<div class="panel-body">
-			<?php $form = $this->beginWidget('CActiveForm', array(
-				'action' => $model->isNewRecord ? $this->createUrl('cams/add') : $this->createUrl('cams/edit', array('id' => $model->getSessionId())),
+			<?php
+				if (isset($bunch) && $bunch) {
+					$url = 'cams/addbunchofcam';
+				} else {
+					$url = 'cams/add';
+				}
+				$form = $this->beginWidget('CActiveForm', array(
+				'action' => $model->isNewRecord ? $this->createUrl($url) : $this->createUrl('cams/edit', array('id' => $model->getSessionId())),
 				'id' => 'cams-form',
 				'enableClientValidation' => true,
 				'clientOptions' => array('validateOnSubmit' => true),
@@ -58,6 +70,21 @@
 					</div>
 				</div>
 				<div class="col-sm-8">
+
+		<?php if (isset($bunch) && $bunch) { ?>
+					<div class="form-group">
+						<div class="col-sm-4 control-label"><b><?php echo Yii::t('cams', 'Start number *'); ?></b></div>
+						<div class="col-sm-8">
+							<?php echo CHtml::textField('start', '', array('class' => 'form-control', 'numerical', 'integerOnly'=>true)); ?>
+						</div>
+					</div>
+					<div class="form-group">
+						<div class="col-sm-4 control-label"><b><?php echo Yii::t('cams', 'End number *'); ?></b></div>
+						<div class="col-sm-8">
+							<?php echo CHtml::textField('end', '', array('class' => 'form-control', 'numerical', 'integerOnly'=>true)); ?>
+						</div>
+					</div>
+		<?php } ?>
 
 					<div class="form-group">
 						<?php echo $form->labelEx($model, 'name', array('class' => 'col-sm-4 control-label')); ?>
@@ -217,10 +244,18 @@ if(Yii::app()->user->hasFlash('notify')) {
 	$(document).ready(function(){
 		$('#MyPlayer_div embed').height($('#MyPlayer_div').width()*9/16);
 		$('#MyPlayer_div').css('padding-top', $('#MyPlayer_div').parent().parent().height() - $('#MyPlayer_div embed').height());
-		map = L.map('map').setView([<?php if ($model->coordinates == "") echo "0,0"; else echo "$model->coordinates"; ?>], 18);
-		L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-		}).addTo(map);
+		map = L.map('map', {'scrollWheelZoom':false, maxZoom:18}).setView([<?php if ($model->coordinates == "") echo "54.84984520366661, 83.10189485549927"; else echo "$model->coordinates"; ?>], 3);
+				var osm;
+				osm = new L.TileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png');
+				if (osm) {
+					map.addLayer(osm);
+				} else {
+					map.setView([54.84984520366661, 83.10189485549927], 10);
+					L.imageOverlay("<?php echo Yii::app()->request->baseUrl; ?>/images/map_bg.png", [[-180, -180], [180, 180]]).addTo(map);
+				}
+
+
+
 		var popup = L.popup();
 		var LeafIcon = L.Icon.extend({
 			options: {
@@ -233,7 +268,7 @@ if(Yii::app()->user->hasFlash('notify')) {
 			}
 		});
 		var cam_icon = new LeafIcon({iconUrl: '<?php echo Yii::app()->request->baseUrl; ?>/images/cam_icon.png'});
-		marker = L.marker([<?php echo $model->coordinates == "" ? "0,0" : "$model->coordinates"; ?>], {icon:cam_icon}).addTo(map);
+		marker = L.marker([<?php echo $model->coordinates == "" ? "54.84984520366661, 83.10189485549927" : "$model->coordinates"; ?>], {icon:cam_icon}).addTo(map);
 		polygon = L.polygon([<?php echo $model->view_area == "" ? "" : "$model->view_area"; ?>], {color:'#2f85cb'}).addTo(map);
 
 		// Initialise the FeatureGroup to store editable layers

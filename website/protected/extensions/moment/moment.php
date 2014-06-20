@@ -93,6 +93,24 @@ class moment {
     }
 
     public function existence($stream) {
+
+		// this shit work 10 times faster!!!
+		$url = $this->options['protocol']."://".$this->options['server_ip'].":".$this->options['web_port']."/mod_nvr/existence?stream=".$stream;
+		$https_user = "";
+		$https_password = "";
+		$opts = array('http' =>
+		array(
+			'method'  => 'GET',
+			'header'  => "Content-Type: text/xml\r\n".
+				"Authorization: Basic ".base64_encode("$https_user:$https_password")."\r\n",
+				'content' => "",
+				'timeout' => 60
+			)
+		);
+		$context  = stream_context_create($opts);
+		$result = @file_get_contents($url, false, $context, -1, 40000);
+		return trim($result);
+
         $this->http->setPort($this->options['web_port']);
         $result = $this->http->get("{$this->options['protocol']}://{$this->options['server_ip']}/mod_nvr/existence?stream={$stream}");
         $this->http->setPort($this->options['server_port']);

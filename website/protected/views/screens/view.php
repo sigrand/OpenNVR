@@ -41,7 +41,7 @@ else
 		eval("\$w=\$model->cam${i}_w;");
 		eval("\$h=\$model->cam${i}_h;");
 		eval("\$descr=\$model->cam${i}_descr;");
-		if (($w > 0) && ($h > 0)) {
+		if ($id && ($w > 0) && ($h > 0)) {
 			$cam = Cams::model()->findByPK($id);
 			$stream = $cam->getSessionId();
 			$stream_low = $cam->getSessionId(true);

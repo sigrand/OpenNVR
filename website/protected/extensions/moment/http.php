@@ -234,6 +234,8 @@ class http
 		$this->_bytes += (strlen($reqhead)+ strlen($reqbody)+ strlen($res));
 
 		/* get response header & body */
+//		echo "response from moment:[\n".$res."\n]";
+//		return "qweqwe\n";
 		list($reshead, $resbody) = explode("\r\n\r\n", $res, 2);
 
 		/* convert header to associative array */

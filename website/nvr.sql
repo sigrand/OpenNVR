@@ -223,6 +223,16 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT=' ';
 
+DROP TABLE IF EXISTS `tun_cams`;
+CREATE TABLE IF NOT EXISTS `tun_cams` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `mac` varchar(20) NOT NULL,
+  `ip` varchar(20) NOT NULL,
+  `cams_id` int(11) NOT NULL,
+  `add_time` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='openvpn tunnel cameras';
+
 INSERT INTO `users` (`id`, `nick`, `email`, `pass`, `salt`, `time_offset`, `status`, `options`) VALUES
   (1, 'admin', 'admin@admin.admin', '$1$7r4.Cn0.$5WTgA7.eMNRcTwWEMulPg.', 'fb3b88dde2e758ecaab215fa25bf3077', '+0', 3, 0);
 
