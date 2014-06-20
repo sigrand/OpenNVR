@@ -321,7 +321,7 @@ class CamsController extends Controller {
 						Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cams successfully added')));
 					} else {
 						Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam not added. Problem with nvr')));
-						$->delete();
+						$m->delete();
 					}
 				} else {
 					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Error while adding cam!!!')));
