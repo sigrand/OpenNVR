@@ -52,6 +52,7 @@ class momentManager {
             if ($result != true) {
                 Notify::note(Yii::t('errors', 'Add cam fail, problem with nvr, http response: {response}', array('{response}' => $result)));
                 return false;
+            }
         }
         $this->rec($model->record == 1 ? 'on' : 'off', $model->id);
     }

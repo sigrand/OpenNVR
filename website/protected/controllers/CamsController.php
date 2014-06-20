@@ -256,7 +256,7 @@ class CamsController extends Controller {
 					$model->prev_url = "rtsp://".$tunCam->ip."/H264_LOW";
 					if($model->validate()) {
 						if ($model->save()) {
-							$momentManager = new momentManager($model->server_id);
+							$momentManager = new momentManager($model->owner->server_id);
 							if($momentManager->add($model)) {
 								Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cam successfully added')));
 								$tunCam->cams_id = $model->id;
@@ -301,7 +301,6 @@ class CamsController extends Controller {
 				Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'URL don\'t have %d substing!')));
 				goto end;
 			}
-			$momentManager = new momentManager($_POST['Cams']['server_id']);
 			for ($i = $start; $i <= $end; $i++) {
 				$m = new Cams;
 				$m->user_id = Yii::app()->user->getId();
@@ -310,7 +309,6 @@ class CamsController extends Controller {
 				$m->url = str_replace("%d", $i, $_POST['Cams']['url']);
 				$m->prev_url = str_replace("%d", $i, $_POST['Cams']['prev_url']);
 				$m->time_offset = $_POST['Cams']['time_offset'];
-				$m->server_id = $_POST['Cams']['server_id'];
 				$m->coordinates = $_POST['Cams']['coordinates'];
 				$m->view_area = $_POST['Cams']['view_area'];
 				$m->user = $_POST['Cams']['user'];
@@ -318,11 +316,12 @@ class CamsController extends Controller {
 				$m->show = $_POST['Cams']['show'];
 				$m->record = $_POST['Cams']['record'];
 				if ($m->validate() && $m->save()) {
+					$momentManager = new momentManager($m->owner->server_id);
 					if($momentManager->add($m)) {
 						Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('cams', 'Cams successfully added')));
 					} else {
 						Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam not added. Problem with nvr')));
-						$model->delete();
+						$->delete();
 					}
 				} else {
 					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Error while adding cam!!!')));
