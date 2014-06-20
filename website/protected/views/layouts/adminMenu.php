@@ -5,4 +5,4 @@
 <li><?php echo CHtml::link(Yii::t('menu', 'Settings'), $this->createUrl('admin/settings')); ?></li>
 <li><?php echo CHtml::link(Yii::t('menu', 'Updater'), $this->createUrl('admin/updater')); ?></li>
 <li><?php echo CHtml::link(Yii::t('menu', 'Backup manager'), $this->createUrl('admin/backupmanager')); ?></li>
-<?php echo Yii::app()->user->permissions == 3 ? '<li>'.CHtml::link(Yii::t('menu', 'Dev tools'), $this->createUrl('admin/devtools')).'</li>' : ''; ?>
+<?php echo Yii::app()->user->permissions == 3 && Settings::model()->getValue('dev_tools') ? '<li>'.CHtml::link(Yii::t('menu', 'Dev tools'), $this->createUrl('admin/devtools')).'</li>' : ''; ?>

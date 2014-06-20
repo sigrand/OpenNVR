@@ -41,10 +41,11 @@ class CamsController extends Controller {
 		$this->layout = 'emptycolumn';
 		$this->render('empty',
 			array(
-				'content' => '<video style="width:100%;" src="'.$url.'" type="application/x-mpegURL" controls autoplay></video>'
+				'content' => '<video style="width:100%;" src="'.strip_tags($url).'" type="application/x-mpegURL" controls autoplay></video>'
 				)
 			);
 	}
+	
 	public function actionUnixtime($id) {
 		$this->layout = 'emptycolumn';
 		$momentManager = new momentManager($id);

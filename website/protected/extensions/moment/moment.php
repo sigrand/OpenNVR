@@ -14,11 +14,32 @@ sony - name of stream
 http://127.0.0.1:8082/mod_nvr_admin/rec_on?stream=sony&seq=1 - turn on record
 http://127.0.0.1:8082/mod_nvr_admin/rec_off?stream=sony&seq=1 - turn off record
 
+add channel
+http://192.168.10.21:8080/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp&quota_id=1&subquota_id=1
+
+modify channel
+http://192.168.10.21:8080/admin/add_channel?conf_file=sony0&title=Sony0&uri=rtsp://192.168.10.21:8092/test0.sdp&update&quota_id=1&subquota_id=1
+
+remove channel
+http://192.168.10.21:8080/admin/remove_channel?conf_file=sony0
+
 add quota
 http://192.168.10.21:8080/admin/add_quota?id=1&size=2048000
 
+update quota
+http://192.168.10.21:8080/admin/update_quota?id=1&size=2048000
+
 remove quota
 http://192.168.10.21:8080/admin/remove_quota?id=1
+
+add subquota
+http://192.168.10.21:8080/admin/add_subquota?id=1&idSub=1&size=2048000
+
+update subquota
+http://192.168.10.21:8080/admin/update_subquota?id=1&idSub=1&size=2048000
+
+remove subquota
+http://192.168.10.21:8080/admin/remove_subquota?id=1&idSub=1
 
 get list of quotas
 http://192.168.10.21:8080/admin/quota_list
