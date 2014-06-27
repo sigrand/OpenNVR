@@ -5,7 +5,7 @@ Yii::app()->clientScript->registerScriptFile(Yii::app()->baseUrl.'/js/passfield.
 <div class="col-md-offset-3 col-md-5">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h3 class="panel-title"><? echo Yii::t('register', 'Login form');?><a href="<?php echo $this->createUrl('site/index'); ?>" class="close" aria-hidden="true">&times;</a></h3>
+			<h3 class="panel-title"><?php echo Yii::t('register', 'Login form');?><a href="<?php echo $this->createUrl('site/index'); ?>" class="close" aria-hidden="true">&times;</a></h3>
 		</div>
 		<div class="panel-body">
 			<?php
