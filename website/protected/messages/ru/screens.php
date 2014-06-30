@@ -17,9 +17,9 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'Archive' => '',
-  'Watch' => '',
-  'none' => '',
+  'Archive' => 'Архив',
+  'Watch' => 'Смотреть',
+  'none' => 'пусто',
   'Add cam' => 'Добавить камеру',
   'Add screen' => 'Добавить экран',
   'All screens' => 'Все экраны',

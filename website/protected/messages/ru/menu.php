@@ -17,9 +17,9 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'Backup manager' => '',
-  'Dev tools' => '',
-  'Quotas' => '',
+  'Backup manager' => 'Менеджер бэкапов',
+  'Dev tools' => 'Инструменты разработчика',
+  'Quotas' => 'Квоты',
   'Account settings' => 'Настройки профиля',
   'Admin' => 'Админка',
   'Cams' => 'Камеры',
