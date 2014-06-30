@@ -19,7 +19,9 @@
 return array (
   'Account settings' => '',
   'Admin' => '',
+  'Backup manager' => '',
   'Cams' => '',
+  'Dev tools' => '',
   'Login' => '',
   'Logout [{nick}]' => '',
   'Logs' => '',
@@ -27,6 +29,7 @@ return array (
   'Manage' => '',
   'Notifications' => '',
   'Public cams' => '',
+  'Quotas' => '',
   'Register' => '',
   'Screens' => '',
   'Servers' => '',

@@ -20,7 +20,4 @@ return array (
   'admin' => '',
   'operators' => '',
   'viewers' => '',
-  'Password successfully changed' => '@@@@',
-  'Time zone successfully changed' => '@@@@',
-  'User decline shared cam' => '@@@@',
 );

@@ -42,7 +42,7 @@ class AdminController extends Controller {
 		if($status == 1)  {
 			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! update created')));
 		} elseif($status == 2) {
-			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update not created. Dir is not writeable: '.BKP)));
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update not created. Dir is not writeable: {DIR}', BKP)));
 		} elseif($status == 0) {
 			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Update not created')));
 		}
@@ -52,7 +52,7 @@ class AdminController extends Controller {
 	public function actionUpdateDelete($id) {
 		Yii::import('ext.Updater.index', 1);
 		if(backupHelper::backupDelete($id)) {
-			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! Update deleted')));		
+			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! Update deleted')));
 			$this->redirect($this->createUrl('admin/devtools'));
 			Yii::app()->end();
 		}
@@ -85,7 +85,7 @@ class AdminController extends Controller {
 		if($status == 1)  {
 			Yii::app()->user->setFlash('notify', array('type' => 'success', 'message' => Yii::t('admin', 'Huge success! backup created')));
 		} elseif($status == 2) {
-			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Backup not created. Dir is not writeable: '.BKP)));
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Backup not created. Dir is not writeable: {DIR}', BKP)));
 		} elseif($status == 0) {
 			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Backup not created')));
 		}

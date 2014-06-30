@@ -17,8 +17,11 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
+  'Archive' => '',
   'Custom' => '',
   'User' => '',
+  'Watch' => '',
+  'none' => '',
   'User ID' => '@@用户ID@@',
   'Add cam' => '增加摄像机',
   'Add screen' => '增加屏幕',

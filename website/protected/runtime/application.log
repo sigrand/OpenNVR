@@ -6196,3 +6196,48 @@ Stack trace:
 #6 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
 #7 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
 
+2014/06/30 12:53:39 [error] [php] Undefined variable: tunCam (/home/imbizo/OpenNVR/website/fw/cli/commands/MessageCommand.php(144) : eval()'d code:1)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): MessageCommand->run()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#2 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#3 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#4 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#5 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/06/30 12:56:38 [error] [php] Undefined variable: tunCam (/home/imbizo/OpenNVR/website/fw/cli/commands/MessageCommand.php(144) : eval()'d code:1)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): MessageCommand->run()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#2 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#3 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#4 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#5 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/06/30 12:58:30 [error] [php] array_key_exists(): The first argument should be either a string or an integer (/home/imbizo/OpenNVR/website/fw/cli/commands/MessageCommand.php:167)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): MessageCommand->run()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#2 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#3 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#4 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#5 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/06/30 13:01:59 [error] [php] array_key_exists(): The first argument should be either a string or an integer (/home/imbizo/OpenNVR/website/fw/cli/commands/MessageCommand.php:167)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): MessageCommand->run()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#2 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#3 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#4 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#5 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+
+2014/06/30 13:03:17 [error] [php] array_key_exists(): The first argument should be either a string or an integer (/home/imbizo/OpenNVR/website/fw/cli/commands/MessageCommand.php:167)
+Stack trace:
+#0 /home/imbizo/OpenNVR/website/fw/console/CConsoleCommandRunner.php(71): MessageCommand->run()
+#1 /home/imbizo/OpenNVR/website/fw/console/CConsoleApplication.php(92): CConsoleCommandRunner->run()
+#2 /home/imbizo/OpenNVR/website/fw/base/CApplication.php(180): CConsoleApplication->processRequest()
+#3 /home/imbizo/OpenNVR/website/fw/yiic.php(33): CConsoleApplication->run()
+#4 /home/imbizo/OpenNVR/website/protected/yiic.php(7): require_once()
+#5 /home/imbizo/OpenNVR/website/protected/yiic(4): require_once()
+

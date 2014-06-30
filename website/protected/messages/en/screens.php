@@ -20,6 +20,7 @@ return array (
   'Add cam' => '',
   'Add screen' => '',
   'All screens' => '',
+  'Archive' => '',
   'Cam' => '',
   'Custom' => '',
   'Delete' => '',
@@ -36,4 +37,6 @@ return array (
   'Screen successfully added' => '',
   'Screen successfully deleted' => '',
   'User' => '',
+  'Watch' => '',
+  'none' => '',
 );

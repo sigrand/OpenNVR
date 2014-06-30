@@ -17,20 +17,23 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'Logout [{nick}]' => 'Выход [{nick}]',
-  'Main' => 'Главная',
-  'Servers' => 'Серверы',
-  'Settings' => 'Настройки',
-  'Updater' => 'Авто обновление',
+  'Backup manager' => '',
+  'Dev tools' => '',
+  'Quotas' => '',
   'Account settings' => 'Настройки профиля',
   'Admin' => 'Админка',
   'Cams' => 'Камеры',
   'Login' => 'Вход',
+  'Logout [{nick}]' => 'Выход [{nick}]',
   'Logs' => 'Логи',
+  'Main' => 'Главная',
   'Manage' => 'Управление',
   'Notifications' => 'Уведомления',
   'Public cams' => 'Публичные камеры',
   'Register' => 'Регистрация',
   'Screens' => 'Экраны',
+  'Servers' => 'Серверы',
+  'Settings' => 'Настройки',
+  'Updater' => 'Авто обновление',
   'Users' => 'Пользователи',
 );

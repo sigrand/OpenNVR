@@ -273,7 +273,7 @@ class CamsController extends Controller {
 						Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam not added. Validate or save model problem')));
 					}
 				} else {
-					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam with this MAC already added $tunCam->cams_id=['.$tunCam->cams_id.']')));
+					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Cam with this MAC already added!')));
 				}
 			} else {
 					Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('cams', 'Where is no record in tun_cam with this MAC')));

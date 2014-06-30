@@ -17,7 +17,9 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
-  'User' => 'Пользователь',
+  'Archive' => '',
+  'Watch' => '',
+  'none' => '',
   'Add cam' => 'Добавить камеру',
   'Add screen' => 'Добавить экран',
   'All screens' => 'Все экраны',
@@ -36,4 +38,5 @@ return array (
   'Screen name' => 'Название экрана',
   'Screen successfully added' => 'Экран добавлен',
   'Screen successfully deleted' => 'Экран удален',
+  'User' => 'Пользователь',
 );

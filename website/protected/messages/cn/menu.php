@@ -17,8 +17,11 @@
  * NOTE, this file must be saved in UTF-8 encoding.
  */
 return array (
+  'Backup manager' => '',
+  'Dev tools' => '',
   'Logout [{nick}]' => '',
   'Main' => '',
+  'Quotas' => '',
   'Servers' => '',
   'Settings' => '',
   'Updater' => '',

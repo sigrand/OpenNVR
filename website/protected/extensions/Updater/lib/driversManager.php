@@ -5,7 +5,7 @@ class driversManager {
 		//$http->setProxy('localhost', 666);
 		//$http->setTimeout(10);
 		if(!is_writeable(TMP)) {
-			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Error make TMP writeable: '.TMP)));
+			Yii::app()->user->setFlash('notify', array('type' => 'danger', 'message' => Yii::t('admin', 'Error make TMP writeable: {DIR}', TMP)));
 			return false;
 		}
 		$repo = Settings::model()->getValue('repo');
