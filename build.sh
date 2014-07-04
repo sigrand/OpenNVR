@@ -53,7 +53,8 @@ sudo apt-get -y install sed autoconf automake build-essential git libass-dev \
 ctemplatePath="${DST}/ctemplate"
     ProjectBuildStart "ctemplate" "${SC_DIR}/external/ctemplate-2.2.tar.gz" \
         $ctemplatePath "$ctemplatePath/lib/libctemplate.so"
-    if [ $CurrentProjectStatus_ -eq 0 ]; then        
+    if [ $CurrentProjectStatus_ -eq 0 ]; then
+	patch -p0 < "${SC_DIR}/external/ctemplate.r129.patch"
         ./configure --prefix="${ctemplatePath}" \
                 --enable-static=no --enable-shared=yes || checkErr "ctemplate config failed"
     fi
